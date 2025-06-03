@@ -1,0 +1,104 @@
+body {
+    font-family: 'Inter', sans-serif;
+    width: 350px; /* Adjust width as needed */
+    margin: 0;
+    padding: 0;
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.container {
+    padding: 15px;
+}
+
+#searchInput {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s ease-in-out;
+}
+
+#searchInput:focus {
+    border-color: #4CAF50;
+}
+
+#tabList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px; /* Limit height for scrollability */
+    overflow-y: auto;
+    background-color: #fff;
+    border-radius: 6px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+#tabList li {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s ease-in-out;
+    border-radius: 4px; /* Slightly rounded corners for list items */
+}
+
+#tabList li:last-child {
+    border-bottom: none;
+}
+
+#tabList li:hover,
+#tabList li.selected {
+    background-color: #e6f7e6; /* Light green on hover/selection */
+    color: #333;
+}
+
+#tabList li .favicon {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+    flex-shrink: 0; /* Prevent favicon from shrinking */
+}
+
+#tabList li .tab-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1; /* Allow title to take available space */
+}
+
+#tabList li .tab-url {
+    font-size: 0.8em;
+    color: #888;
+    margin-left: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px; /* Limit URL width */
+}
+
+/* Scrollbar styling */
+#tabList::-webkit-scrollbar {
+    width: 8px;
+}
+
+#tabList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#tabList::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#tabList::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

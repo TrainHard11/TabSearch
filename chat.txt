@@ -1,0 +1,312 @@
+//manifest.json:
+
+{
+  "manifest_version": 3,
+  "name": "Fuzzy Tab Switcher",
+  "version": "1.0",
+  "description": "Quickly switch between Chrome tabs using fuzzy search.",
+  "permissions": ["tabs"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon.png"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+A",
+        "mac": "Alt+A"
+      },
+      "description": "Open the Fuzzy Tab Switcher popup"
+    }
+  }
+}
+
+
+//popup.css:
+
+
+
+body {
+    font-family: 'Inter', sans-serif;
+    width: 350px; /* Adjust width as needed */
+    margin: 0;
+    padding: 0;
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.container {
+    padding: 15px;
+}
+
+#searchInput {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s ease-in-out;
+}
+
+#searchInput:focus {
+    border-color: #4CAF50;
+}
+
+#tabList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px; /* Limit height for scrollability */
+    overflow-y: auto;
+    background-color: #fff;
+    border-radius: 6px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+#tabList li {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s ease-in-out;
+    border-radius: 4px; /* Slightly rounded corners for list items */
+}
+
+#tabList li:last-child {
+    border-bottom: none;
+}
+
+#tabList li:hover,
+#tabList li.selected {
+    background-color: #e6f7e6; /* Light green on hover/selection */
+    color: #333;
+}
+
+#tabList li .favicon {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+    flex-shrink: 0; /* Prevent favicon from shrinking */
+}
+
+#tabList li .tab-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1; /* Allow title to take available space */
+}
+
+#tabList li .tab-url {
+    font-size: 0.8em;
+    color: #888;
+    margin-left: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px; /* Limit URL width */
+}
+
+/* Scrollbar styling */
+#tabList::-webkit-scrollbar {
+    width: 8px;
+}
+
+#tabList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#tabList::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#tabList::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+//popup.html:
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuzzy Tab Switcher</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <input type="text" id="searchInput" placeholder="Search tabs..." autofocus>
+        <ul id="tabList"></ul>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
+
+
+//popup.js:
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('searchInput');
+    const tabList = document.getElementById('tabList');
+    let allTabs = [];
+    let filteredTabs = [];
+    let selectedIndex = -1; // Index of the currently selected tab in the filtered list
+
+    // Function to fetch and display tabs
+    const fetchAndDisplayTabs = () => {
+        chrome.tabs.query({}, (tabs) => {
+            allTabs = tabs;
+            filteredTabs = [...allTabs]; // Initially, all tabs are filtered
+            renderTabs(filteredTabs);
+            searchInput.focus(); // Focus the search input when popup opens
+        });
+    };
+
+    // Function to render tabs in the list
+    const renderTabs = (tabsToRender) => {
+        tabList.innerHTML = ''; // Clear previous list
+        if (tabsToRender.length === 0) {
+            const noResults = document.createElement('li');
+            noResults.textContent = 'No matching tabs found.';
+            noResults.style.textAlign = 'center';
+            noResults.style.color = '#888';
+            tabList.appendChild(noResults);
+            selectedIndex = -1;
+            return;
+        }
+
+        tabsToRender.forEach((tab, index) => {
+            const listItem = document.createElement('li');
+            listItem.dataset.tabId = tab.id;
+            listItem.dataset.windowId = tab.windowId;
+            listItem.dataset.index = index; // Store the index in the filtered list
+
+            // Add favicon
+            if (tab.favIconUrl) {
+                const favicon = document.createElement('img');
+                favicon.src = tab.favIconUrl;
+                favicon.alt = 'favicon';
+                favicon.classList.add('favicon');
+                listItem.appendChild(favicon);
+            } else {
+                // Placeholder for missing favicon
+                const placeholder = document.createElement('span');
+                placeholder.classList.add('favicon');
+                placeholder.textContent = '📄'; // A simple document emoji
+                listItem.appendChild(placeholder);
+            }
+
+            // Add title
+            const titleSpan = document.createElement('span');
+            titleSpan.classList.add('tab-title');
+            titleSpan.textContent = tab.title || tab.url;
+            listItem.appendChild(titleSpan);
+
+            // Add URL (optional, can be hidden with CSS if too much)
+            const urlSpan = document.createElement('span');
+            urlSpan.classList.add('tab-url');
+            urlSpan.textContent = tab.url;
+            listItem.appendChild(urlSpan);
+
+            listItem.addEventListener('click', () => {
+                switchTab(tab.id, tab.windowId);
+            });
+
+            tabList.appendChild(listItem);
+        });
+
+        // Highlight the first item if there are results
+        if (tabsToRender.length > 0) {
+            selectedIndex = 0;
+            highlightSelectedItem();
+        } else {
+            selectedIndex = -1;
+        }
+    };
+
+    // Fuzzy search function (simple implementation)
+    const fuzzySearch = (query, tabs) => {
+        if (!query) {
+            return tabs;
+        }
+        const lowerCaseQuery = query.toLowerCase();
+        return tabs.filter(tab =>
+            (tab.title && tab.title.toLowerCase().includes(lowerCaseQuery)) ||
+            (tab.url && tab.url.toLowerCase().includes(lowerCaseQuery))
+        );
+    };
+
+    // Handle search input
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.trim();
+        filteredTabs = fuzzySearch(query, allTabs);
+        renderTabs(filteredTabs);
+    });
+
+    // Highlight selected item
+    const highlightSelectedItem = () => {
+        const items = tabList.querySelectorAll('li');
+        items.forEach((item, index) => {
+            if (index === selectedIndex) {
+                item.classList.add('selected');
+                // Changed behavior from 'smooth' to 'auto' for no animation
+                item.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    };
+
+    // Handle keyboard navigation for Arrow keys, Alt+J, and Alt+K
+    searchInput.addEventListener('keydown', (e) => {
+        const items = tabList.querySelectorAll('li');
+        if (items.length === 0) return;
+
+        if (e.key === 'ArrowDown' || (e.altKey && e.key === 'j')) {
+            e.preventDefault(); // Prevent cursor movement in input
+            selectedIndex = (selectedIndex + 1) % items.length;
+            highlightSelectedItem();
+        } else if (e.key === 'ArrowUp' || (e.altKey && e.key === 'k')) {
+            e.preventDefault(); // Prevent cursor movement in input
+            selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+            highlightSelectedItem();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (selectedIndex !== -1 && filteredTabs[selectedIndex]) {
+                const selectedTab = filteredTabs[selectedIndex];
+                switchTab(selectedTab.id, selectedTab.windowId);
+            }
+        }
+    });
+
+    // Function to switch to a tab and close the popup
+    const switchTab = (tabId, windowId) => {
+        console.log(`Attempting to switch to tabId: ${tabId}, windowId: ${windowId}`);
+        chrome.windows.update(windowId, { focused: true }, () => {
+            chrome.tabs.update(tabId, { active: true }, () => {
+                console.log(`Successfully switched to tabId: ${tabId}`);
+				window.close(); // Close the popup
+            });
+        });
+    };
+
+    // Initial fetch and display of tabs
+    fetchAndDisplayTabs();
+});
+
+
