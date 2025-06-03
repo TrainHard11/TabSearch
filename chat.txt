@@ -1,3 +1,6 @@
+ok , im trying to make a chrome extention which fuzzy searches throw the tabs in chrome and goes to that tab when i click enter, i can search but i cant go to that tab , please help.
+also give me the file name and the entire solution so i can copy and paste the solution and paste it and search it 
+
 //manifest.json:
 
 {
