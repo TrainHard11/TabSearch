@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         items.forEach((item, index) => {
             if (index === selectedIndex) {
                 item.classList.add('selected');
-                // Changed behavior from 'smooth' to 'auto' for no animation
+                // Scroll the selected item into view if it's not already
                 item.scrollIntoView({ block: 'nearest', behavior: 'auto' });
             } else {
                 item.classList.remove('selected');
@@ -133,17 +133,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Function to switch to a tab and close the popup
-    const switchTab = (tabId, windowId) => {
-        console.log(`Attempting to switch to tabId: ${tabId}, windowId: ${windowId}`);
-        chrome.windows.update(windowId, { focused: true }, () => {
-            chrome.tabs.update(tabId, { active: true }, () => {
-                console.log(`Successfully switched to tabId: ${tabId}`);
-				window.close(); // Close the popup
-            });
+    const switchTab = (tabId, targetWindowId) => {
+        chrome.windows.getCurrent((currentWindow) => {
+            if (currentWindow.id === targetWindowId) {
+                // If the target tab is in the current window, just activate the tab
+                chrome.tabs.update(tabId, { active: true }, () => {
+                    window.close(); // Close the popup
+                });
+            } else {
+                // If the target tab is in a different window, first focus that window, then activate the tab
+                chrome.windows.update(targetWindowId, { focused: true }, () => {
+                    chrome.tabs.update(tabId, { active: true }, () => {
+                        window.close(); // Close the popup
+                    });
+                });
+            }
         });
     };
+
 
     // Initial fetch and display of tabs
     fetchAndDisplayTabs();
 });
-
