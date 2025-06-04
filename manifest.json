@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Fuzzy Tab Switcher",
   "version": "1.0",
-  "description": "Quickly switch between Chrome tabs using fuzzy search.",
+  "description": "Quickly switch between Chrome tabs using fuzzy search and dedicated shortcuts.",
   "permissions": ["tabs"],
   "action": {
     "default_popup": "popup.html",
@@ -20,6 +20,27 @@
         "mac": "Alt+A"
       },
       "description": "Open the Fuzzy Tab Switcher popup"
+    },
+    "whatsapp_tab": {
+      "suggested_key": {
+        "default": "Alt+1",
+        "mac": "Alt+1"
+      },
+      "description": "Focus or open WhatsApp Web tab"
+    },
+    "chatgpt_tab": {
+      "suggested_key": {
+        "default": "Alt+2",
+        "mac": "Alt+2"
+      },
+      "description": "Focus or open ChatGpt tab"
+    },
+    "gemini_tab": {
+      "suggested_key": {
+        "default": "Alt+3",
+        "mac": "Alt+3"
+      },
+      "description": "Focus or open Gemini tab"
     }
   },
   "browser_specific_settings": {
@@ -27,5 +48,8 @@
       "id": "fuzzy-tab-switcher@SergiuNani.private",
       "strict_min_version": "109.0"
     }
+  },
+  "background": {
+    "service_worker": "background.js"
   }
 }
