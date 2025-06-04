@@ -1,118 +1,136 @@
 body {
-  font-family: "Inter", sans-serif;
-  width: 750px; /* Adjust width as needed */
-  margin: 0;
-  padding: 0;
-  background-color: #282c34;
-  border-radius: 8px;
-  overflow: hidden;
-  color: #e0e0e0;
+	font-family: "Inter", sans-serif;
+	width: 750px;
+	/* Adjust width as needed */
+	margin: 0;
+	padding: 0;
+	background-color: #282c34;
+	border-radius: 8px;
+	overflow: hidden;
+	color: #e0e0e0;
 }
 
 .container {
-  padding: 15px;
+	padding: 15px;
 }
 
 #searchInput {
-  width: calc(100% - 20px);
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #444; /* Darker border */
-  border-radius: 6px;
-  font-size: 16px;
-  box-sizing: border-box;
-  outline: none;
-  background-color: #3b4048; /* Dark background for input */
-  color: #e0e0e0; /* Light text for input */
+	width: calc(100% - 20px);
+	padding: 10px;
+	margin-bottom: 10px;
+	border: 1px solid #444;
+	/* Darker border */
+	border-radius: 6px;
+	font-size: 16px;
+	box-sizing: border-box;
+	outline: none;
+	background-color: #3b4048;
+	/* Dark background for input */
+	color: #e0e0e0;
+	/* Light text for input */
 }
 
 #searchInput::placeholder {
-  color: #a0a0a0; /* Lighter placeholder text */
+	color: #a0a0a0;
+	/* Lighter placeholder text */
 }
 
 #searchInput:focus {
-  border-color: #61afef; /* A pleasing blue for focus */
+	border-color: #61afef;
+	/* A pleasing blue for focus */
 }
 
 #tabList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  max-height: 300px; /* Limit height for scrollability */
-  overflow-y: auto;
-  background-color: #21252b; /* Even darker background for the list */
-  border-radius: 6px;
-  border: 1px solid #333; /* Darker border for the list */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* More pronounced shadow */
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	max-height: 8000px;
+	/* Limit height for scrollability */
+	overflow-y: auto;
+	background-color: #21252b;
+	/* Even darker background for the list */
+	border-radius: 6px;
+	border: 1px solid #333;
+	/* Darker border for the list */
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+	/* More pronounced shadow */
 }
 
 #tabList li {
-  padding: 10px 15px;
-  cursor: pointer;
-  border-bottom: 1px solid #2c313a; /* Darker separator */
-  display: flex;
-  align-items: center;
-  border-radius: 4px;
+	padding: 10px 15px;
+	cursor: pointer;
+	border-bottom: 1px solid #2c313a;
+	/* Darker separator */
+	display: flex;
+	align-items: center;
+	border-radius: 4px;
 }
 
 #tabList li:last-child {
-  border-bottom: none;
+	border-bottom: none;
 }
 
 #tabList li:hover,
 #tabList li.selected {
-  background-color: #3a4049; /* Darker hover/selection color */
-  color: #f8f8f8; /* Very light text on hover/selection */
+	background-color: #3a4049;
+	/* Darker hover/selection color */
+	color: #f8f8f8;
+	/* Very light text on hover/selection */
 }
 
 #tabList li .favicon {
-  width: 16px;
-  height: 16px;
-  margin-right: 10px;
-  flex-shrink: 0;
+	width: 16px;
+	height: 16px;
+	margin-right: 10px;
+	flex-shrink: 0;
 }
 
 #tabList li .tab-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-grow: 1;
-  color: #e0e0e0; /* Ensure title is light */
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex-grow: 1;
+	color: #e0e0e0;
+	/* Ensure title is light */
 }
 
 #tabList li .tab-url {
-  font-size: 0.8em;
-  color: #8a8a8a; /* Slightly desaturated light grey for URL */
-  margin-left: 10px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 150px;
+	font-size: 0.8em;
+	color: #8a8a8a;
+	/* Slightly desaturated light grey for URL */
+	margin-left: 10px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 150px;
 }
 
 /* NEW: Highlight styling for search matches */
 .highlight {
-  background-color: #ffd580;
-  color: #1a1a1a;
-  padding: 1px 2px;
-  border-radius: 2px;
+	background-color: #ffd580;
+	color: #1a1a1a;
+	padding: 1px 2px;
+	border-radius: 2px;
 }
 
 /* Scrollbar styling for dark mode */
 #tabList::-webkit-scrollbar {
-  width: 8px;
+	width: 8px;
 }
 
 #tabList::-webkit-scrollbar-track {
-  background: #2c313a; /* Darker scrollbar track */
-  border-radius: 4px;
+	background: #2c313a;
+	/* Darker scrollbar track */
+	border-radius: 4px;
 }
 
 #tabList::-webkit-scrollbar-thumb {
-  background: #555; /* Darker scrollbar thumb */
-  border-radius: 4px;
+	background: #555;
+	/* Darker scrollbar thumb */
+	border-radius: 4px;
 }
 
 #tabList::-webkit-scrollbar-thumb:hover {
-  background: #61afef; /* Blue on hover for scrollbar */
+	background: #61afef;
+	/* Blue on hover for scrollbar */
 }
