@@ -77,17 +77,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Fuzzy search function (simple implementation)
+  // Fuzzy search function
   const fuzzySearch = (query, tabs) => {
     if (!query) {
       return tabs;
     }
+
     const lowerCaseQuery = query.toLowerCase();
-    return tabs.filter(
-      (tab) =>
-        (tab.title && tab.title.toLowerCase().includes(lowerCaseQuery)) ||
-        (tab.url && tab.url.toLowerCase().includes(lowerCaseQuery)),
-    );
+    // Split the query into words, removing any empty strings that might result from multiple spaces
+    const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
+
+    return tabs.filter((tab) => {
+      const tabTitle = (tab.title || "").toLowerCase();
+      const tabUrl = (tab.url || "").toLowerCase();
+
+      // Check if ALL query words are present in either the tab's title or URL,
+      // regardless of their order in the query.
+      return queryWords.every(
+        (queryWord) =>
+          tabTitle.includes(queryWord) || tabUrl.includes(queryWord),
+      );
+    });
   };
 
   // Handle search input

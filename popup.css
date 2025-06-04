@@ -22,7 +22,7 @@ body {
   font-size: 16px;
   box-sizing: border-box;
   outline: none;
-  transition: border-color 0.2s ease-in-out;
+  /* Removed: transition: border-color 0.2s ease-in-out; */
   background-color: #3b4048; /* Dark background for input */
   color: #e0e0e0; /* Light text for input */
 }
@@ -53,7 +53,7 @@ body {
   border-bottom: 1px solid #2c313a; /* Darker separator */
   display: flex;
   align-items: center;
-  transition: background-color 0.2s ease-in-out;
+  /* Removed: transition: background-color 0.2s ease-in-out; */
   border-radius: 4px;
 }
 
