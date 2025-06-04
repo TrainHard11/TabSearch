@@ -22,7 +22,6 @@ body {
   font-size: 16px;
   box-sizing: border-box;
   outline: none;
-  /* Removed: transition: border-color 0.2s ease-in-out; */
   background-color: #3b4048; /* Dark background for input */
   color: #e0e0e0; /* Light text for input */
 }
@@ -53,7 +52,6 @@ body {
   border-bottom: 1px solid #2c313a; /* Darker separator */
   display: flex;
   align-items: center;
-  /* Removed: transition: background-color 0.2s ease-in-out; */
   border-radius: 4px;
 }
 
@@ -90,6 +88,14 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 150px;
+}
+
+/* NEW: Highlight styling for search matches */
+.highlight {
+  background-color: #61afef; /* A striking blue background */
+  color: #1a1a1a; /* Dark text for contrast */
+  padding: 1px 2px; /* Small padding for better visibility */
+  border-radius: 2px; /* Slightly rounded corners */
 }
 
 /* Scrollbar styling for dark mode */

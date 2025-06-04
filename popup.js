@@ -4,6 +4,33 @@ document.addEventListener("DOMContentLoaded", () => {
   let allTabs = [];
   let filteredTabs = [];
   let selectedIndex = -1; // Index of the currently selected tab in the filtered list
+  let currentQuery = ""; // Declare a variable to hold the current search query
+
+  // Helper function to highlight matching parts of the text
+  const highlightText = (text, query) => {
+    if (!text || !query) {
+      return text;
+    }
+
+    let highlightedHtml = text;
+    const lowerCaseQuery = query.toLowerCase();
+    // Split the query into words and filter out any empty strings
+    const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
+
+    queryWords.forEach((word) => {
+      // Escape special characters in the word for use in RegExp
+      const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      // Create a global, case-insensitive regular expression for each word
+      const regex = new RegExp(`(${escapedWord})`, "gi");
+      // Replace matches with a span tag
+      highlightedHtml = highlightedHtml.replace(
+        regex,
+        (match) => `<span class="highlight">${match}</span>`,
+      );
+    });
+
+    return highlightedHtml;
+  };
 
   // Function to fetch and display tabs
   const fetchAndDisplayTabs = () => {
@@ -49,16 +76,18 @@ document.addEventListener("DOMContentLoaded", () => {
         listItem.appendChild(placeholder);
       }
 
-      // Add title
+      // Add title with highlighting
       const titleSpan = document.createElement("span");
       titleSpan.classList.add("tab-title");
-      titleSpan.textContent = tab.title || tab.url;
+      // Use innerHTML to render the highlighted text
+      titleSpan.innerHTML = highlightText(tab.title || "", currentQuery);
       listItem.appendChild(titleSpan);
 
-      // Add URL (optional, can be hidden with CSS if too much)
+      // Add URL with highlighting (optional, can be hidden with CSS if too much)
       const urlSpan = document.createElement("span");
       urlSpan.classList.add("tab-url");
-      urlSpan.textContent = tab.url;
+      // Use innerHTML to render the highlighted text
+      urlSpan.innerHTML = highlightText(tab.url || "", currentQuery);
       listItem.appendChild(urlSpan);
 
       listItem.addEventListener("click", () => {
@@ -102,8 +131,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Handle search input
   searchInput.addEventListener("input", () => {
-    const query = searchInput.value.trim();
-    filteredTabs = fuzzySearch(query, allTabs);
+    currentQuery = searchInput.value.trim(); // Update the current query
+    filteredTabs = fuzzySearch(currentQuery, allTabs);
     renderTabs(filteredTabs);
   });
 
