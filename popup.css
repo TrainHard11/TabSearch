@@ -92,10 +92,10 @@ body {
 
 /* NEW: Highlight styling for search matches */
 .highlight {
-  background-color: #61afef; /* A striking blue background */
-  color: #1a1a1a; /* Dark text for contrast */
-  padding: 1px 2px; /* Small padding for better visibility */
-  border-radius: 2px; /* Slightly rounded corners */
+  background-color: #ffd580;
+  color: #1a1a1a;
+  padding: 1px 2px;
+  border-radius: 2px;
 }
 
 /* Scrollbar styling for dark mode */

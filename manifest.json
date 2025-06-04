@@ -21,5 +21,11 @@
       },
       "description": "Open the Fuzzy Tab Switcher popup"
     }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "fuzzy-tab-switcher@SergiuNani.private",
+      "strict_min_version": "109.0"
+    }
   }
 }
