@@ -35,12 +35,16 @@
       },
       "description": "Focus or open ChatGpt tab"
     },
-    "gemini_tab": {
+    "youtube_homepage_tab": {
       "suggested_key": {
         "default": "Alt+3",
         "mac": "Alt+3"
       },
-      "description": "Focus or open Gemini tab"
+      "description": "Focus or open YouTube homepage tab (exact match)"
+    },
+
+    "gemini_tab": {
+      "description": "Focus or open ChatGpt tab"
     }
   },
   "browser_specific_settings": {

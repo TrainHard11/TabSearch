@@ -1,12 +1,16 @@
 // background.js
 
 // Function to handle focusing an existing tab or creating/updating a new one
-// It now takes a baseUrl for matching and a newTabUrl for opening/updating
-async function focusOrCreateTab(baseUrl, newTabUrl) {
-  // 1. Try to find an existing tab with the baseUrl
-  // We use a wildcard (*) to match URLs that start with the baseUrl,
-  // allowing for additional path segments or query parameters.
-  const existingTabs = await chrome.tabs.query({ url: `${baseUrl}*` });
+// It now takes a targetUrl for matching, a newTabUrl for opening/updating,
+// and an optional exactMatch boolean for precise URL matching.
+async function focusOrCreateTab(targetUrl, newTabUrl, exactMatch = false) {
+  // 1. Try to find an existing tab based on the matching criteria.
+  // If exactMatch is true, query for the exact targetUrl.
+  // Otherwise, use a wildcard (*) to match URLs that start with the targetUrl.
+  const queryOptions = exactMatch
+    ? { url: targetUrl }
+    : { url: `${targetUrl}*` };
+  const existingTabs = await chrome.tabs.query(queryOptions);
 
   if (existingTabs.length > 0) {
     // If one or more tabs are found, pick the first one.
@@ -15,7 +19,7 @@ async function focusOrCreateTab(baseUrl, newTabUrl) {
     await chrome.windows.update(targetTab.windowId, { focused: true });
     await chrome.tabs.update(targetTab.id, { active: true });
   } else {
-    // 2. If no existing tab with the baseUrl is found,
+    // 2. If no existing tab matching the criteria is found,
     //    check the current active tab to see if it's empty.
     const [currentTab] = await chrome.tabs.query({
       active: true,
@@ -44,17 +48,20 @@ async function focusOrCreateTab(baseUrl, newTabUrl) {
 // Listen for commands defined in manifest.json
 chrome.commands.onCommand.addListener((command) => {
   if (command === "whatsapp_tab") {
-    // For WhatsApp, the base URL and new tab URL are the same.
     focusOrCreateTab("https://web.whatsapp.com/", "https://web.whatsapp.com/");
   } else if (command === "gemini_tab") {
-    // For Gemini, the base URL is 'https://gemini.google.com/app' and the new tab URL is also 'https://gemini.google.com/app'.
     focusOrCreateTab(
       "https://gemini.google.com/app",
       "https://gemini.google.com/app",
     );
   } else if (command === "chatgpt_tab") {
-    // For ChatGPT, the base URL and new tab URL are the same.
     focusOrCreateTab("https://chatgpt.com/", "https://chatgpt.com/");
+  } else if (command === "youtube_homepage_tab") {
+    focusOrCreateTab(
+      "https://www.youtube.com/",
+      "https://www.youtube.com/",
+      true, // Set exactMatch to true for this command
+    );
   }
 });
 
