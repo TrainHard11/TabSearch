@@ -6,3 +6,5 @@ also , can we navigate the google search like a pro????
 Preview mode ??
 
 
+Bro , somehow allocate a keybind to move the damn tab to the last or first place , cause tahts incredebly useful
+
