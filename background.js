@@ -69,6 +69,93 @@ async function openNewEmptyTab() {
   await chrome.tabs.create({ url: "chrome://newtab/" });
 }
 
+// NEW: Function to cycle through tabs currently playing audio (audible)
+async function cycleAudibleTabs() {
+    // Get all tabs that are currently audible (playing sound)
+    const audibleTabs = await chrome.tabs.query({ audible: true });
+
+    if (audibleTabs.length === 0) {
+        return;
+    }
+
+    // Sort audible tabs for a consistent cycling order
+    audibleTabs.sort((a, b) => {
+        if (a.windowId !== b.windowId) {
+            return a.windowId - b.windowId;
+        }
+        return a.index - b.index;
+    });
+
+    // Get the ID of the last audible tab that was focused by this command
+    const { lastAudibleTabId } = await chrome.storage.local.get({ lastAudibleTabId: null });
+
+    let nextTabIndex = -1;
+
+    // Try to find the last focused audible tab in the current list
+    if (lastAudibleTabId !== null) {
+        const lastTabIndex = audibleTabs.findIndex(tab => tab.id === lastAudibleTabId);
+        if (lastTabIndex !== -1) {
+            nextTabIndex = (lastTabIndex + 1) % audibleTabs.length;
+        }
+    }
+
+    if (nextTabIndex === -1) {
+        nextTabIndex = 0;
+    }
+
+    const targetTab = audibleTabs[nextTabIndex];
+
+    if (targetTab) {
+        await chrome.windows.update(targetTab.windowId, { focused: true });
+        await chrome.tabs.update(targetTab.id, { active: true });
+        await chrome.storage.local.set({ lastAudibleTabId: targetTab.id });
+    }
+}
+
+// NEW: Function to cycle through tabs with active or muted media
+// This includes tabs that are audible OR are explicitly muted.
+async function cycleMediaTabs() {
+    const allTabs = await chrome.tabs.query({});
+
+    const mediaTabs = allTabs.filter(tab => {
+        return tab.audible || (tab.mutedInfo && tab.mutedInfo.muted);
+    });
+
+    if (mediaTabs.length === 0) {
+        return;
+    }
+
+    mediaTabs.sort((a, b) => {
+        if (a.windowId !== b.windowId) {
+            return a.windowId - b.windowId;
+        }
+        return a.index - b.index;
+    });
+
+    const { lastMediaTabId } = await chrome.storage.local.get({ lastMediaTabId: null });
+
+    let nextTabIndex = -1;
+
+    if (lastMediaTabId !== null) {
+        const lastTabIndex = mediaTabs.findIndex(tab => tab.id === lastMediaTabId);
+        if (lastTabIndex !== -1) {
+            nextTabIndex = (lastTabIndex + 1) % mediaTabs.length;
+        }
+    }
+
+    if (nextTabIndex === -1) {
+        nextTabIndex = 0;
+    }
+
+    const targetTab = mediaTabs[nextTabIndex];
+
+    if (targetTab) {
+        await chrome.windows.update(targetTab.windowId, { focused: true });
+        await chrome.tabs.update(targetTab.id, { active: true });
+        await chrome.storage.local.set({ lastMediaTabId: targetTab.id });
+    }
+}
+
 
 // Listen for commands defined in manifest.json
 chrome.commands.onCommand.addListener(async (command) => {
@@ -97,5 +184,9 @@ chrome.commands.onCommand.addListener(async (command) => {
     await moveCurrentTabToPosition(3);
   } else if (command === "open_new_empty_tab") { 
     await openNewEmptyTab();
-  }
+  } else if (command === "cycle_audible_tabs") { // Specific for audible tabs
+        await cycleAudibleTabs();
+    } else if (command === "cycle_media_tabs") { // For audible OR muted tabs
+        await cycleMediaTabs();
+    }
 });
