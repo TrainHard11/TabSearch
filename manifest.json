@@ -1,8 +1,8 @@
 {
 	"manifest_version": 3,
 	"name": "Fuzzy Tab & Search Navigator",
-	"version": "1.7",
-	"description": "Quickly switch between Chrome tabs using fuzzy search, navigate/open links on Google search results, and cycle through various types of media tabs.",
+	"version": "1.8",
+	"description": "Quickly switch between Chrome tabs using fuzzy search, navigate/open links on Google search results, and cycle through various types of media tabs, including YouTube.",
 	"permissions": [
 		"tabs",
 		"scripting",
@@ -60,11 +60,11 @@
 			},
 			"description": "Cycle through tabs currently playing audio"
 		},
-		"cycle_media_tabs": {
+		"cycle_youtube_tabs": {
 			"suggested_key": {
-				"default": "Alt+W"
+				"default": "Alt+Y"
 			},
-			"description": "Cycle through tabs with active or muted media"
+			"description": "Cycle through all YouTube tabs"
 		}
 	},
 	"browser_specific_settings": {

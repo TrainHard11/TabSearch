@@ -108,21 +108,19 @@ async function cycleAudibleTabs() {
     }
 }
 
-// Function to cycle through tabs with active or muted media
-async function cycleMediaTabs() {
+async function cycleYoutubeTabs() {
     const allTabs = await chrome.tabs.query({});
 
-    const mediaTabs = allTabs.filter(tab => {
-        // Filter for tabs that are audible OR explicitly muted
-        // This is the best we can do with public APIs for 'active or muted media'
-        return tab.audible || (tab.mutedInfo && tab.mutedInfo.muted);
+    const youtubeTabs = allTabs.filter(tab => {
+        // Filter for tabs whose URL starts with the YouTube domain
+        return tab.url && (tab.url.startsWith("https://www.youtube.com/") || tab.url.startsWith("http://www.youtube.com/"));
     });
 
-    if (mediaTabs.length === 0) {
+    if (youtubeTabs.length === 0) {
         return;
     }
 
-    mediaTabs.sort((a, b) => {
+    youtubeTabs.sort((a, b) => {
         if (a.windowId !== b.windowId) {
             return a.windowId - b.windowId;
         }
@@ -130,14 +128,14 @@ async function cycleMediaTabs() {
     });
 
     // Use a separate storage key for this command's cycle state
-    const { lastMediaTabId } = await chrome.storage.local.get({ lastMediaTabId: null });
+    const { lastYoutubeTabId } = await chrome.storage.local.get({ lastYoutubeTabId: null });
 
     let nextTabIndex = -1;
 
-    if (lastMediaTabId !== null) {
-        const lastTabIndex = mediaTabs.findIndex(tab => tab.id === lastMediaTabId);
+    if (lastYoutubeTabId !== null) {
+        const lastTabIndex = youtubeTabs.findIndex(tab => tab.id === lastYoutubeTabId);
         if (lastTabIndex !== -1) {
-            nextTabIndex = (lastTabIndex + 1) % mediaTabs.length;
+            nextTabIndex = (lastTabIndex + 1) % youtubeTabs.length;
         }
     }
 
@@ -145,13 +143,12 @@ async function cycleMediaTabs() {
         nextTabIndex = 0;
     }
 
-    const targetTab = mediaTabs[nextTabIndex];
+    const targetTab = youtubeTabs[nextTabIndex];
 
     if (targetTab) {
         await chrome.windows.update(targetTab.windowId, { focused: true });
         await chrome.tabs.update(targetTab.id, { active: true });
-        // Store the ID for this command's cycle state
-        await chrome.storage.local.set({ lastMediaTabId: targetTab.id });
+        await chrome.storage.local.set({ lastYoutubeTabId: targetTab.id });
     }
 }
 
@@ -185,7 +182,7 @@ chrome.commands.onCommand.addListener(async (command) => {
     await openNewEmptyTab();
   } else if (command === "cycle_audible_tabs") {
         await cycleAudibleTabs();
-    } else if (command === "cycle_media_tabs") {
-        await cycleMediaTabs();
+    }  else if (command === "cycle_youtube_tabs") { 
+        await cycleYoutubeTabs();
     }
 });

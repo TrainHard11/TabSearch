@@ -31,19 +31,19 @@ This extension significantly enhances your browsing efficiency by providing powe
 ### Configurable Keyboard Shortcuts
 You can customize these commands with your preferred keyboard shortcuts by visiting `chrome://extensions/shortcuts` in your browser:
 
-* **`_execute_action`**: Opens the Fuzzy Tab Switcher popup.
+* `_execute_action`: Opens the Fuzzy Tab Switcher popup.
     * *Default Suggested Key:* `Alt+A`
-* **`whatsapp_tab`**: Focuses an existing WhatsApp Web tab or opens a new one.
-* **`chatgpt_tab`**: Focuses an existing ChatGPT tab or opens a new one.
-* **`youtube_homepage_tab`**: Focuses an existing YouTube homepage tab or opens a new one.
-* **`gemini_tab`**: Focuses an existing Gemini tab or opens a new one.
-* **`move_tab_to_first`**: Moves the current active tab to the 1st position.
-* **`move_tab_to_second`**: Moves the current active tab to the 2nd position.
-* **`move_tab_to_third`**: Moves the current active tab to the 3rd position.
-* **`move_tab_to_fourth`**: Moves the current active tab to the 4th position.
-* **`open_new_empty_tab`**: Opens a new, empty tab.
-* **`cycle_audible_tabs`**: Cycles through tabs that are **currently playing audio**.
-    * *Default Suggested Key:* `Alt+Q`
-* **`cycle_media_tabs`**: Cycles through tabs that have **active or muted media sessions**. This includes tabs that are currently playing audio (`audible: true`) or are explicitly muted (`mutedInfo.muted: true`).
-    * *Default Suggested Key:* `Alt+W`
-    * **Note on "Media Tabs"**: Due to browser API limitations, this command **cannot detect tabs where media is paused but unmuted**. It only identifies tabs that are actively playing sound or have their audio explicitly muted.
+* `whatsapp_tab`: Focuses an existing WhatsApp Web tab or opens a new one.
+* `chatgpt_tab`: Focuses an existing ChatGPT tab or opens a new one.
+* `youtube_homepage_tab`: Focuses an existing YouTube homepage tab or opens a new one.
+* `gemini_tab`: Focuses an existing Gemini tab or opens a new one.
+* `move_tab_to_first`: Moves the current active tab to the 1st position.
+* `move_tab_to_second`: Moves the current active tab to the 2nd position.
+* `move_tab_to_third`: Moves the current active tab to the 3rd position.
+* `move_tab_to_fourth`: Moves the current active tab to the 4th position.
+* `open_new_empty_tab`: Opens a new, empty tab.
+
+* `cycle_audible_tabs`: Cycles through tabs that are **currently playing audio (making sound)**.
+
+* `cycle_youtube_tabs`: Cycles through **all tabs that are YouTube.com instances**, regardless of their playback or muted status.
+    * *Default Suggested Key:* `Alt+Y`
