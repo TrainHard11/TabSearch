@@ -4,8 +4,8 @@
  * 1. Identify all organic search result links.
  * 2. Inject a small orange arrow icon next to the currently selected link.
  * 3. Allow navigation between links using Up/Down arrow keys.
- * 4. Open the selected link in the current tab when 'Enter' is pressed.
- * 5. Open the selected link in a new tab when 'Ctrl+Enter' is pressed.
+ * 4. Open the selected link in the current tab when 'Enter' or 'Space' is pressed.
+ * 5. Open the selected link in a new tab when 'Ctrl+Enter' or 'Ctrl+Space' is pressed.
  * 6. Ensure only one arrow is present and selection is maintained across DOM changes.
  * 7. Implements refined scrolling behavior:
  * - For the FIRST link: Scrolls to the very top of the page to show all content above it.
@@ -23,10 +23,10 @@ let isExtensionInitialized = false; // Tracks if the content script's listeners 
 let mutationObserverInstance = null;
 
 const SCROLL_MARGIN_PX = 100;
-const SCROLL_FROM_BOTTOM_PERCENT = 0.70;
-const SCROLL_FROM_TOP_PERCENT = 0.70;
+const SCROLL_FROM_BOTTOM_PERCENT = 0.25;
+const SCROLL_FROM_TOP_PERCENT = 0.25;
 
-// NEW: Variable to hold the current web navigator enabled state
+// Variable to hold the current web navigator enabled state
 let webNavigatorEnabledState = true; // Default to enabled
 
 /**
@@ -130,7 +130,7 @@ function isElementFullyVisibleWithMargin(element, marginPx) {
 }
 
 function updateArrowPosition(newIndex) {
-  if (!webNavigatorEnabledState) return; // NEW: Do nothing if disabled
+  if (!webNavigatorEnabledState) return;
 
   if (allResultLinks.length === 0) {
     currentSelectedIndex = -1;
@@ -190,10 +190,22 @@ function updateArrowPosition(newIndex) {
 }
 
 function handleKeyDown(event) {
-  if (!webNavigatorEnabledState) return; // NEW: Do nothing if disabled
+  if (!webNavigatorEnabledState) return;
 
-  if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) {
-    return;
+  // Check if the event target is an input field, textarea, or contenteditable element.
+  // This is crucial to avoid interfering with user typing.
+  const tagName = event.target.tagName;
+  if (tagName === 'INPUT' || tagName === 'TEXTAREA' || event.target.isContentEditable) {
+    // Additionally, allow space to be typed in search inputs, unless Ctrl is pressed
+    if (event.key === ' ' && !event.ctrlKey && (tagName === 'INPUT' && event.target.type === 'search' || event.target.type === 'text')) {
+        return;
+    }
+    // For other inputs, if it's space or enter, we might still want to prevent default if not typing
+    // but the current setup implicitly handles it by returning early.
+    // If it's not a relevant key, just let it pass.
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown' && event.key !== 'Enter' && event.key !== ' ') {
+        return;
+    }
   }
 
   if (allResultLinks.length === 0) {
@@ -209,8 +221,15 @@ function handleKeyDown(event) {
       event.preventDefault();
       updateArrowPosition(currentSelectedIndex + 1);
       break;
-    case 'Enter':
+    case 'Enter': // Fallthrough for Enter and Space
+    case ' ':
+      // Only prevent default for Space if Ctrl is also pressed or if it's not an input field
+      // This prevents unwanted scrolling/actions while allowing space to be typed in search bars normally
+      if (event.key === ' ' && !event.ctrlKey && (tagName === 'INPUT' || tagName === 'TEXTAREA' || event.target.isContentEditable)) {
+          return;
+      }
       event.preventDefault();
+
       const selectedLink = allResultLinks[currentSelectedIndex];
       if (selectedLink) {
         if (event.ctrlKey) {
@@ -224,7 +243,7 @@ function handleKeyDown(event) {
 }
 
 function refreshLinksAndArrowPosition() {
-  if (!webNavigatorEnabledState) { // NEW: If disabled, clean up and exit
+  if (!webNavigatorEnabledState) {
     removeExistingArrows();
     allResultLinks = [];
     currentSelectedIndex = -1;
@@ -261,9 +280,8 @@ function refreshLinksAndArrowPosition() {
 
 // Function to attach all event listeners and observer
 function attachContentScriptListeners() {
-  if (isExtensionInitialized) return; // Already attached
+  if (isExtensionInitialized) return;
 
-  // Attach keydown listener for navigation
   if (window.extensionKeyDownListener) {
     document.removeEventListener('keydown', window.extensionKeyDownListener);
   }
@@ -271,7 +289,6 @@ function attachContentScriptListeners() {
   document.addEventListener('keydown', newListener);
   window.extensionKeyDownListener = newListener;
 
-  // Set up MutationObserver to detect DOM changes (e.g., pagination, infinite scroll)
   if (!mutationObserverInstance) {
     mutationObserverInstance = new MutationObserver((mutations) => {
       let relevantChangeDetected = false;
@@ -314,7 +331,7 @@ function attachContentScriptListeners() {
 
 // Function to remove all event listeners and disconnect observer
 function detachContentScriptListeners() {
-  if (!isExtensionInitialized) return; // Already detached
+  if (!isExtensionInitialized) return;
 
   if (window.extensionKeyDownListener) {
     document.removeEventListener('keydown', window.extensionKeyDownListener);
@@ -324,7 +341,7 @@ function detachContentScriptListeners() {
     mutationObserverInstance.disconnect();
     mutationObserverInstance = null;
   }
-  removeExistingArrows(); // Clean up any active arrows
+  removeExistingArrows();
   allResultLinks = [];
   currentSelectedIndex = -1;
   isExtensionInitialized = false;
@@ -336,17 +353,16 @@ async function initializeExtension() {
 
   if (webNavigatorEnabledState) {
     attachContentScriptListeners();
-    refreshLinksAndArrowPosition(); // Initial scan and arrow placement if enabled
+    refreshLinksAndArrowPosition();
   } else {
-    detachContentScriptListeners(); // Ensure everything is off if disabled
+    detachContentScriptListeners();
   }
 }
 
-// NEW: Listen for changes in storage (from popup)
+// Listen for changes in storage (from popup)
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'local' && changes.webNavigatorEnabled) {
     webNavigatorEnabledState = changes.webNavigatorEnabled.newValue;
-    // Re-initialize based on the new setting
     initializeExtension();
   }
 });
@@ -360,12 +376,12 @@ if (document.readyState === 'loading') {
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    initializeExtension(); // Re-check setting and refresh when tab becomes visible
+    initializeExtension();
   }
 });
 
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) {
-    initializeExtension(); // Re-check setting and refresh when restored from bfcache
+    initializeExtension();
   }
 });
