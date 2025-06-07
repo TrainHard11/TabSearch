@@ -2,15 +2,13 @@
 	"manifest_version": 3,
 	"name": "Fuzzy Tab & Search Navigator",
 	"version": "1.2",
-	"description": "Quickly switch between Chrome tabs using fuzzy search, and navigate/open links on Google & Yandex search results.",
+	"description": "Quickly switch between Chrome tabs using fuzzy search, and navigate/open links on Google search results.",
 	"permissions": [
 		"tabs",
 		"scripting"
 	],
 	"host_permissions": [
-		"*://www.google.com/search?*",
-		"*://yandex.com/search?*",
-		"*://yandex.ru/search?*"
+		"*://www.google.com/search?*"
 	],
 	"action": {
 		"default_popup": "popup.html",
@@ -68,9 +66,7 @@
 	"content_scripts": [
 		{
 			"matches": [
-				"*://www.google.com/search?*",
-				"*://yandex.com/search?*",
-				"*://yandex.ru/search?*"
+				"*://www.google.com/search?*"
 			],
 			"js": [
 				"WebNavigator.js"
