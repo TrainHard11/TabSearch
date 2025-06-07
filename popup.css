@@ -16,14 +16,17 @@ body {
 
 /* NEW: Style for search input and counter wrapper */
 .search-area {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px; /* Space between search area and tab list */
-    gap: 10px; /* Space between input and counter */
+	display: flex;
+	align-items: center;
+	margin-bottom: 10px;
+	/* Space between search area and tab list */
+	gap: 10px;
+	/* Space between input and counter */
 }
 
 #searchInput {
-	flex-grow: 1; /* Allow search input to take available space */
+	flex-grow: 1;
+	/* Allow search input to take available space */
 	padding: 10px;
 	border: 1px solid #444;
 	/* Darker border */
@@ -49,13 +52,16 @@ body {
 
 /* NEW: Style for the tab counter */
 .tab-counter {
-    padding: 5px 10px;
-    background-color: #61afef; /* Blue background */
-    color: #282c34; /* Dark text */
-    border-radius: 5px;
-    font-weight: bold;
-    font-size: 0.9em;
-    flex-shrink: 0; /* Prevent counter from shrinking */
+	padding: 5px 10px;
+	background-color: #61afef;
+	/* Blue background */
+	color: #282c34;
+	/* Dark text */
+	border-radius: 5px;
+	font-weight: bold;
+	font-size: 0.9em;
+	flex-shrink: 0;
+	/* Prevent counter from shrinking */
 }
 
 #tabList {
@@ -155,66 +161,76 @@ body {
 
 /* UPDATED Styles for the extension-arrow on search results pages (Lowered) */
 .extension-arrow {
-    position: absolute; /* Take it out of the normal document flow */
-    left: -28px; /* Position to the left of the link. Adjust as needed. */
-    top: 0%; /* Adjusted to 60% to lower the arrow */
-    transform: translateY(-50%); /* Adjust for perfect vertical centering, now relative to the new 'top' */
-    font-size: 1.2em;
-    font-weight: bold;
-    color: #FFA500; /* Orange color */
-    pointer-events: none; /* Ensure it doesn't interfere with link clicks */
-    /* Remove any transition properties if they exist, to prevent animation */
-    transition: none !important;
-    animation: none !important;
+	position: absolute;
+	/* Take it out of the normal document flow */
+	left: -28px;
+	/* Position to the left of the link. Adjust as needed. */
+	top: 0%;
+	/* Adjusted to 60% to lower the arrow */
+	transform: translateY(-50%);
+	/* Adjust for perfect vertical centering, now relative to the new 'top' */
+	font-size: 1.2em;
+	font-weight: bold;
+	color: #FFA500;
+	/* Orange color */
+	pointer-events: none;
+	/* Ensure it doesn't interfere with link clicks */
+	/* Remove any transition properties if they exist, to prevent animation */
+	transition: none !important;
+	animation: none !important;
 }
 
 /* Styles for the options section */
 .options-container {
-    margin-top: 15px;
-    padding: 15px;
-    background-color: #363a42; /* Slightly different background for options */
-    border-radius: 8px;
-    border: 1px solid #444;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2); /* Inset shadow */
+	margin-top: 15px;
+	padding: 15px;
+	background-color: #363a42;
+	/* Slightly different background for options */
+	border-radius: 8px;
+	border: 1px solid #444;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+	/* Inset shadow */
 }
 
 .options-container h2 {
-    color: #61afef; /* Blue heading */
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 1.1em;
-    border-bottom: 1px solid #444;
-    padding-bottom: 10px;
+	color: #61afef;
+	/* Blue heading */
+	margin-top: 0;
+	margin-bottom: 15px;
+	font-size: 1.1em;
+	border-bottom: 1px solid #444;
+	padding-bottom: 10px;
 }
 
 .option-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
+	display: flex;
+	align-items: center;
+	margin-bottom: 10px;
 }
 
 .option-item input[type="checkbox"] {
-    margin-right: 10px;
-    width: 18px;
-    height: 18px;
-    accent-color: #98c379; /* Green accent color */
-    cursor: pointer;
+	margin-right: 10px;
+	width: 18px;
+	height: 18px;
+	accent-color: #98c379;
+	/* Green accent color */
+	cursor: pointer;
 }
 
 .option-item label {
-    font-size: 0.95em;
-    color: #e0e0e0;
-    cursor: pointer;
+	font-size: 0.95em;
+	color: #e0e0e0;
+	cursor: pointer;
 }
 
 .settings-hint {
-    font-size: 0.8em;
-    color: #888;
-    text-align: right;
-    margin-top: 15px;
+	font-size: 0.8em;
+	color: #888;
+	text-align: right;
+	margin-top: 15px;
 }
 
 /* Utility class to hide elements */
 .hidden {
-    display: none !important;
+	display: none !important;
 }
