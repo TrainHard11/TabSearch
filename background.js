@@ -65,6 +65,11 @@ async function moveCurrentTabToPosition(index) {
   }
 }
 
+async function openNewEmptyTab() {
+  await chrome.tabs.create({ url: "chrome://newtab/" });
+}
+
+
 // Listen for commands defined in manifest.json
 chrome.commands.onCommand.addListener(async (command) => {
   if (command === "whatsapp_tab") {
@@ -90,6 +95,8 @@ chrome.commands.onCommand.addListener(async (command) => {
     await moveCurrentTabToPosition(2);
   } else if (command === "move_tab_to_fourth") {
     await moveCurrentTabToPosition(3);
+  } else if (command === "open_new_empty_tab") { // NEW command handler
+    await openNewEmptyTab();
   }
   // Ctrl+D and Ctrl+Shift+D are handled in popup.js, so no need for them here.
 });

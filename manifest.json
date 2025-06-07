@@ -35,16 +35,19 @@
 			"description": "Gemini tab"
 		},
 		"move_tab_to_first": {
-			"description": "Move current tab to first position"
+			"description": "Move tab to 1st place"
 		},
 		"move_tab_to_second": {
-			"description": "Move current tab to second position"
+			"description": "Move tab to 2nd place"
 		},
 		"move_tab_to_third": {
-			"description": "Move current tab to third position"
+			"description": "Move tab to 3rd place"
 		},
 		"move_tab_to_fourth": {
-			"description": "Move current tab to fourth position"
+			"description": "Move tab to 4th place"
+		},
+		"open_new_empty_tab": {  
+			"description": "New empty tab"
 		}
 	},
 	"browser_specific_settings": {

@@ -50,6 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
       noResults.textContent = "No matching tabs found.";
       noResults.style.textAlign = "center";
       noResults.style.color = "#888";
+      noResults.style.padding = "10px"; // Add some padding for better appearance
       tabList.appendChild(noResults);
       selectedIndex = -1;
       return;
@@ -192,21 +193,35 @@ document.addEventListener("DOMContentLoaded", () => {
   // Handle keyboard navigation including new delete commands
   searchInput.addEventListener("keydown", (e) => {
     const items = tabList.querySelectorAll("li");
-    if (items.length === 0) return;
 
     if (e.key === "ArrowDown" || (e.altKey && e.key === "j")) {
       e.preventDefault(); // Prevent cursor movement in input
-      selectedIndex = (selectedIndex + 1) % items.length;
-      highlightSelectedItem();
+      if (items.length > 0) { // Only navigate if there are items
+        selectedIndex = (selectedIndex + 1) % items.length;
+        highlightSelectedItem();
+      }
     } else if (e.key === "ArrowUp" || (e.altKey && e.key === "k")) {
       e.preventDefault(); // Prevent cursor movement in input
-      selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-      highlightSelectedItem();
+      if (items.length > 0) { // Only navigate if there are items
+        selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+        highlightSelectedItem();
+      }
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (selectedIndex !== -1 && filteredTabs[selectedIndex]) {
+        // If a tab is selected, switch to it
         const selectedTab = filteredTabs[selectedIndex];
         switchTab(selectedTab.id, selectedTab.windowId);
+      } else if (currentQuery.length > 0 && filteredTabs.length === 0) {
+        // NEW: If no tabs are found and a query is typed, open a Google search
+        const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`;
+        chrome.tabs.create({ url: googleSearchUrl }, () => {
+          window.close(); // Close the popup after opening the search tab
+        });
+      } else {
+        // If no search results and no query, or simply no selection,
+        // and Enter is pressed, close the popup (default behavior if no action)
+        window.close();
       }
     } else if (e.ctrlKey && e.key === "d") { // Ctrl+D for deleting selected tab
       e.preventDefault();

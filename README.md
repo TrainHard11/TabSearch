@@ -1,13 +1,17 @@
-
 # TabSearch
 
 ## Keymaps:
 
 Alt+a - open the Tab Search UI
-Alt+1 - goto whatsapp or open it anew
-Alt+2 - goto chatgpt or open it anew
-Alt+3 - goto youtube main page or open it anew
 
+Ctrl+d - deletes the focused tab inside the extention
+Ctrl+Shift+d - deletes all search resulted tabs
+
+## Available Commands:
+
+
+
+# Instalation:
 ## Chrome:
 1. Activate DEV mode
 2. From "Extentions" : "Load Unpacked"
