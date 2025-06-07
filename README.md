@@ -1,27 +1,35 @@
-# TabSearch
+# Fuzzy Tab & Search Navigator
 
-## Keymaps:
+### Web Search Navigator
 
-Alt+a - open the Tab Search UI
+* Keyboard Navigation: Use `Arrow Up`/`Down` on **Google search results** to select links.
 
-Ctrl+d - deletes the focused tab inside the extention
-Ctrl+Shift+d - deletes all search resulted tabs
+* Visual Highlight: An orange arrow `➤` marks the active link.
 
-## Available Commands:
+* Smooth Scrolling:
 
+    * First link: Scrolls to the top of the page.
 
+    * Other links: Scrolls with a deep 25% margin for a slower, more contextual animation. No scroll if already visible.
 
-# Instalation:
-## Chrome:
-1. Activate DEV mode
-2. From "Extentions" : "Load Unpacked"
+* Quick Open: Press `Enter` to open in the current tab, `Ctrl+Enter` for a new tab.
 
-## Mozzila:
+---
 
-#### Testing
-about:debugging#addons
+### Fuzzy Tab Switcher
 
-1. Load Temporary Add-on..
-2. Select the "manifest.json"
+* Quick Access: Open with `Alt+A` (or custom shortcut).
 
-https://addons.mozilla.org/en-US/firefox/addon/2918936
+* Fuzzy Search: Find tabs by title or URL.
+
+* Efficient Switching: Navigate with `Arrow Up`/`Down` (or `Alt+K`/`Alt+J`), then `Enter` to switch tabs.
+
+* Integrated Search: If no tab matches, `Enter` opens a Google search for your query.
+
+* Tab Management:
+
+    * `Ctrl+D`: Delete selected tab.
+
+    * `Ctrl+Shift+D`: Delete all filtered tabs.
+
+* Quick Commands: Instantly open/switch to common sites (WhatsApp, Gemini, ChatGPT, YouTube Homepage) or move tabs to the 1st, 2nd, 3rd, or 4th position, and open new empty tabs via configurable keyboard shortcuts.
