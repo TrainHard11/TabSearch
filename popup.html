@@ -8,10 +8,13 @@
 </head>
 <body>
     <div class="container">
-        <input type="text" id="searchInput" placeholder="Search tabs..." autofocus>
+        <div class="search-area"> <!-- NEW: Wrapper for search input and counter -->
+            <input type="text" id="searchInput" placeholder="Search tabs..." autofocus>
+            <span id="tabCounter" class="tab-counter"></span> <!-- NEW: Tab Counter -->
+        </div>
         <ul id="tabList"></ul>
 
-        <!-- NEW: Options Section -->
+        <!-- Options Section -->
         <div id="optionsSection" class="options-container hidden">
             <h2>Extension Options</h2>
             <div class="option-item">

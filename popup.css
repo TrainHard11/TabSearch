@@ -14,10 +14,17 @@ body {
 	padding: 15px;
 }
 
+/* NEW: Style for search input and counter wrapper */
+.search-area {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px; /* Space between search area and tab list */
+    gap: 10px; /* Space between input and counter */
+}
+
 #searchInput {
-	width: calc(100% - 20px);
+	flex-grow: 1; /* Allow search input to take available space */
 	padding: 10px;
-	margin-bottom: 10px;
 	border: 1px solid #444;
 	/* Darker border */
 	border-radius: 6px;
@@ -38,6 +45,17 @@ body {
 #searchInput:focus {
 	border-color: #61afef;
 	/* A pleasing blue for focus */
+}
+
+/* NEW: Style for the tab counter */
+.tab-counter {
+    padding: 5px 10px;
+    background-color: #61afef; /* Blue background */
+    color: #282c34; /* Dark text */
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+    flex-shrink: 0; /* Prevent counter from shrinking */
 }
 
 #tabList {
@@ -142,12 +160,12 @@ body {
   font-size: 1.2em;
   font-weight: bold;
   color: #FFA500; /* Orange color */
-  vertical-align: 6px; /* Adjusts vertical position downwards by 3 pixels */
+  vertical-align: -3px; /* Adjusts vertical position downwards by 3 pixels */
   pointer-events: none; /* Ensure it doesn't interfere with link clicks */
   flex-shrink: 0; /* Prevent arrow from shrinking on small screens */
 }
 
-/* NEW: Styles for the options section */
+/* Styles for the options section */
 .options-container {
     margin-top: 15px;
     padding: 15px;

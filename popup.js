@@ -1,9 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById("searchInput");
     const tabList = document.getElementById("tabList");
-    const optionsSection = document.getElementById("optionsSection"); // NEW
-    const enableWebNavigatorCheckbox = document.getElementById("enableWebNavigator"); // NEW
-    const searchOnNoResultsCheckbox = document.getElementById("searchOnNoResults"); // NEW
+    const tabCounter = document.getElementById("tabCounter"); // NEW
+    const optionsSection = document.getElementById("optionsSection");
+    const enableWebNavigatorCheckbox = document.getElementById("enableWebNavigator");
+    const searchOnNoResultsCheckbox = document.getElementById("searchOnNoResults");
 
     let allTabs = [];
     let filteredTabs = [];
@@ -71,12 +72,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // Function to render tabs in the list
     const renderTabs = (tabsToRender, suggestedIndex = 0) => {
         tabList.innerHTML = ""; // Clear previous list
+        // Update the tab counter
+        tabCounter.textContent = `${tabsToRender.length} tabs`; // NEW
+
         if (tabsToRender.length === 0) {
             const noResults = document.createElement("li");
             noResults.textContent = "No matching tabs found.";
             noResults.style.textAlign = "center";
             noResults.style.color = "#888";
-            noResults.style.padding = "10px"; // Add some padding for better appearance
+            noResults.style.padding = "10px";
             tabList.appendChild(noResults);
             selectedIndex = -1;
             return;
@@ -86,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const listItem = document.createElement("li");
             listItem.dataset.tabId = tab.id;
             listItem.dataset.windowId = tab.windowId;
-            listItem.dataset.index = index; // Store the index in the filtered list
+            listItem.dataset.index = index;
 
             // Add favicon
             if (tab.favIconUrl) {
@@ -99,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Placeholder for missing favicon
                 const placeholder = document.createElement("span");
                 placeholder.classList.add("favicon");
-                placeholder.textContent = "📄"; // A simple document emoji
+                placeholder.textContent = "📄";
                 listItem.appendChild(placeholder);
             }
 
@@ -124,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Set selectedIndex based on suggestedIndex, with bounds checking
         selectedIndex = Math.min(suggestedIndex, tabsToRender.length - 1);
-        selectedIndex = Math.max(-1, selectedIndex); // Ensure it's not negative unless list is truly empty
+        selectedIndex = Math.max(-1, selectedIndex);
 
         // Highlight the item if a valid index is selected
         if (selectedIndex !== -1) {
@@ -261,24 +265,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // NEW: Toggle options section visibility
+    // Toggle options section visibility
     document.addEventListener("keydown", (e) => {
         if (e.key === "F1") {
             e.preventDefault(); // Prevent default F1 behavior (e.g., opening help)
             optionsSection.classList.toggle("hidden");
-            // If options are shown, hide tab list, otherwise show tab list
+            // If options are shown, hide search area and tab list, otherwise show them
             if (!optionsSection.classList.contains("hidden")) {
+                document.querySelector('.search-area').classList.add('hidden'); // NEW: Hide search area wrapper
                 tabList.classList.add("hidden");
-                searchInput.classList.add("hidden"); // Hide search input too for cleaner UI
             } else {
+                document.querySelector('.search-area').classList.remove('hidden'); // NEW: Show search area wrapper
                 tabList.classList.remove("hidden");
-                searchInput.classList.remove("hidden");
                 searchInput.focus(); // Focus search input when tab list is visible
             }
         }
     });
 
-    // NEW: Event listeners for checkboxes
+    // Event listeners for checkboxes
     enableWebNavigatorCheckbox.addEventListener("change", saveSettings);
     searchOnNoResultsCheckbox.addEventListener("change", saveSettings);
 
@@ -310,7 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const selectedTab = filteredTabs[selectedIndex];
                 switchTab(selectedTab.id, selectedTab.windowId);
             } else if (currentQuery.length > 0 && filteredTabs.length === 0) {
-                // NEW: Check setting for "Search on Enter if no results"
+                // Check setting for "Search on Enter if no results"
                 if (currentSettings.searchOnNoResults) {
                     // If no tabs are found and a query is typed, open a Google search
                     const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`;
