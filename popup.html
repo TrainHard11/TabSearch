@@ -10,6 +10,20 @@
     <div class="container">
         <input type="text" id="searchInput" placeholder="Search tabs..." autofocus>
         <ul id="tabList"></ul>
+
+        <!-- NEW: Options Section -->
+        <div id="optionsSection" class="options-container hidden">
+            <h2>Extension Options</h2>
+            <div class="option-item">
+                <input type="checkbox" id="enableWebNavigator">
+                <label for="enableWebNavigator">Enable Web Search Navigator</label>
+            </div>
+            <div class="option-item">
+                <input type="checkbox" id="searchOnNoResults">
+                <label for="searchOnNoResults">Search on Enter if no results</label>
+            </div>
+            <p class="settings-hint">Press F1 again to hide options.</p>
+        </div>
     </div>
     <script src="popup.js"></script>
 </body>

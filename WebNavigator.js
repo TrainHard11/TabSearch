@@ -14,17 +14,33 @@
  * - If the link is not fully visible OR too close to an edge:
  * - Scroll it so its bottom is 70% up from the viewport bottom (when scrolling down).
  * - Scroll it so its top is 70% from the viewport top (when scrolling up).
+ * This functionality is controlled by a user setting.
  */
 
 let allResultLinks = [];
 let currentSelectedIndex = -1;
-let isExtensionInitialized = false;
+let isExtensionInitialized = false; // Tracks if the content script's listeners are active
 let mutationObserverInstance = null;
 
 const SCROLL_MARGIN_PX = 100;
-const SCROLL_FROM_BOTTOM_PERCENT = 0.25;
-const SCROLL_FROM_TOP_PERCENT = 0.25;
+const SCROLL_FROM_BOTTOM_PERCENT = 0.70;
+const SCROLL_FROM_TOP_PERCENT = 0.70;
 
+// NEW: Variable to hold the current web navigator enabled state
+let webNavigatorEnabledState = true; // Default to enabled
+
+/**
+ * Retrieves the webNavigatorEnabled setting from storage.
+ * @returns {Promise<boolean>} Resolves with the boolean value of the setting.
+ */
+async function getWebNavigatorSetting() {
+  const result = await chrome.storage.local.get({ webNavigatorEnabled: true });
+  return result.webNavigatorEnabled;
+}
+
+/**
+ * Finds all eligible search result links based on the current hostname.
+ */
 function findAllResultLinks() {
   const hostname = window.location.hostname;
   let searchResultsContainer = null;
@@ -47,7 +63,6 @@ function findAllResultLinks() {
       'a[ping]'
     ];
   } else {
-    // Should not happen as manifest only targets google.com
     return [];
   }
 
@@ -115,6 +130,8 @@ function isElementFullyVisibleWithMargin(element, marginPx) {
 }
 
 function updateArrowPosition(newIndex) {
+  if (!webNavigatorEnabledState) return; // NEW: Do nothing if disabled
+
   if (allResultLinks.length === 0) {
     currentSelectedIndex = -1;
     removeExistingArrows();
@@ -173,6 +190,8 @@ function updateArrowPosition(newIndex) {
 }
 
 function handleKeyDown(event) {
+  if (!webNavigatorEnabledState) return; // NEW: Do nothing if disabled
+
   if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) {
     return;
   }
@@ -205,6 +224,13 @@ function handleKeyDown(event) {
 }
 
 function refreshLinksAndArrowPosition() {
+  if (!webNavigatorEnabledState) { // NEW: If disabled, clean up and exit
+    removeExistingArrows();
+    allResultLinks = [];
+    currentSelectedIndex = -1;
+    return;
+  }
+
   const oldResultLinks = [...allResultLinks];
   const newLinks = findAllResultLinks();
 
@@ -233,14 +259,11 @@ function refreshLinksAndArrowPosition() {
   }
 }
 
-function initializeExtension() {
-  if (isExtensionInitialized) {
-    refreshLinksAndArrowPosition();
-    return;
-  }
+// Function to attach all event listeners and observer
+function attachContentScriptListeners() {
+  if (isExtensionInitialized) return; // Already attached
 
-  refreshLinksAndArrowPosition();
-
+  // Attach keydown listener for navigation
   if (window.extensionKeyDownListener) {
     document.removeEventListener('keydown', window.extensionKeyDownListener);
   }
@@ -248,6 +271,7 @@ function initializeExtension() {
   document.addEventListener('keydown', newListener);
   window.extensionKeyDownListener = newListener;
 
+  // Set up MutationObserver to detect DOM changes (e.g., pagination, infinite scroll)
   if (!mutationObserverInstance) {
     mutationObserverInstance = new MutationObserver((mutations) => {
       let relevantChangeDetected = false;
@@ -278,7 +302,6 @@ function initializeExtension() {
     });
 
     const googleSearchContainer = document.getElementById('search');
-
     if (googleSearchContainer) {
       mutationObserverInstance.observe(googleSearchContainer, { childList: true, subtree: true, attributes: false });
     } else {
@@ -289,6 +312,46 @@ function initializeExtension() {
   isExtensionInitialized = true;
 }
 
+// Function to remove all event listeners and disconnect observer
+function detachContentScriptListeners() {
+  if (!isExtensionInitialized) return; // Already detached
+
+  if (window.extensionKeyDownListener) {
+    document.removeEventListener('keydown', window.extensionKeyDownListener);
+    window.extensionKeyDownListener = null;
+  }
+  if (mutationObserverInstance) {
+    mutationObserverInstance.disconnect();
+    mutationObserverInstance = null;
+  }
+  removeExistingArrows(); // Clean up any active arrows
+  allResultLinks = [];
+  currentSelectedIndex = -1;
+  isExtensionInitialized = false;
+}
+
+// Main initialization logic, now conditional
+async function initializeExtension() {
+  webNavigatorEnabledState = await getWebNavigatorSetting();
+
+  if (webNavigatorEnabledState) {
+    attachContentScriptListeners();
+    refreshLinksAndArrowPosition(); // Initial scan and arrow placement if enabled
+  } else {
+    detachContentScriptListeners(); // Ensure everything is off if disabled
+  }
+}
+
+// NEW: Listen for changes in storage (from popup)
+chrome.storage.onChanged.addListener((changes, namespace) => {
+  if (namespace === 'local' && changes.webNavigatorEnabled) {
+    webNavigatorEnabledState = changes.webNavigatorEnabled.newValue;
+    // Re-initialize based on the new setting
+    initializeExtension();
+  }
+});
+
+// Initial load events
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeExtension);
 } else {
@@ -297,12 +360,12 @@ if (document.readyState === 'loading') {
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    refreshLinksAndArrowPosition();
+    initializeExtension(); // Re-check setting and refresh when tab becomes visible
   }
 });
 
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) {
-    refreshLinksAndArrowPosition();
+    initializeExtension(); // Re-check setting and refresh when restored from bfcache
   }
 });
