@@ -1,21 +1,3 @@
-/**
- * content.js
- * This script runs on Google and Yandex search results pages to:
- * 1. Identify all organic search result links.
- * 2. Inject a small orange arrow icon next to the currently selected link.
- * 3. Allow navigation between links using Up/Down arrow keys.
- * 4. Open the selected link in the current tab when 'Enter' is pressed.
- * 5. Open the selected link in a new tab when 'Ctrl+Enter' is pressed.
- * 6. Ensure only one arrow is present and selection is maintained across DOM changes.
- * 7. Implements refined scrolling behavior:
- * - For the FIRST link: Scrolls to the very top of the page to show all content above it.
- * - For all OTHER links (including the last one):
- * - If the link is already fully visible and has sufficient margin from the viewport edges, NO SCROLL.
- * - If the link is not fully visible OR too close to an edge:
- * - Scroll it so its bottom is 25% up from the viewport bottom (when scrolling down).
- * - Scroll it so its top is 25% from the viewport top (when scrolling up).
- */
-
 let allResultLinks = [];       // Stores all found clickable result links
 let currentSelectedIndex = -1; // Index of the currently highlighted link
 let isExtensionInitialized = false; // Flag to prevent multiple initializations
