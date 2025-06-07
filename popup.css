@@ -160,7 +160,7 @@ body {
   font-size: 1.2em;
   font-weight: bold;
   color: #FFA500; /* Orange color */
-  vertical-align: -3px; /* Adjusts vertical position downwards by 3 pixels */
+  vertical-align: 6px; /* Adjusts vertical position downwards by 3 pixels */
   pointer-events: none; /* Ensure it doesn't interfere with link clicks */
   flex-shrink: 0; /* Prevent arrow from shrinking on small screens */
 }
