@@ -95,7 +95,7 @@ chrome.commands.onCommand.addListener(async (command) => {
     await moveCurrentTabToPosition(2);
   } else if (command === "move_tab_to_fourth") {
     await moveCurrentTabToPosition(3);
-  } else if (command === "open_new_empty_tab") { // NEW command handler
+  } else if (command === "open_new_empty_tab") { 
     await openNewEmptyTab();
   }
 });

@@ -1,10 +1,16 @@
 {
 	"manifest_version": 3,
-	"name": "Fuzzy Tab Switcher",
-	"version": "1.0",
-	"description": "Quickly switch between Chrome tabs using fuzzy search",
+	"name": "Fuzzy Tab & Search Navigator",
+	"version": "1.2",
+	"description": "Quickly switch between Chrome tabs using fuzzy search, and navigate/open links on Google & Yandex search results.",
 	"permissions": [
-		"tabs"
+		"tabs",
+		"scripting"
+	],
+	"host_permissions": [
+		"*://www.google.com/search?*",
+		"*://yandex.com/search?*",
+		"*://yandex.ru/search?*"
 	],
 	"action": {
 		"default_popup": "popup.html",
@@ -46,7 +52,7 @@
 		"move_tab_to_fourth": {
 			"description": "Move tab to 4th place"
 		},
-		"open_new_empty_tab": {  
+		"open_new_empty_tab": {
 			"description": "New empty tab"
 		}
 	},
@@ -58,5 +64,21 @@
 	},
 	"background": {
 		"service_worker": "background.js"
-	}
+	},
+	"content_scripts": [
+		{
+			"matches": [
+				"*://www.google.com/search?*",
+				"*://yandex.com/search?*",
+				"*://yandex.ru/search?*"
+			],
+			"js": [
+				"WebNavigator.js"
+			],
+			"css": [
+				"popup.css"
+			],
+			"run_at": "document_idle"
+		}
+	]
 }

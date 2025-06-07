@@ -134,3 +134,16 @@ body {
 	background: #61afef;
 	/* Blue on hover for scrollbar */
 }
+
+/* Styles for the extension-arrow on search results pages */
+.extension-arrow {
+  display: inline-block;
+  margin-right: 8px; /* Small margin to separate arrow from text */
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #FFA500; /* Orange color */
+  vertical-align: middle; /* Align with middle of text */
+  pointer-events: none; /* Ensure it doesn't interfere with link clicks */
+  flex-shrink: 0; /* Prevent arrow from shrinking on small screens */
+  transition: transform 0.1s ease-out; /* Subtle animation for movement */
+}
