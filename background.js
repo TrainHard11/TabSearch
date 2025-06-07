@@ -98,7 +98,6 @@ chrome.commands.onCommand.addListener(async (command) => {
   } else if (command === "open_new_empty_tab") { // NEW command handler
     await openNewEmptyTab();
   }
-  // Ctrl+D and Ctrl+Shift+D are handled in popup.js, so no need for them here.
 });
 
 console.log("Background service worker started and listening for commands.");
