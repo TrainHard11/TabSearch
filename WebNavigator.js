@@ -12,8 +12,8 @@
  * - For all OTHER links (including the last one):
  * - If the link is already fully visible and has sufficient margin from the viewport edges, NO SCROLL.
  * - If the link is not fully visible OR too close to an edge:
- * - If moving up, scroll so its TOP is 5% from viewport top.
- * - If moving down, scroll so its BOTTOM is 5% from viewport bottom.
+ * - Scroll it so its bottom is 25% up from the viewport bottom (when scrolling down).
+ * - Scroll it so its top is 25% from the viewport top (when scrolling up).
  */
 
 let allResultLinks = [];       // Stores all found clickable result links
@@ -22,14 +22,13 @@ let isExtensionInitialized = false; // Flag to prevent multiple initializations
 let mutationObserverInstance = null; // Store the observer instance
 
 // Define a desired minimum margin in pixels from viewport top/bottom for intermediate links
-// This helps prevent links from appearing right at the edge without scrolling.
 const SCROLL_MARGIN_PX = 100;
 
-// Define the percentage from the bottom for intermediate link scrolling (when scrolling DOWN)
-const SCROLL_FROM_BOTTOM_PERCENT = 0.15; // 5% from the bottom
+// Define the percentage from the bottom for intermediate link scrolling (when scrolling DOWN or coming into view from below)
+const SCROLL_FROM_BOTTOM_PERCENT = 0.25; // Adjusted to 25% for more noticeable scroll
 
-// Define the percentage from the top for intermediate link scrolling (when scrolling UP)
-const SCROLL_FROM_TOP_PERCENT = 0.15; // 5% from the top
+// Define the percentage from the top for intermediate link scrolling (when scrolling UP or coming into view from above)
+const SCROLL_FROM_TOP_PERCENT = 0.25; // Adjusted to 25% for more noticeable scroll
 
 /**
  * Finds all eligible search result links based on the current hostname.
@@ -144,12 +143,19 @@ function injectArrow(linkElement) {
   }
 
   const arrow = document.createElement('span');
-  arrow.classList.add('extension-arrow'); // Styling comes from popup.css
+  arrow.classList.add('extension-arrow'); // Applies initial styles (opacity: 0, transform: scale(0.8))
   arrow.textContent = '➤'; // Unicode right arrow
 
-  // Prepend the arrow directly inside the link element, so it's always "right next to" the link's content.
   linkElement.prepend(arrow);
-  // console.log('Google & Yandex Search Result Opener: Arrow injected successfully inside link.');
+
+  // Trigger the animation by adding the 'is-active' class
+  // Use requestAnimationFrame to ensure the browser has painted the initial state (opacity 0)
+  // before applying the active state, triggering the transition.
+  requestAnimationFrame(() => {
+    arrow.classList.add('is-active');
+  });
+
+  // console.log('Google & Yandex Search Result Opener: Arrow injected and animation triggered.');
 }
 
 /**
@@ -222,19 +228,19 @@ function updateArrowPosition(newIndex) {
         let scrollToY = currentScrollY;
 
         // Determine scroll target based on which edge is violated or direction
-        // If scrolling up (ArrowUp) or link's top is too high
+        // If the link's top is above or too close to the top margin (scrolling up to it)
         if (linkRect.top < SCROLL_MARGIN_PX) {
-          // Calculate desired scroll position so link's top is at SCROLL_FROM_TOP_PERCENT from viewport top
+          // Scroll so its TOP is at SCROLL_FROM_TOP_PERCENT from viewport top
           const desiredLinkTopFromViewportTop = viewportHeight * SCROLL_FROM_TOP_PERCENT;
           scrollToY = currentScrollY + linkRect.top - desiredLinkTopFromViewportTop;
-          console.log('Scroll Up triggered - top too high.');
+          console.log('Scroll triggered - top too high.');
         }
-        // If scrolling down (ArrowDown) or link's bottom is too low
+        // If the link's bottom is below or too close to the bottom margin (scrolling down to it)
         else if (linkRect.bottom > (viewportHeight - SCROLL_MARGIN_PX)) {
-          // Calculate desired scroll position so link's bottom is at SCROLL_FROM_BOTTOM_PERCENT from viewport bottom
+          // Scroll so its BOTTOM is at SCROLL_FROM_BOTTOM_PERCENT from viewport bottom
           const desiredLinkBottomFromViewportTop = viewportHeight - (viewportHeight * SCROLL_FROM_BOTTOM_PERCENT);
           scrollToY = currentScrollY + linkRect.bottom - desiredLinkBottomFromViewportTop;
-          console.log('Scroll Down triggered - bottom too low.');
+          console.log('Scroll triggered - bottom too low.');
         }
 
         // Clamp the scroll position to valid bounds
@@ -243,7 +249,7 @@ function updateArrowPosition(newIndex) {
         // Only perform the scroll if it's actually changing the scroll position by a noticeable amount
         if (Math.abs(scrollToY - currentScrollY) > 1) {
             window.scrollTo({ top: scrollToY, behavior: 'smooth' });
-            console.log(`Google & Yandex Search Result Opener: Arrow moved to index ${currentSelectedIndex}, link: ${targetLink.href}, scrolled to ensure visibility with margin.`);
+            console.log(`Google & Yandex Search Result Opener: Arrow moved to index ${currentSelectedIndex}, link: ${targetLink.href}, scrolled to ensure visibility with custom margins.`);
         } else {
             console.log(`Google & Yandex Search Result Opener: Arrow moved to index ${currentSelectedIndex}, link: ${targetLink.href}, no scroll needed (already visible within margin).`);
         }
