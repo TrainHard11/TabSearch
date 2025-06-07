@@ -29,6 +29,10 @@ This extension significantly enhances your browsing efficiency by providing powe
 ---
 
 ### Configurable Keyboard Shortcuts
+
+GOTO: 
+`chrome://extensions/shortcuts`
+
 You can customize these commands with your preferred keyboard shortcuts by visiting `chrome://extensions/shortcuts` in your browser:
 
 * `_execute_action`: Opens the Fuzzy Tab Switcher popup.
