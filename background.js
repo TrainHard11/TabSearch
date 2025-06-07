@@ -69,16 +69,14 @@ async function openNewEmptyTab() {
   await chrome.tabs.create({ url: "chrome://newtab/" });
 }
 
-// NEW: Function to cycle through tabs currently playing audio (audible)
+// Function to cycle through tabs currently playing audio (audible)
 async function cycleAudibleTabs() {
-    // Get all tabs that are currently audible (playing sound)
     const audibleTabs = await chrome.tabs.query({ audible: true });
 
     if (audibleTabs.length === 0) {
         return;
     }
 
-    // Sort audible tabs for a consistent cycling order
     audibleTabs.sort((a, b) => {
         if (a.windowId !== b.windowId) {
             return a.windowId - b.windowId;
@@ -86,12 +84,10 @@ async function cycleAudibleTabs() {
         return a.index - b.index;
     });
 
-    // Get the ID of the last audible tab that was focused by this command
     const { lastAudibleTabId } = await chrome.storage.local.get({ lastAudibleTabId: null });
 
     let nextTabIndex = -1;
 
-    // Try to find the last focused audible tab in the current list
     if (lastAudibleTabId !== null) {
         const lastTabIndex = audibleTabs.findIndex(tab => tab.id === lastAudibleTabId);
         if (lastTabIndex !== -1) {
@@ -112,12 +108,13 @@ async function cycleAudibleTabs() {
     }
 }
 
-// NEW: Function to cycle through tabs with active or muted media
-// This includes tabs that are audible OR are explicitly muted.
+// Function to cycle through tabs with active or muted media
 async function cycleMediaTabs() {
     const allTabs = await chrome.tabs.query({});
 
     const mediaTabs = allTabs.filter(tab => {
+        // Filter for tabs that are audible OR explicitly muted
+        // This is the best we can do with public APIs for 'active or muted media'
         return tab.audible || (tab.mutedInfo && tab.mutedInfo.muted);
     });
 
@@ -132,6 +129,7 @@ async function cycleMediaTabs() {
         return a.index - b.index;
     });
 
+    // Use a separate storage key for this command's cycle state
     const { lastMediaTabId } = await chrome.storage.local.get({ lastMediaTabId: null });
 
     let nextTabIndex = -1;
@@ -152,6 +150,7 @@ async function cycleMediaTabs() {
     if (targetTab) {
         await chrome.windows.update(targetTab.windowId, { focused: true });
         await chrome.tabs.update(targetTab.id, { active: true });
+        // Store the ID for this command's cycle state
         await chrome.storage.local.set({ lastMediaTabId: targetTab.id });
     }
 }
@@ -184,9 +183,9 @@ chrome.commands.onCommand.addListener(async (command) => {
     await moveCurrentTabToPosition(3);
   } else if (command === "open_new_empty_tab") { 
     await openNewEmptyTab();
-  } else if (command === "cycle_audible_tabs") { // Specific for audible tabs
+  } else if (command === "cycle_audible_tabs") {
         await cycleAudibleTabs();
-    } else if (command === "cycle_media_tabs") { // For audible OR muted tabs
+    } else if (command === "cycle_media_tabs") {
         await cycleMediaTabs();
     }
 });

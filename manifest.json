@@ -58,13 +58,13 @@
 			"suggested_key": {
 				"default": "Alt+Q"
 			},
-			"description": "Cycle through tabs currently playing audio (audible)"
+			"description": "Cycle through tabs currently playing audio"
 		},
 		"cycle_media_tabs": {
 			"suggested_key": {
 				"default": "Alt+W"
 			},
-			"description": "Cycle through tabs with active or muted media (audible or muted)"
+			"description": "Cycle through tabs with active or muted media"
 		}
 	},
 	"browser_specific_settings": {
