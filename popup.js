@@ -110,27 +110,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Fuzzy search function
+  // Fuzzy search function - MODIFIED FOR PRIORITY
   const fuzzySearch = (query, tabs) => {
     if (!query) {
-      return tabs;
+      return tabs; // If no query, return all tabs without sorting
     }
 
     const lowerCaseQuery = query.toLowerCase();
-    // Split the query into words, removing any empty strings that might result from multiple spaces
     const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
 
-    return tabs.filter((tab) => {
+    const titleMatches = [];
+    const urlMatches = [];
+    const processedTabIds = new Set(); // To avoid duplicates
+
+    tabs.forEach((tab) => {
       const tabTitle = (tab.title || "").toLowerCase();
       const tabUrl = (tab.url || "").toLowerCase();
 
-      // Check if ALL query words are present in either the tab's title or URL,
-      // regardless of their order in the query.
-      return queryWords.every(
-        (queryWord) =>
-          tabTitle.includes(queryWord) || tabUrl.includes(queryWord),
-      );
+      // Check if all query words are in the title
+      const matchesTitle = queryWords.every((word) => tabTitle.includes(word));
+      // Check if all query words are in the URL
+      const matchesUrl = queryWords.every((word) => tabUrl.includes(word));
+
+      if (matchesTitle) {
+        titleMatches.push(tab);
+        processedTabIds.add(tab.id); // Mark this tab ID as processed for title match
+      } else if (matchesUrl && !processedTabIds.has(tab.id)) {
+        // If it didn't match the title, but matches the URL, and hasn't been added yet
+        urlMatches.push(tab);
+        processedTabIds.add(tab.id); // Mark this tab ID as processed for URL match
+      }
     });
+
+    // Combine results: title matches first, then URL matches
+    return [...titleMatches, ...urlMatches];
   };
 
   // Handle search input
