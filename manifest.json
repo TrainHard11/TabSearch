@@ -55,16 +55,10 @@
 			"description": "New empty tab"
 		},
 		"cycle_audible_tabs": {
-			"suggested_key": {
-				"default": "Alt+Q"
-			},
-			"description": "Cycle through tabs currently playing audio"
+			"description": "Cycle tabs playing audio"
 		},
 		"cycle_youtube_tabs": {
-			"suggested_key": {
-				"default": "Alt+Y"
-			},
-			"description": "Cycle through all YouTube tabs"
+			"description": "Cycle YouTube tabs"
 		}
 	},
 	"browser_specific_settings": {
