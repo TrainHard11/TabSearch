@@ -1,59 +1,59 @@
 {
-  "manifest_version": 3,
-  "name": "Fuzzy Tab Switcher",
-  "version": "1.0",
-  "description": "Quickly switch between Chrome tabs using fuzzy search and dedicated shortcuts.",
-  "permissions": ["tabs"],
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icon.png"
-    }
-  },
-  "icons": {
-    "16": "icon.png"
-  },
-  "commands": {
-    "_execute_action": {
-      "suggested_key": {
-        "default": "Alt+A",
-        "mac": "Alt+A"
-      },
-      "description": "Open the Fuzzy Tab Switcher popup"
-    },
-    "whatsapp_tab": {
-      "suggested_key": {
-        "default": "Alt+1",
-        "mac": "Alt+1"
-      },
-      "description": "Focus or open WhatsApp Web tab"
-    },
-    "chatgpt_tab": {
-      "suggested_key": {
-        "default": "Alt+2",
-        "mac": "Alt+2"
-      },
-      "description": "Focus or open ChatGpt tab"
-    },
-    "youtube_homepage_tab": {
-      "suggested_key": {
-        "default": "Alt+3",
-        "mac": "Alt+3"
-      },
-      "description": "Focus or open YouTube homepage tab (exact match)"
-    },
-
-    "gemini_tab": {
-      "description": "Focus or open ChatGpt tab"
-    }
-  },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "fuzzy-tab-switcher@SergiuNani.private",
-      "strict_min_version": "109.0"
-    }
-  },
-  "background": {
-    "service_worker": "background.js"
-  }
+	"manifest_version": 3,
+	"name": "Fuzzy Tab Switcher",
+	"version": "1.0",
+	"description": "Quickly switch between Chrome tabs using fuzzy search",
+	"permissions": [
+		"tabs"
+	],
+	"action": {
+		"default_popup": "popup.html",
+		"default_icon": {
+			"16": "icon.png"
+		}
+	},
+	"icons": {
+		"16": "icon.png"
+	},
+	"commands": {
+		"_execute_action": {
+			"suggested_key": {
+				"default": "Alt+A"
+			},
+			"description": "Open Fuzzy Tab Switcher"
+		},
+		"whatsapp_tab": {
+			"description": "WhatsApp tab"
+		},
+		"chatgpt_tab": {
+			"description": "ChatGPT tab"
+		},
+		"youtube_homepage_tab": {
+			"description": "YouTube homepage tab"
+		},
+		"gemini_tab": {
+			"description": "Gemini tab"
+		},
+		"move_tab_to_first": {
+			"description": "Move current tab to first position"
+		},
+		"move_tab_to_second": {
+			"description": "Move current tab to second position"
+		},
+		"move_tab_to_third": {
+			"description": "Move current tab to third position"
+		},
+		"move_tab_to_fourth": {
+			"description": "Move current tab to fourth position"
+		}
+	},
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "fuzzy-tab-switcher@SergiuNani.private",
+			"strict_min_version": "109.0"
+		}
+	},
+	"background": {
+		"service_worker": "background.js"
+	}
 }

@@ -45,8 +45,28 @@ async function focusOrCreateTab(targetUrl, newTabUrl, exactMatch = false) {
   }
 }
 
+// Function to move the current tab to a specific position (0-indexed)
+async function moveCurrentTabToPosition(index) {
+  const [currentTab] = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+  if (currentTab) {
+    // Check if the target index is valid within the current window's tab count
+    const tabsInWindow = await chrome.tabs.query({ windowId: currentTab.windowId });
+    const maxIndex = tabsInWindow.length - 1;
+
+    // Ensure index is not negative and not beyond the last position (unless it's the current tab, which can move freely)
+    // The Chrome tabs.move API handles out-of-bounds indices by placing at the end/beginning.
+    // However, explicitly limiting helps with user expectations (e.g., cannot move to 10th place if only 5 tabs exist unless allowed)
+    const effectiveIndex = Math.max(0, Math.min(index, maxIndex + 1)); // Allows moving past the last tab to the end
+
+    chrome.tabs.move(currentTab.id, { index: effectiveIndex });
+  }
+}
+
 // Listen for commands defined in manifest.json
-chrome.commands.onCommand.addListener((command) => {
+chrome.commands.onCommand.addListener(async (command) => {
   if (command === "whatsapp_tab") {
     focusOrCreateTab("https://web.whatsapp.com/", "https://web.whatsapp.com/");
   } else if (command === "gemini_tab") {
@@ -62,7 +82,16 @@ chrome.commands.onCommand.addListener((command) => {
       "https://www.youtube.com/",
       true, // Set exactMatch to true for this command
     );
+  } else if (command === "move_tab_to_first") {
+    await moveCurrentTabToPosition(0);
+  } else if (command === "move_tab_to_second") {
+    await moveCurrentTabToPosition(1);
+  } else if (command === "move_tab_to_third") {
+    await moveCurrentTabToPosition(2);
+  } else if (command === "move_tab_to_fourth") {
+    await moveCurrentTabToPosition(3);
   }
+  // Ctrl+D and Ctrl+Shift+D are handled in popup.js, so no need for them here.
 });
 
 console.log("Background service worker started and listening for commands.");

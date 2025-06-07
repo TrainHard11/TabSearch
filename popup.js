@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const fetchAndDisplayTabs = () => {
     chrome.tabs.query({}, (tabs) => {
       allTabs = tabs;
-      filteredTabs = [...allTabs]; // Initially, all tabs are filtered
+      filteredTabs = fuzzySearch(currentQuery, allTabs); // Re-apply filter on new data
       renderTabs(filteredTabs);
       searchInput.focus(); // Focus the search input when popup opens
     });
@@ -150,28 +150,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  // Handle keyboard navigation for Arrow keys, Alt+J, and Alt+K
-  searchInput.addEventListener("keydown", (e) => {
-    const items = tabList.querySelectorAll("li");
-    if (items.length === 0) return;
-
-    if (e.key === "ArrowDown" || (e.altKey && e.key === "j")) {
-      e.preventDefault(); // Prevent cursor movement in input
-      selectedIndex = (selectedIndex + 1) % items.length;
-      highlightSelectedItem();
-    } else if (e.key === "ArrowUp" || (e.altKey && e.key === "k")) {
-      e.preventDefault(); // Prevent cursor movement in input
-      selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-      highlightSelectedItem();
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (selectedIndex !== -1 && filteredTabs[selectedIndex]) {
-        const selectedTab = filteredTabs[selectedIndex];
-        switchTab(selectedTab.id, selectedTab.windowId);
-      }
-    }
-  });
-
   // Function to switch to a tab and close the popup
   const switchTab = (tabId, targetWindowId) => {
     chrome.windows.getCurrent((currentWindow) => {
@@ -190,6 +168,54 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   };
+
+  // Function to delete the selected tab
+  const deleteSelectedTab = async () => {
+    if (selectedIndex !== -1 && filteredTabs[selectedIndex]) {
+      const tabToDelete = filteredTabs[selectedIndex];
+      await chrome.tabs.remove(tabToDelete.id);
+      // After deletion, re-fetch and display tabs to update the list
+      fetchAndDisplayTabs();
+    }
+  };
+
+  // Function to delete all filtered tabs
+  const deleteAllFilteredTabs = async () => {
+    if (filteredTabs.length > 0) {
+      const tabIdsToDelete = filteredTabs.map(tab => tab.id);
+      await chrome.tabs.remove(tabIdsToDelete);
+      // After deletion, re-fetch and display tabs to update the list
+      fetchAndDisplayTabs();
+    }
+  };
+
+  // Handle keyboard navigation including new delete commands
+  searchInput.addEventListener("keydown", (e) => {
+    const items = tabList.querySelectorAll("li");
+    if (items.length === 0) return;
+
+    if (e.key === "ArrowDown" || (e.altKey && e.key === "j")) {
+      e.preventDefault(); // Prevent cursor movement in input
+      selectedIndex = (selectedIndex + 1) % items.length;
+      highlightSelectedItem();
+    } else if (e.key === "ArrowUp" || (e.altKey && e.key === "k")) {
+      e.preventDefault(); // Prevent cursor movement in input
+      selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+      highlightSelectedItem();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (selectedIndex !== -1 && filteredTabs[selectedIndex]) {
+        const selectedTab = filteredTabs[selectedIndex];
+        switchTab(selectedTab.id, selectedTab.windowId);
+      }
+    } else if (e.ctrlKey && e.key === "d") { // Ctrl+D for deleting selected tab
+      e.preventDefault();
+      deleteSelectedTab();
+    } else if (e.ctrlKey && e.shiftKey && e.key === "D") { // Ctrl+Shift+D for deleting all filtered tabs (e.key will be 'D' for Shift+d)
+      e.preventDefault();
+      deleteAllFilteredTabs();
+    }
+  });
 
   // Initial fetch and display of tabs
   fetchAndDisplayTabs();
