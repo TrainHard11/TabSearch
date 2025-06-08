@@ -61,10 +61,22 @@
 			"description": "Cycle YouTube tabs"
 		},
         "move_tab_left": {
-            "description": "Move tab to the left"
+            "suggested_key": {
+                "default": "Ctrl+Shift+Left"
+            },
+            "description": "Move current tab to the left"
         },
         "move_tab_right": {
-            "description": "Move tab to the right"
+            "suggested_key": {
+                "default": "Ctrl+Shift+Right"
+            },
+            "description": "Move current tab to the right"
+        },
+        "cycle_media_tabs": {
+            "suggested_key": {
+                "default": "Alt+M"
+            },
+            "description": "Cycle media tabs"
         }
 	},
 	"browser_specific_settings": {

@@ -70,6 +70,7 @@ async function openNewEmptyTab() {
 }
 
 // Function to cycle through tabs currently playing audio (audible)
+// This function will now be largely incorporated into cycleMediaTabs
 async function cycleAudibleTabs() {
     const audibleTabs = await chrome.tabs.query({ audible: true });
 
@@ -182,6 +183,84 @@ async function moveCurrentTabRight() {
     }
 }
 
+/**
+ * Cycles through tabs that are identified as "media content tabs" based on specific URL patterns,
+ * AND includes any tabs that are currently playing audio.
+ */
+async function cycleMediaTabs() {
+    const allTabs = await chrome.tabs.query({});
+
+    // Define a list of regex patterns for media CONTENT pages (excluding home/browse)
+    const mediaContentPatterns = [
+        /^https?:\/\/(www\.)?youtube\.com\/watch\?v=/, // Specific YouTube video pages
+        /^https?:\/\/(www\.)?netflix\.com\/watch\//,    // Netflix watch pages
+        /^https?:\/\/(www\.)?open\.spotify\.com\/(track|album|playlist|artist|episode)\//, // Standard Spotify content
+        /^https?:\/\/googleusercontent\.com\/spotify\.com\/27\/(track|album|playlist|artist|episode)\//, // Googleusercontent.com Spotify URLs
+        /^https?:\/\/(www\.)?twitch\.tv\/[^\/]+\/?$/, // Twitch live streams (e.g., twitch.tv/some_channel, not just twitch.tv)
+        /^https?:\/\/(www\.)?twitch\.tv\/videos\//,    // Twitch VODs
+        /^https?:\/\/(www\.)?vimeo\.com\/\d+/,         // Specific Vimeo videos
+        /^https?:\/\/(www\.)?soundcloud\.com\/[^\/]+\/[^\/]+/, // Specific SoundCloud tracks
+        /^https?:\/\/(www\.)?hulu\.com\/watch\//,      // Hulu watch pages
+        /^https?:\/\/(www\.)?disneyplus\.com\/video\//, // Disney+ video pages
+        /^https?:\/\/(www\.)?amazon\.com\/Prime-Video\/dp\//, // Amazon Prime Video detail pages
+        /^https?:\/\/(www\.)?amazon\.com\/gp\/video\/detail\// // Another Amazon Prime Video detail pattern
+    ];
+
+    let mediaTabs = allTabs.filter(tab => {
+        return tab.url && mediaContentPatterns.some(pattern => pattern.test(tab.url));
+    });
+
+    // Add currently audible tabs that are not already in mediaTabs
+    const audibleTabs = allTabs.filter(tab => tab.audible);
+    for (const audibleTab of audibleTabs) {
+        if (!mediaTabs.some(tab => tab.id === audibleTab.id)) {
+            mediaTabs.push(audibleTab);
+        }
+    }
+
+    if (mediaTabs.length === 0) {
+        return; // No media or audible tabs found, do nothing
+    }
+
+    // Sort tabs for consistent cycling order
+    mediaTabs.sort((a, b) => {
+        if (a.windowId !== b.windowId) {
+            return a.windowId - b.windowId;
+        }
+        return a.index - b.index;
+    });
+
+    // Get the ID of the last media tab that was focused
+    const { lastMediaTabId } = await chrome.storage.local.get({ lastMediaTabId: null });
+
+    let nextTabIndex = -1;
+
+    // Find the index of the last focused media tab
+    if (lastMediaTabId !== null) {
+        const lastTabIndex = mediaTabs.findIndex(tab => tab.id === lastMediaTabId);
+        if (lastTabIndex !== -1) {
+            // Calculate the next tab's index, cycling back to the beginning if at the end
+            nextTabIndex = (lastTabIndex + 1) % mediaTabs.length;
+        }
+    }
+
+    // If no last tab was found or it was invalid, start from the first media tab
+    if (nextTabIndex === -1) {
+        nextTabIndex = 0;
+    }
+
+    const targetTab = mediaTabs[nextTabIndex];
+
+    if (targetTab) {
+        // Focus the window and activate the target tab
+        await chrome.windows.update(targetTab.windowId, { focused: true });
+        await chrome.tabs.update(targetTab.id, { active: true });
+        // Store the ID of the newly focused tab for the next cycle
+        await chrome.storage.local.set({ lastMediaTabId: targetTab.id });
+    }
+}
+
+
 // Listen for commands defined in manifest.json
 chrome.commands.onCommand.addListener(async (command) => {
   if (command === "whatsapp_tab") {
@@ -210,6 +289,8 @@ chrome.commands.onCommand.addListener(async (command) => {
   } else if (command === "open_new_empty_tab") {
     await openNewEmptyTab();
   } else if (command === "cycle_audible_tabs") {
+    // This command can now be redundant if cycle_media_tabs covers all audible tabs.
+    // Consider removing this if you only want one unified media/audible cycle.
     await cycleAudibleTabs();
     }  else if (command === "cycle_youtube_tabs") {
         await cycleYoutubeTabs();
@@ -217,5 +298,7 @@ chrome.commands.onCommand.addListener(async (command) => {
         await moveCurrentTabLeft();
     } else if (command === "move_tab_right") {
         await moveCurrentTabRight();
+    } else if (command === "cycle_media_tabs") { // New command handler
+        await cycleMediaTabs();
     }
 });
