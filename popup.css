@@ -282,3 +282,98 @@ body {
 .hidden {
     display: none !important;
 }
+
+/* Start of help.css merged into popup.css */
+
+.help-container {
+    padding: 15px;
+    background-color: #21252b; /* Darker background similar to tab list */
+    border-radius: 8px;
+    color: #e0e0e0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    margin-top: 15px; /* Space from info-text */
+    max-height: 80vh; /* Limit height for scrollability */
+    overflow-y: auto; /* Enable scrolling for help content */
+}
+
+.help-container h1 {
+    color: #61afef; /* Blue heading */
+    font-size: 1.5em;
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 1px solid #444;
+    padding-bottom: 10px;
+}
+
+.help-container h2 {
+    color: #98c379; /* Green sub-heading */
+    font-size: 1.2em;
+    margin-top: 25px;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #555;
+    padding-bottom: 5px;
+}
+
+.help-container p {
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.help-container ul {
+    list-style: disc;
+    margin-left: 20px;
+    margin-bottom: 15px;
+    padding: 0;
+}
+
+.help-container ul ul {
+    list-style: circle;
+    margin-left: 15px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.help-container li {
+    margin-bottom: 5px;
+    line-height: 1.4;
+}
+
+.help-container code {
+    background-color: #3b4048; /* Darker background for code */
+    color: #f8f8f8;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.help-footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+    color: #888;
+    font-size: 0.8em;
+}
+
+/* Scrollbar styling for help-container, similar to tabList */
+.help-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.help-container::-webkit-scrollbar-track {
+    background: #2c313a;
+    border-radius: 4px;
+}
+
+.help-container::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.help-container::-webkit-scrollbar-thumb:hover {
+    background: #61afef;
+}
+
+/* End of help.css merged into popup.css */

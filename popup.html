@@ -108,6 +108,93 @@
 
             <p class="settings-hint">Press F1 again to hide options.</p>
         </div>
+
+        <div id="helpSection" class="help-container hidden">
+            <h1>Fuzzy Tab & Search Navigator Help</h1>
+
+            <p>This extension helps you navigate Chrome tabs and Google search results more efficiently.</p>
+
+            <section class="help-section">
+                <h2>Tab Search (Popup)</h2>
+                <ul>
+                    <li><strong>Open Popup:</strong> Use the extension icon or the configured shortcut (default: <code>Alt+A</code>).</li>
+                    <li><strong>Search:</strong> Start typing to fuzzy search through your open tabs by title or URL.</li>
+                    <li><strong>Navigate Results:</strong>
+                        <ul>
+                            <li><code>Arrow Up</code> / <code>Alt+K</code>: Move selection up.</li>
+                            <li><code>Arrow Down</code> / <code>Alt+J</code>: Move selection down.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Switch Tab:</strong> Press <code>Enter</code> on a selected tab to switch to it.</li>
+                    <li><strong>Search Google:</strong> If no tabs match your query and the "Search on Enter if no results" setting is enabled, pressing <code>Enter</code> will open a new Google search tab with your query.</li>
+                    <li><strong>Delete Tab:</strong>
+                        <ul>
+                            <li><code>Delete</code> key: Close the currently selected tab.</li>
+                            <li><code>Ctrl+D</code>: Close the currently selected tab.</li>
+                            <li><code>Ctrl+Shift+D</code>: Close ALL filtered tabs. Use with caution!</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="help-section">
+                <h2>Web Search Navigator (Google Search Pages)</h2>
+                <p>When on a Google search results page, this feature allows you to navigate results using keyboard shortcuts:</p>
+                <ul>
+                    <li><strong>Enable/Disable:</strong> Can be toggled in the extension settings (F1).</li>
+                    <li><strong>Navigate Results:</strong>
+                        <ul>
+                            <li><code>Arrow Up</code>: Move arrow cursor to the previous search result.</li>
+                            <li><code>Arrow Down</code>: Move arrow cursor to the next search result.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Open Link:</strong>
+                        <ul>
+                            <li><code>Enter</code>: Open the link marked by the arrow cursor in the current tab.</li>
+                            <li><code>Ctrl+Enter</code>: Open the link marked by the arrow cursor in a new background tab.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="help-section">
+                <h2>Global Shortcuts (Configurable in Chrome)</h2>
+                <p>These shortcuts are defined in Chrome's extension settings (<code>chrome://extensions/shortcuts</code>).</p>
+                <ul>
+                    <li><code>Alt+A</code>: Open Fuzzy Tab Switcher (default).</li>
+                    <li><strong>Custom Tabs (1-7):</strong> Use your custom defined URLs to open or focus tabs. Configure these URLs in the extension settings (F1).</li>
+                    <li><code>Ctrl+Shift+Left</code>: Move current tab one position to the left.</li>
+                    <li><code>Ctrl+Shift+Right</code>: Move current tab one position to the right.</li>
+                    <li><code>Alt+M</code>: Cycle through tabs playing media (YouTube, Netflix, Spotify, Twitch, etc.) or audible tabs.</li>
+                    <li><strong>Move Tab to 1st/2nd/3rd/4th:</strong> Move the current tab to the specified position.</li>
+                    <li><strong>New empty tab:</strong> Opens a new empty tab.</li>
+                    <li><strong>Cycle tabs playing audio:</strong> Cycles through tabs that are currently playing audio.</li>
+                    <li><strong>Cycle YouTube tabs:</strong> Cycles through tabs with a YouTube URL.</li>
+                </ul>
+            </section>
+
+            <section class="help-section">
+                <h2>Settings (F1)</h2>
+                <p>Press <code>F1</code> in the extension popup to toggle the settings menu. Here you can:</p>
+                <ul>
+                    <li>Toggle the "Enable Web Search Navigator" feature.</li>
+                    <li>Toggle "Search on Enter if no results".</li>
+                    <li><strong>Configure Custom Tabs (1-7):</strong> Enter URLs for your custom tab shortcuts.</li>
+                    <li><strong>Exact URL Match:</strong> For each custom tab, use the checkbox next to the section title to determine if the tab should be matched by its exact URL or if a partial match (URL starts with the entered string) is sufficient.</li>
+                </ul>
+            </section>
+            <section class="help-section">
+                <h2>General Information</h2>
+                <p>The extension icon in your browser toolbar also opens the tab switcher popup.</p>
+                <p>Your settings are saved automatically.</p>
+            </section>
+
+            <p class="settings-hint">Press F2 again to hide help.</p>
+
+            <div class="help-footer">
+                <p>© 2025 Fuzzy Tab & Search Navigator</p>
+            </div>
+        </div>
     </div>
     <script src="popup.js"></script>
 </body>

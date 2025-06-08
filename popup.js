@@ -3,13 +3,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabList = document.getElementById("tabList");
     const tabCounter = document.getElementById("tabCounter");
     const optionsSection = document.getElementById("optionsSection");
+    const helpSection = document.getElementById("helpSection"); // NEW: Get reference to help section
     const enableWebNavigatorCheckbox = document.getElementById("enableWebNavigator");
     const searchOnNoResultsCheckbox = document.getElementById("searchOnNoResults");
 
     // Custom tab input fields and checkboxes
     const customTabInputs = [];
     const customTabExactMatchCheckboxes = [];
-    for (let i = 1; i <= 7; i++) { // Changed to 7 custom tabs
+    for (let i = 1; i <= 7; i++) {
         customTabInputs.push(document.getElementById(`customTab${i}Url`));
         customTabExactMatchCheckboxes.push(document.getElementById(`customTab${i}ExactMatch`));
     }
@@ -28,9 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
         customTab2Url: '', customTab2ExactMatch: false,
         customTab3Url: '', customTab3ExactMatch: false,
         customTab4Url: '', customTab4ExactMatch: false,
-        customTab5Url: '', customTab5ExactMatch: false, // Added customTab5
-        customTab6Url: '', customTab6ExactMatch: false, // Added customTab6
-        customTab7Url: '', customTab7ExactMatch: false  // Added customTab7
+        customTab5Url: '', customTab5ExactMatch: false,
+        customTab6Url: '', customTab6ExactMatch: false,
+        customTab7Url: '', customTab7ExactMatch: false
     };
     let currentSettings = {};
 
@@ -43,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
         searchOnNoResultsCheckbox.checked = currentSettings.searchOnNoResults;
 
         // Load custom tab settings
-        for (let i = 0; i < 7; i++) { // Changed loop to 7
+        for (let i = 0; i < 7; i++) {
             customTabInputs[i].value = currentSettings[`customTab${i + 1}Url`];
             customTabExactMatchCheckboxes[i].checked = currentSettings[`customTab${i + 1}ExactMatch`];
         }
@@ -55,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentSettings.searchOnNoResults = searchOnNoResultsCheckbox.checked;
 
         // Save custom tab settings
-        for (let i = 0; i < 7; i++) { // Changed loop to 7
+        for (let i = 0; i < 7; i++) {
             currentSettings[`customTab${i + 1}Url`] = customTabInputs[i].value.trim();
             currentSettings[`customTab${i + 1}ExactMatch`] = customTabExactMatchCheckboxes[i].checked;
         }
@@ -270,30 +271,46 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Toggle options section visibility and help page
-    document.addEventListener("keydown", (e) => {
+    // Helper to manage visibility of UI sections
+    const setUIVisibility = (mainVisible, optionsVisible, helpVisible) => {
         const searchArea = document.querySelector('.search-area');
 
+        searchArea.classList.toggle('hidden', !mainVisible);
+        tabList.classList.toggle("hidden", !mainVisible);
+        optionsSection.classList.toggle("hidden", !optionsVisible);
+        helpSection.classList.toggle("hidden", !helpVisible);
+
+        if (mainVisible) {
+            searchInput.focus();
+        }
+    };
+
+    // Toggle options section visibility and help page
+    document.addEventListener("keydown", (e) => {
         if (e.key === "F1") {
             e.preventDefault();
-            optionsSection.classList.toggle("hidden");
-            // Toggle visibility of other UI elements
-            searchArea.classList.toggle('hidden', !optionsSection.classList.contains("hidden"));
-            tabList.classList.toggle("hidden", !optionsSection.classList.contains("hidden"));
-
             if (optionsSection.classList.contains("hidden")) {
-                searchInput.focus(); // Focus search input when tab list is visible
-            } else {
-                // When options are shown, clear search input and reset filtered tabs
+                setUIVisibility(false, true, false); // Show options, hide main and help
+                // Clear search input and reset filtered tabs when showing options
                 currentQuery = "";
                 searchInput.value = "";
                 filteredTabs = [];
                 renderTabs(filteredTabs); // Render an empty list or "no matching tabs"
+            } else {
+                setUIVisibility(true, false, false); // Hide options, show main
             }
         } else if (e.key === "F2") {
             e.preventDefault();
-            // Open the help page in a new tab
-            chrome.tabs.create({ url: "help.html" });
+            if (helpSection.classList.contains("hidden")) {
+                setUIVisibility(false, false, true); // Show help, hide main and options
+                // Clear search input and reset filtered tabs when showing help
+                currentQuery = "";
+                searchInput.value = "";
+                filteredTabs = [];
+                renderTabs(filteredTabs); // Render an empty list or "no matching tabs"
+            } else {
+                setUIVisibility(true, false, false); // Hide help, show main
+            }
         }
     });
 
@@ -302,15 +319,16 @@ document.addEventListener("DOMContentLoaded", () => {
     searchOnNoResultsCheckbox.addEventListener("change", saveSettings);
 
     // Event listeners for custom tab inputs and checkboxes
-    for (let i = 0; i < 7; i++) { // Changed loop to 7
+    for (let i = 0; i < 7; i++) {
         customTabInputs[i].addEventListener("input", saveSettings);
         customTabExactMatchCheckboxes[i].addEventListener("change", saveSettings);
     }
 
     // Handle keyboard navigation including new delete commands
     searchInput.addEventListener("keydown", (e) => {
-        if (!optionsSection.classList.contains("hidden")) {
-            return; // Do nothing if options are visible
+        // Prevent navigation if settings or help is visible
+        if (!optionsSection.classList.contains("hidden") || !helpSection.classList.contains("hidden")) {
+            return;
         }
 
         const items = tabList.querySelectorAll("li");
