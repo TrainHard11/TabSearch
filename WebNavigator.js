@@ -65,35 +65,84 @@ function findAllResultLinks() {
     let excludeSelectors = [];
 
     if (hostname.includes('google.com')) {
-        searchResultsContainer = document.getElementById('search');
+        // More robust selectors for various types of Google search results
         linkSelectors = [
-            'div.g h3 a',
-            'div.tF2Cxc h3 a',
-            'div.yuRUbf a[href^="http"]',
-            'div.g a[href^="http"]'
+            'a:not([role="button"]):not(.fl):not(.eZt8xd):not([ping])', // Generic link not a button, footer link, etc.
+            'div.g a', // Standard organic results
+            'div.tF2Cxc a', // Another common structure for organic results
+            'div.yuRUbf a', // Yet another structure
+            'div.X5OiLe a', // News/video results sometimes use this
+            'div.qv3Wpe a', // "People also ask" links
+            'div.dFdO7c a', // Image links that open a search (if not specifically excluded)
+            'div.srg a', // Older Google structure for search results
+            'g-scrolling-carousel a', // Links within carousels (e.g., videos)
+            'div[data-sokoban-container] a', // Featured snippets, knowledge panels
+            'div[data-md] a', // More generic for structured data results
+            'div.jtfGm a', // Could capture some ad or sponsored links, need careful exclusion
+            'div.Ww4FFb a' // General links often found in result blocks
         ];
         excludeSelectors = [
+            // General exclusions
             '[role="button"]',
-            '.commercial-unit',
-            '#pnnext',
-            '.fl',
-            'a[ping]'
+            '.commercial-unit', // Ads
+            'a[ping]', // Links with ping attribute (often analytics/ads)
+            '.gL9Hy', // Footer/bottom links (e.g., "Next page")
+            '#pnnext', // Next page button
+            '.fl', // Various footer links
+            'a[href="#"]', // Anchor links within the page
+            'a[href^="javascript:"]', // Javascript links
+            'a[aria-label="Search by image"]', // Image search icon
+            'a[href*="/search?q=related:"]', // Related searches
+            'a[href*="/search?q=site:"]', // Site search suggestions
+            'a[href*="google.com/url?q="][href*="webcache.googleusercontent.com"]', // Cached links
+            'a[data-ved][jsname="cKq3i"]', // "More results" from a site/section
+            '.fGFU5', // "More results" button
+            '.xERGE', // Google Translate / "More languages" links
+            '.gLFyf', // The search input itself
+            '.jhp button', // Search button
+            '.sbsb_c a', // Search suggestions dropdown links
+            'a.kno-a.xnprg', // Knowledge panel "More about" links
+            'a[href*="google.com/search?tbm=isch"]', // Image search link from video/news section
+            'a[href*="google.com/search?tbm=vid"]', // Video search link
+            'a[href*="google.com/search?tbm=nws"]', // News search link
+            'a[jsaction*="click:__qavf:"]', // Links in "People also ask" that expand answers, not real external links
+            '.lXgL3c', // Elements often containing "Feedback" or similar non-result links
+            '.P9pYv.cKq3i', // "More results from X" type links that are not the main result
+            '.fP1Qef a', // "About this result"
+            '.mI8kLc a', // "Similar results" links
+            '.wQ3eC a', // Some related searches or quick answers
+            '.v5rswb a', // "See results about" links
+            '.nBDE2d a' // More like shopping or product links
         ];
+        searchResultsContainer = document.getElementById('search'); // Still a good general container
     } else {
+        // If not a Google search page, no links are found by this script.
         return [];
     }
 
     if (!searchResultsContainer) {
-        return [];
+        // Fallback to searching the whole document if 'search' container is not found,
+        // though it's usually present on Google search pages.
+        searchResultsContainer = document.body;
     }
 
-    const links = [];
+    const links = new Set(); // Use a Set to automatically handle duplicates
 
     for (const selector of linkSelectors) {
         const elements = searchResultsContainer.querySelectorAll(selector);
         for (const el of elements) {
-            let isValid = el.tagName === 'A' && el.href && el.href.startsWith('http') && el.offsetParent !== null && el.textContent.trim().length > 0;
+            // Basic validity checks
+            let isValid = el.tagName === 'A' && el.href && el.href.startsWith('http') && el.offsetParent !== null;
 
+            // Additional checks to ensure it's a "displayable" link with text or an image
+            if (isValid) {
+                const textContent = el.textContent.trim();
+                const hasText = textContent.length > 0;
+                const hasImage = el.querySelector('img') !== null;
+                isValid = hasText || hasImage; // Must have text or an image
+            }
+
+            // Apply exclusion selectors
             if (isValid) {
                 for (const excludeSelector of excludeSelectors) {
                     if (el.matches(excludeSelector) || el.closest(excludeSelector)) {
@@ -102,14 +151,51 @@ function findAllResultLinks() {
                     }
                 }
             }
+            
+            // Exclude links that are direct children of the search input field or similar interactive elements
+            // This prevents the arrow from appearing within the search bar itself or its autocomplete suggestions.
+            if (isValid) {
+                if (el.closest('.gLFyf, .RNNXgb, .a4bIc, .SDkEP')) { // Common classes for search input/related elements
+                    isValid = false;
+                }
+            }
 
-            if (isValid && !links.includes(el)) {
-                links.push(el);
+
+            if (isValid) {
+                // Further filter out empty or non-meaningful links
+                if (el.href.trim() === '' || el.textContent.trim() === '') {
+                    isValid = false;
+                }
+                // Exclude links that point to the current page with just a hash
+                if (el.href === window.location.href + '#') {
+                    isValid = false;
+                }
+                // Exclude links that are just part of the navigation (e.g., page numbers)
+                if (el.closest('#foot')) { // Check if it's in the footer pagination
+                    isValid = false;
+                }
+            }
+
+
+            if (isValid) {
+                links.add(el);
             }
         }
     }
 
-    return links;
+    // Convert Set to Array and sort by vertical position to maintain natural order
+    const sortedLinks = Array.from(links).sort((a, b) => {
+        const rectA = a.getBoundingClientRect();
+        const rectB = b.getBoundingClientRect();
+
+        // Sort primarily by top position, then by left position for elements on the same line
+        if (rectA.top !== rectB.top) {
+            return rectA.top - rectB.top;
+        }
+        return rectA.left - rectB.left;
+    });
+
+    return sortedLinks;
 }
 
 function removeExistingArrows() {
@@ -322,8 +408,9 @@ function attachContentScriptListeners() {
                     const hasRelevantNode = (nodes) => nodes.some(node =>
                         node.nodeType === 1 && (
                             node.id === 'search' || node.closest('#search') ||
-                            node.matches('.g') || node.matches('.tF2Cxc') ||
-                            node.matches('.yuRUbf') || node.matches('.rc') || node.matches('.srg')
+                            node.matches('div.g') || node.matches('div.tF2Cxc') ||
+                            node.matches('div.yuRUbf') || node.matches('div.rc') || node.matches('div.srg') ||
+                            node.matches('div.X5OiLe') || node.matches('div.qv3Wpe') // Added more specific relevant nodes
                         )
                     );
                     if (hasRelevantNode(addedNodes) || hasRelevantNode(removedNodes)) {
