@@ -7,13 +7,7 @@
  * 4. Open the selected link in the current tab when 'Enter' or 'Space' is pressed.
  * 5. Open the selected link in a new tab when 'Ctrl+Enter' or 'Ctrl+Space' is pressed.
  * 6. Ensure only one arrow is present and selection is maintained across DOM changes.
- * 7. Implements refined scrolling behavior:
- * - For the FIRST link: Scrolls to the very top of the page to show all content above it.
- * - For all OTHER links (including the last one):
- * - If the link is already fully visible and has sufficient margin from the viewport edges, NO SCROLL.
- * - If the link is not fully visible OR too close to an edge:
- * - Scroll it so its bottom is 70% up from the viewport bottom (when scrolling down).
- * - Scroll it so its top is 70% from the viewport top (when scrolling up).
+ * 7. Implements refined scrolling behavior.
  * This functionality is controlled by a user setting.
  */
 
@@ -37,112 +31,96 @@ let webNavigatorEnabledState = true; // Default to enabled
 async function getWebNavigatorSetting() {
     try {
         const result = await chrome.storage.local.get({ webNavigatorEnabled: true });
-        // It's good practice to check chrome.runtime.lastError after any chrome.* API call
-        // especially in content scripts.
         if (chrome.runtime.lastError) {
             console.warn("Chrome storage error:", chrome.runtime.lastError.message);
-            // If there's an error, assume default or a safe state
-            return true; // Or false, depending on what's safest default behavior during an error
+            return true;
         }
         return result.webNavigatorEnabled;
     } catch (error) {
-        // This catch block might not always capture "context invalidated"
-        // as the error might occur even before the promise 'catches' it
-        // but it's good for other potential errors.
         console.error("Error getting webNavigatorEnabled setting:", error);
-        return true; // Return default in case of error
+        return true;
     }
 }
 
 
 /**
- * Finds all eligible search result links based on the current hostname.
+ * Finds all eligible search result links.
+ * This version simplifies selectors to be more robust across Google's frequent DOM changes.
+ * It prioritizes links that are clearly part of organic search results or prominent related links.
  */
 function findAllResultLinks() {
     const hostname = window.location.hostname;
-    let searchResultsContainer = null;
-    let linkSelectors = [];
-    let excludeSelectors = [];
+    let searchResultsContainer = document.getElementById('search'); // Primary container for search results
 
-    if (hostname.includes('google.com')) {
-        // More robust selectors for various types of Google search results
-        linkSelectors = [
-            'a:not([role="button"]):not(.fl):not(.eZt8xd):not([ping])', // Generic link not a button, footer link, etc.
-            'div.g a', // Standard organic results
-            'div.tF2Cxc a', // Another common structure for organic results
-            'div.yuRUbf a', // Yet another structure
-            'div.X5OiLe a', // News/video results sometimes use this
-            'div.qv3Wpe a', // "People also ask" links
-            'div.dFdO7c a', // Image links that open a search (if not specifically excluded)
-            'div.srg a', // Older Google structure for search results
-            'g-scrolling-carousel a', // Links within carousels (e.g., videos)
-            'div[data-sokoban-container] a', // Featured snippets, knowledge panels
-            'div[data-md] a', // More generic for structured data results
-            'div.jtfGm a', // Could capture some ad or sponsored links, need careful exclusion
-            'div.Ww4FFb a' // General links often found in result blocks
-        ];
-        excludeSelectors = [
-            // General exclusions
-            '[role="button"]',
-            '.commercial-unit', // Ads
-            'a[ping]', // Links with ping attribute (often analytics/ads)
-            '.gL9Hy', // Footer/bottom links (e.g., "Next page")
-            '#pnnext', // Next page button
-            '.fl', // Various footer links
-            'a[href="#"]', // Anchor links within the page
-            'a[href^="javascript:"]', // Javascript links
-            'a[aria-label="Search by image"]', // Image search icon
-            'a[href*="/search?q=related:"]', // Related searches
-            'a[href*="/search?q=site:"]', // Site search suggestions
-            'a[href*="google.com/url?q="][href*="webcache.googleusercontent.com"]', // Cached links
-            'a[data-ved][jsname="cKq3i"]', // "More results" from a site/section
-            '.fGFU5', // "More results" button
-            '.xERGE', // Google Translate / "More languages" links
-            '.gLFyf', // The search input itself
-            '.jhp button', // Search button
-            '.sbsb_c a', // Search suggestions dropdown links
-            'a.kno-a.xnprg', // Knowledge panel "More about" links
-            'a[href*="google.com/search?tbm=isch"]', // Image search link from video/news section
-            'a[href*="google.com/search?tbm=vid"]', // Video search link
-            'a[href*="google.com/search?tbm=nws"]', // News search link
-            'a[jsaction*="click:__qavf:"]', // Links in "People also ask" that expand answers, not real external links
-            '.lXgL3c', // Elements often containing "Feedback" or similar non-result links
-            '.P9pYv.cKq3i', // "More results from X" type links that are not the main result
-            '.fP1Qef a', // "About this result"
-            '.mI8kLc a', // "Similar results" links
-            '.wQ3eC a', // Some related searches or quick answers
-            '.v5rswb a', // "See results about" links
-            '.nBDE2d a' // More like shopping or product links
-        ];
-        searchResultsContainer = document.getElementById('search'); // Still a good general container
-    } else {
-        // If not a Google search page, no links are found by this script.
-        return [];
+    if (!hostname.includes('google.com')) {
+        return []; // Only run on Google search pages
     }
 
     if (!searchResultsContainer) {
-        // Fallback to searching the whole document if 'search' container is not found,
-        // though it's usually present on Google search pages.
+        // Fallback if the 'search' ID is not present (e.g., in rare variations)
         searchResultsContainer = document.body;
     }
 
-    const links = new Set(); // Use a Set to automatically handle duplicates
+    // Key selectors for various result types. Order matters for prioritization.
+    // Starting with more specific, commonly used patterns.
+    const linkSelectors = [
+        'div.g a:not([role="button"]):not(.fl):not(.eZt8xd)', // Standard organic results (main links)
+        'div.tF2Cxc a:not([role="button"]):not(.fl):not(.eZt8xd)', // Another common main result structure
+        'div.yuRUbf a:not([role="button"]):not(.fl):not(.eZt8xd)', // Yet another main result structure
+        'div.X5OiLe a:not([role="button"]):not(.fl):not(.eZt8xd)', // News/video results
+        'div.qv3Wpe a:not([role="button"]):not(.fl):not(.eZt8xd)', // "People also ask" direct links
+        'g-scrolling-carousel a:not([role="button"]):not(.fl):not(.eZt8xd)', // Links within carousels (videos, products)
+        'div[data-sokoban-container] a:not([role="button"]):not(.fl):not(.eZt8xd)', // Featured snippets, knowledge panels
+        'div.jtfGm a:not([role="button"]):not(.fl):not(.eZt8xd)', // Might capture some ads, but also legitimate sub-links
+        'div.Ww4FFb a:not([role="button"]):not(.fl):not(.eZt8xd)', // General result block links
+        'a[jsaction*="click:h"]:not([role="button"]):not(.fl):not(.eZt8xd)', // Generic click handler for result links
+        'a[href^="http"]:not([role="button"]):not(.fl):not(.eZt8xd):not([ping])' // Broadest valid links, excluding known non-result elements
+    ];
 
+    // Exclusions to prevent selecting non-navigable or irrelevant elements.
+    // Keep this list minimal and target specific non-link types.
+    const excludeSelectors = [
+        '[role="button"]', // Anything explicitly a button
+        'a[ping]', // Often analytics/ad tracking links, or non-direct navigation
+        '.gL9Hy', // Footer/bottom links (e.g., "Next page", page numbers)
+        '#pnnext', // Next page button
+        '.fl', // Various footer/utility links
+        'a[href="#"]', // Anchor links within the same page
+        'a[href^="javascript:"]', // Javascript links
+        '.commercial-unit', // Ads (usually have this class)
+        'input, textarea, [contenteditable="true"]', // User input fields
+        '.sbsb_c a', // Search suggestions dropdown links
+        '.jhp button', // Search button in input field
+        '.GHDv0b', // Specific "More results from..." links that are often redundant or bad targets
+        '.xERGE', // Google Translate / More languages
+        '.fP1Qef a', // "About this result" links
+        '.mI8kLc a', // "Similar results" links
+        '.wQ3eC a', // Some related searches or quick answers
+        '.v5rswb a', // "See results about" links
+        '.nBDE2d a', // Shopping/product links often duplicated
+        // Exclude specific elements that are part of the input or visual decorations
+        '.gLFyf', '.RNNXgb', '.a4bIc', '.SDkEP', // Search input related
+        '[aria-label="Search by image"]' // Image search icon
+    ];
+
+    const uniqueLinks = new Set(); // Use a Set to automatically handle duplicates
+
+    // Iterate through selectors and collect potential links
     for (const selector of linkSelectors) {
         const elements = searchResultsContainer.querySelectorAll(selector);
         for (const el of elements) {
             // Basic validity checks
             let isValid = el.tagName === 'A' && el.href && el.href.startsWith('http') && el.offsetParent !== null;
 
-            // Additional checks to ensure it's a "displayable" link with text or an image
+            // Ensure the link has some meaningful content (text or image)
             if (isValid) {
                 const textContent = el.textContent.trim();
                 const hasText = textContent.length > 0;
                 const hasImage = el.querySelector('img') !== null;
-                isValid = hasText || hasImage; // Must have text or an image
+                isValid = hasText || hasImage;
             }
 
-            // Apply exclusion selectors
+            // Apply exclusion selectors to the element itself or its ancestors
             if (isValid) {
                 for (const excludeSelector of excludeSelectors) {
                     if (el.matches(excludeSelector) || el.closest(excludeSelector)) {
@@ -151,44 +129,31 @@ function findAllResultLinks() {
                     }
                 }
             }
+
+            // Additional check for "People also ask" question headers that act as links
+            // We want to avoid selecting the expand/collapse triggers themselves if they just reveal content.
+            if (isValid && el.closest('div[jsname="x3Bms"]')) { // Common parent for PAA
+                if (el.matches('a[aria-expanded]')) { // The actual question link that expands
+                    isValid = false;
+                }
+            }
             
-            // Exclude links that are direct children of the search input field or similar interactive elements
-            // This prevents the arrow from appearing within the search bar itself or its autocomplete suggestions.
-            if (isValid) {
-                if (el.closest('.gLFyf, .RNNXgb, .a4bIc, .SDkEP')) { // Common classes for search input/related elements
-                    isValid = false;
-                }
+            // Filter out empty or non-meaningful links, e.g., icons without text
+            if (isValid && el.textContent.trim() === '' && !el.querySelector('img')) {
+                isValid = false;
             }
 
-
             if (isValid) {
-                // Further filter out empty or non-meaningful links
-                if (el.href.trim() === '' || el.textContent.trim() === '') {
-                    isValid = false;
-                }
-                // Exclude links that point to the current page with just a hash
-                if (el.href === window.location.href + '#') {
-                    isValid = false;
-                }
-                // Exclude links that are just part of the navigation (e.g., page numbers)
-                if (el.closest('#foot')) { // Check if it's in the footer pagination
-                    isValid = false;
-                }
-            }
-
-
-            if (isValid) {
-                links.add(el);
+                uniqueLinks.add(el);
             }
         }
     }
 
     // Convert Set to Array and sort by vertical position to maintain natural order
-    const sortedLinks = Array.from(links).sort((a, b) => {
+    const sortedLinks = Array.from(uniqueLinks).sort((a, b) => {
         const rectA = a.getBoundingClientRect();
         const rectB = b.getBoundingClientRect();
 
-        // Sort primarily by top position, then by left position for elements on the same line
         if (rectA.top !== rectB.top) {
             return rectA.top - rectB.top;
         }
@@ -201,6 +166,17 @@ function findAllResultLinks() {
 function removeExistingArrows() {
     const existingArrows = document.querySelectorAll('.extension-arrow');
     existingArrows.forEach(arrow => {
+        const parentLink = arrow.closest('a');
+        if (parentLink) {
+            // Restore original position if it was changed by us
+            if (parentLink.dataset.originalPosition !== undefined) {
+                parentLink.style.position = parentLink.dataset.originalPosition;
+                delete parentLink.dataset.originalPosition;
+            } else if (parentLink.style.position === 'relative') {
+                // If we set it to relative and didn't store an original, revert to default
+                parentLink.style.position = ''; // Revert to browser default/inherited
+            }
+        }
         if (arrow.parentNode) {
             arrow.parentNode.removeChild(arrow);
         }
@@ -208,21 +184,32 @@ function removeExistingArrows() {
 }
 
 function injectArrow(linkElement) {
-    if (linkElement.querySelector('.extension-arrow')) {
-        return;
+    // Ensure we always target the actual anchor tag for injecting the arrow
+    const targetAnchor = linkElement.tagName === 'A' ? linkElement : linkElement.querySelector('a');
+
+    if (!targetAnchor || targetAnchor.querySelector('.extension-arrow')) {
+        return; // Don't inject if no anchor or arrow already exists
     }
 
     const arrow = document.createElement('span');
     arrow.classList.add('extension-arrow');
     arrow.textContent = '➤';
 
-    // Set the parent link to position: relative for absolute positioning of the arrow
-    // We check if it's already set to avoid unnecessary style changes.
-    if (window.getComputedStyle(linkElement).position === 'static') {
-        linkElement.style.position = 'relative';
+    // Store original position and set to relative for proper absolute positioning of the arrow.
+    const computedPosition = window.getComputedStyle(targetAnchor).position;
+    if (computedPosition === 'static') {
+        targetAnchor.dataset.originalPosition = 'static'; // Store 'static'
+        targetAnchor.style.position = 'relative';
+    } else {
+        // If it's already non-static, store its current position
+        targetAnchor.dataset.originalPosition = computedPosition;
     }
+    
+    // Ensure the arrow is visually on top
+    arrow.style.zIndex = '9999';
 
-    linkElement.prepend(arrow);
+    // Prepend the arrow to the targetAnchor
+    targetAnchor.prepend(arrow);
 }
 
 function isElementFullyVisibleWithMargin(element, marginPx) {
@@ -253,11 +240,7 @@ function updateArrowPosition(newIndex) {
         newIndex = 0;
     }
 
-    if (newIndex === currentSelectedIndex && allResultLinks[newIndex]?.querySelector('.extension-arrow')) {
-        return;
-    }
-
-    removeExistingArrows();
+    removeExistingArrows(); // Always remove existing before injecting new
 
     currentSelectedIndex = newIndex;
     const targetLink = allResultLinks[currentSelectedIndex];
@@ -269,11 +252,13 @@ function updateArrowPosition(newIndex) {
         const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
         const currentScrollY = window.scrollY;
 
+        // Special handling for the first link
         if (currentSelectedIndex === 0) {
             if (currentScrollY > 0) {
-                window.scrollTo({ top: 0, behavior: 'auto' }); // Changed to 'auto' for no animation
+                window.scrollTo({ top: 0, behavior: 'auto' });
             }
         } else {
+            // General scrolling for other links
             if (!isElementFullyVisibleWithMargin(targetLink, SCROLL_MARGIN_PX)) {
                 let scrollToY = currentScrollY;
 
@@ -289,11 +274,13 @@ function updateArrowPosition(newIndex) {
                 scrollToY = Math.max(0, Math.min(scrollToY, document.body.scrollHeight - viewportHeight));
 
                 if (Math.abs(scrollToY - currentScrollY) > 1) {
-                    window.scrollTo({ top: scrollToY, behavior: 'auto' }); // Changed to 'auto' for no animation
+                    window.scrollTo({ top: scrollToY, behavior: 'auto' });
                 }
             }
         }
     } else {
+        // If targetLink is somehow null/undefined (e.g., after a filter or DOM change),
+        // re-initialize to try and find links and select the first one.
         initializeExtension();
     }
 }
@@ -302,16 +289,14 @@ function handleKeyDown(event) {
     if (!webNavigatorEnabledState) return;
 
     // Check if the event target is an input field, textarea, or contenteditable element.
-    // This is crucial to avoid interfering with user typing.
     const tagName = event.target.tagName;
     if (tagName === 'INPUT' || tagName === 'TEXTAREA' || event.target.isContentEditable) {
-        // Additionally, allow space to be typed in search inputs, unless Ctrl is pressed
-        if (event.key === ' ' && !event.ctrlKey && (tagName === 'INPUT' && event.target.type === 'search' || event.target.type === 'text')) {
+        // Allow normal typing for relevant keys unless Ctrl/Alt is pressed
+        if (!event.ctrlKey && !event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ')) {
             return;
         }
-        // For other inputs, if it's space or enter, we might still want to prevent default if not typing
-        // but the current setup implicitly handles it by returning early.
-        // If it's not a relevant key, just let it pass.
+        // If Ctrl/Alt IS pressed with one of these keys, then we might want to intervene.
+        // For now, if it's an input and not one of our navigation keys, let it pass.
         if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown' && event.key !== 'Enter' && event.key !== ' ') {
             return;
         }
@@ -330,22 +315,20 @@ function handleKeyDown(event) {
             event.preventDefault();
             updateArrowPosition(currentSelectedIndex + 1);
             break;
-        case 'Enter': // Fallthrough for Enter and Space
-        case ' ':
-            // Only prevent default for Space if Ctrl is also pressed or if it's not an input field
-            // This prevents unwanted scrolling/actions while allowing space to be typed in search bars normally
-            if (event.key === ' ' && !event.ctrlKey && (tagName === 'INPUT' || tagName === 'TEXTAREA' || event.target.isContentEditable)) {
-                return;
-            }
-            event.preventDefault();
-
-            const selectedLink = allResultLinks[currentSelectedIndex];
-            if (selectedLink) {
+        case 'Enter':
+        case ' ': // Handle space bar for activation
+            // Prevent default only if we are taking action
+            if (currentSelectedIndex !== -1 && allResultLinks[currentSelectedIndex]) {
+                event.preventDefault();
+                const selectedLink = allResultLinks[currentSelectedIndex];
                 if (event.ctrlKey) {
                     window.open(selectedLink.href, '_blank');
                 } else {
                     selectedLink.click();
                 }
+            } else if (event.key === ' ') {
+                // If no link selected and space pressed, allow default space behavior (e.g., scroll page)
+                return;
             }
             break;
     }
@@ -368,13 +351,14 @@ function refreshLinksAndArrowPosition() {
     if (linksChanged) {
         allResultLinks = newLinks;
 
-        let newIndex = 0;
+        let newIndex = 0; // Default to selecting the first link
         if (currentSelectedIndex !== -1 && oldResultLinks[currentSelectedIndex]) {
             const previouslySelectedLink = oldResultLinks[currentSelectedIndex];
             const foundIndexInNewList = newLinks.indexOf(previouslySelectedLink);
             if (foundIndexInNewList !== -1) {
                 newIndex = foundIndexInNewList;
             } else {
+                // Try to find by href if the DOM element itself changed
                 const sameHrefLinkIndex = newLinks.findIndex(link => link.href === previouslySelectedLink.href);
                 if (sameHrefLinkIndex !== -1) {
                     newIndex = sameHrefLinkIndex;
@@ -383,6 +367,7 @@ function refreshLinksAndArrowPosition() {
         }
         updateArrowPosition(newIndex);
     } else if (allResultLinks.length > 0 && (currentSelectedIndex === -1 || !allResultLinks[currentSelectedIndex]?.querySelector('.extension-arrow'))) {
+        // If links didn't change but arrow is missing (e.g., page re-render without full DOM reset)
         updateArrowPosition(currentSelectedIndex === -1 ? 0 : currentSelectedIndex);
     }
 }
@@ -391,6 +376,7 @@ function refreshLinksAndArrowPosition() {
 function attachContentScriptListeners() {
     if (isExtensionInitialized) return;
 
+    // Detach any pre-existing listeners to prevent duplicates
     if (window.extensionKeyDownListener) {
         document.removeEventListener('keydown', window.extensionKeyDownListener);
     }
@@ -403,17 +389,20 @@ function attachContentScriptListeners() {
             let relevantChangeDetected = false;
             for (const mutation of mutations) {
                 if (mutation.type === 'childList') {
-                    const addedNodes = Array.from(mutation.addedNodes);
-                    const removedNodes = Array.from(mutation.removedNodes);
-                    const hasRelevantNode = (nodes) => nodes.some(node =>
-                        node.nodeType === 1 && (
+                    // Check if nodes were added/removed from relevant search sections
+                    const hasRelevantNode = (nodes) => Array.from(nodes).some(node =>
+                        node.nodeType === Node.ELEMENT_NODE && (
                             node.id === 'search' || node.closest('#search') ||
-                            node.matches('div.g') || node.matches('div.tF2Cxc') ||
-                            node.matches('div.yuRUbf') || node.matches('div.rc') || node.matches('div.srg') ||
-                            node.matches('div.X5OiLe') || node.matches('div.qv3Wpe') // Added more specific relevant nodes
+                            node.matches('div.g, div.tF2Cxc, div.yuRUbf, div.rc, div.srg, div.X5OiLe, div.qv3Wpe, div.jtfGm, div.Ww4FFb')
                         )
                     );
-                    if (hasRelevantNode(addedNodes) || hasRelevantNode(removedNodes)) {
+                    if (hasRelevantNode(mutation.addedNodes) || hasRelevantNode(mutation.removedNodes)) {
+                        relevantChangeDetected = true;
+                        break;
+                    }
+                } else if (mutation.type === 'attributes' && mutation.target.tagName === 'A' && mutation.attributeName === 'href') {
+                    // Also consider changes to href attributes on links as relevant
+                    if (mutation.target.closest('#search')) {
                         relevantChangeDetected = true;
                         break;
                     }
@@ -430,9 +419,9 @@ function attachContentScriptListeners() {
 
         const googleSearchContainer = document.getElementById('search');
         if (googleSearchContainer) {
-            mutationObserverInstance.observe(googleSearchContainer, { childList: true, subtree: true, attributes: false });
+            mutationObserverInstance.observe(googleSearchContainer, { childList: true, subtree: true, attributes: true });
         } else {
-            mutationObserverInstance.observe(document.body, { childList: true, subtree: true, attributes: false });
+            mutationObserverInstance.observe(document.body, { childList: true, subtree: true, attributes: true });
         }
     }
 
@@ -459,18 +448,13 @@ function detachContentScriptListeners() {
 
 // Main initialization logic, now conditional
 async function initializeExtension() {
-    // Before calling getWebNavigatorSetting(), check if the runtime is valid.
-    // This is more of a defensive check. The error typically happens *after* the await,
-    // so checking chrome.runtime.lastError *after* the promise resolves/rejects
-    // is the primary fix. However, this preliminary check doesn't hurt.
-    if (chrome.runtime && chrome.runtime.id) { // Check if extension runtime is still active
+    // Only proceed if runtime is valid (extension is still active)
+    if (chrome.runtime && chrome.runtime.id) {
         webNavigatorEnabledState = await getWebNavigatorSetting();
     } else {
-        // If runtime is already invalidated, assume a default state
         console.warn("Extension runtime is invalidated during initializeExtension. Assuming webNavigatorEnabledState is true.");
-        webNavigatorEnabledState = true; // Or false, depending on desired behavior
+        webNavigatorEnabledState = true;
     }
-
 
     if (webNavigatorEnabledState) {
         attachContentScriptListeners();
@@ -483,9 +467,6 @@ async function initializeExtension() {
 // Listen for changes in storage (from popup)
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'local' && changes.webNavigatorEnabled) {
-        // This listener might also fire after context invalidation.
-        // It's generally handled by Chrome's lifecycle, but a similar
-        // check can be added if issues persist here.
         if (chrome.runtime && chrome.runtime.id) {
             webNavigatorEnabledState = changes.webNavigatorEnabled.newValue;
             initializeExtension();
