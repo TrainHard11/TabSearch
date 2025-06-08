@@ -1,347 +1,358 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const searchInput = document.getElementById("searchInput");
-    const tabList = document.getElementById("tabList");
-    const tabCounter = document.getElementById("tabCounter"); // NEW
-    const optionsSection = document.getElementById("optionsSection");
-    const enableWebNavigatorCheckbox = document.getElementById("enableWebNavigator");
-    const searchOnNoResultsCheckbox = document.getElementById("searchOnNoResults");
+    const searchInput = document.getElementById("searchInput");
+    const tabList = document.getElementById("tabList");
+    const tabCounter = document.getElementById("tabCounter");
+    const optionsSection = document.getElementById("optionsSection");
+    const enableWebNavigatorCheckbox = document.getElementById("enableWebNavigator");
+    const searchOnNoResultsCheckbox = document.getElementById("searchOnNoResults");
 
-    let allTabs = [];
-    let filteredTabs = [];
-    let selectedIndex = -1; // Index of the currently selected tab in the filtered list
-    let currentQuery = ""; // Declare a variable to hold the current search query
+    // Custom tab input fields and checkboxes
+    const customTabInputs = [];
+    const customTabExactMatchCheckboxes = [];
+    for (let i = 1; i <= 4; i++) {
+        customTabInputs.push(document.getElementById(`customTab${i}Url`));
+        customTabExactMatchCheckboxes.push(document.getElementById(`customTab${i}ExactMatch`));
+    }
 
-    // Default settings
-    const defaultSettings = {
-        webNavigatorEnabled: true, // Default enabled
-        searchOnNoResults: true // Default enabled
-    };
-    let currentSettings = {}; // Will hold loaded settings
 
-    // Function to load settings
-    const loadSettings = async () => {
-        const storedSettings = await chrome.storage.local.get(defaultSettings);
-        currentSettings = { ...defaultSettings, ...storedSettings }; // Merge with defaults
-        enableWebNavigatorCheckbox.checked = currentSettings.webNavigatorEnabled;
-        searchOnNoResultsCheckbox.checked = currentSettings.searchOnNoResults;
-    };
+    let allTabs = [];
+    let filteredTabs = [];
+    let selectedIndex = -1;
+    let currentQuery = "";
 
-    // Function to save settings
-    const saveSettings = async () => {
-        currentSettings.webNavigatorEnabled = enableWebNavigatorCheckbox.checked;
-        currentSettings.searchOnNoResults = searchOnNoResultsCheckbox.checked;
-        await chrome.storage.local.set(currentSettings);
-    };
+    // Default settings including custom tabs
+    const defaultSettings = {
+        webNavigatorEnabled: true,
+        searchOnNoResults: true,
+        customTab1Url: '', customTab1ExactMatch: false,
+        customTab2Url: '', customTab2ExactMatch: false,
+        customTab3Url: '', customTab3ExactMatch: false,
+        customTab4Url: '', customTab4ExactMatch: false
+    };
+    let currentSettings = {};
 
-    // Helper function to highlight matching parts of the text
-    const highlightText = (text, query) => {
-        if (!text || !query) {
-            return text;
-        }
+    // Function to load settings
+    const loadSettings = async () => {
+        const storedSettings = await chrome.storage.local.get(defaultSettings);
+        currentSettings = { ...defaultSettings, ...storedSettings };
 
-        let highlightedHtml = text;
-        const lowerCaseQuery = query.toLowerCase();
-        // Split the query into words and filter out any empty strings
-        const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
+        enableWebNavigatorCheckbox.checked = currentSettings.webNavigatorEnabled;
+        searchOnNoResultsCheckbox.checked = currentSettings.searchOnNoResults;
 
-        queryWords.forEach((word) => {
-            // Escape special characters in the word for use in RegExp
-            const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-            // Create a global, case-insensitive regular expression for each word
-            const regex = new RegExp(`(${escapedWord})`, "gi");
-            // Replace matches with a span tag
-            highlightedHtml = highlightedHtml.replace(
-                regex,
-                (match) => `<span class="highlight">${match}</span>`,
-            );
-        });
+        // Load custom tab settings
+        for (let i = 0; i < 4; i++) {
+            customTabInputs[i].value = currentSettings[`customTab${i + 1}Url`];
+            customTabExactMatchCheckboxes[i].checked = currentSettings[`customTab${i + 1}ExactMatch`];
+        }
+    };
 
-        return highlightedHtml;
-    };
+    // Function to save settings
+    const saveSettings = async () => {
+        currentSettings.webNavigatorEnabled = enableWebNavigatorCheckbox.checked;
+        currentSettings.searchOnNoResults = searchOnNoResultsCheckbox.checked;
 
-    // Function to fetch and display tabs
-    const fetchAndDisplayTabs = (preferredIndex = 0) => {
-        chrome.tabs.query({}, (tabs) => {
-            allTabs = tabs;
-            filteredTabs = fuzzySearch(currentQuery, allTabs); // Re-apply filter on new data
-            renderTabs(filteredTabs, preferredIndex); // Pass the preferred index
-            searchInput.focus(); // Focus the search input when popup opens
-        });
-    };
+        // Save custom tab settings
+        for (let i = 0; i < 4; i++) {
+            currentSettings[`customTab${i + 1}Url`] = customTabInputs[i].value.trim();
+            currentSettings[`customTab${i + 1}ExactMatch`] = customTabExactMatchCheckboxes[i].checked;
+        }
 
-    // Function to render tabs in the list
-    const renderTabs = (tabsToRender, suggestedIndex = 0) => {
-        tabList.innerHTML = ""; // Clear previous list
-        // Update the tab counter
-        tabCounter.textContent = `${tabsToRender.length} tabs`; // NEW
+        await chrome.storage.local.set(currentSettings);
+    };
 
-        if (tabsToRender.length === 0) {
-            const noResults = document.createElement("li");
-            noResults.textContent = "No matching tabs found.";
-            noResults.style.textAlign = "center";
-            noResults.style.color = "#888";
-            noResults.style.padding = "10px";
-            tabList.appendChild(noResults);
-            selectedIndex = -1;
-            return;
-        }
+    // Helper function to highlight matching parts of the text
+    const highlightText = (text, query) => {
+        if (!text || !query) {
+            return text;
+        }
 
-        tabsToRender.forEach((tab, index) => {
-            const listItem = document.createElement("li");
-            listItem.dataset.tabId = tab.id;
-            listItem.dataset.windowId = tab.windowId;
-            listItem.dataset.index = index;
+        let highlightedHtml = text;
+        const lowerCaseQuery = query.toLowerCase();
+        const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
 
-            // Add favicon
-            if (tab.favIconUrl) {
-                const favicon = document.createElement("img");
-                favicon.src = tab.favIconUrl;
-                favicon.alt = "favicon";
-                favicon.classList.add("favicon");
-                listItem.appendChild(favicon);
-            } else {
-                // Placeholder for missing favicon
-                const placeholder = document.createElement("span");
-                placeholder.classList.add("favicon");
-                placeholder.textContent = "📄";
-                listItem.appendChild(placeholder);
-            }
+        queryWords.forEach((word) => {
+            const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const regex = new RegExp(`(${escapedWord})`, "gi");
+            highlightedHtml = highlightedHtml.replace(
+                regex,
+                (match) => `<span class="highlight">${match}</span>`,
+            );
+        });
 
-            // Add title with highlighting
-            const titleSpan = document.createElement("span");
-            titleSpan.classList.add("tab-title");
-            titleSpan.innerHTML = highlightText(tab.title || "", currentQuery);
-            listItem.appendChild(titleSpan);
+        return highlightedHtml;
+    };
 
-            // Add URL with highlighting
-            const urlSpan = document.createElement("span");
-            urlSpan.classList.add("tab-url");
-            urlSpan.innerHTML = highlightText(tab.url || "", currentQuery);
-            listItem.appendChild(urlSpan);
+    // Function to fetch and display tabs
+    const fetchAndDisplayTabs = (preferredIndex = 0) => {
+        chrome.tabs.query({}, (tabs) => {
+            allTabs = tabs;
+            filteredTabs = fuzzySearch(currentQuery, allTabs);
+            renderTabs(filteredTabs, preferredIndex);
+            searchInput.focus();
+        });
+    };
 
-            listItem.addEventListener("click", () => {
-                switchTab(tab.id, tab.windowId);
-            });
+    // Function to render tabs in the list
+    const renderTabs = (tabsToRender, suggestedIndex = 0) => {
+        tabList.innerHTML = "";
+        tabCounter.textContent = `${tabsToRender.length} tabs`;
 
-            tabList.appendChild(listItem);
-        });
+        if (tabsToRender.length === 0) {
+            const noResults = document.createElement("li");
+            noResults.textContent = "No matching tabs found.";
+            noResults.style.textAlign = "center";
+            noResults.style.color = "#888";
+            noResults.style.padding = "10px";
+            tabList.appendChild(noResults);
+            selectedIndex = -1;
+            return;
+        }
 
-        // Set selectedIndex based on suggestedIndex, with bounds checking
-        selectedIndex = Math.min(suggestedIndex, tabsToRender.length - 1);
-        selectedIndex = Math.max(-1, selectedIndex);
+        tabsToRender.forEach((tab, index) => {
+            const listItem = document.createElement("li");
+            listItem.dataset.tabId = tab.id;
+            listItem.dataset.windowId = tab.windowId;
+            listItem.dataset.index = index;
 
-        // Highlight the item if a valid index is selected
-        if (selectedIndex !== -1) {
-            highlightSelectedItem();
-        }
-    };
+            if (tab.favIconUrl) {
+                const favicon = document.createElement("img");
+                favicon.src = tab.favIconUrl;
+                favicon.alt = "favicon";
+                favicon.classList.add("favicon");
+                listItem.appendChild(favicon);
+            } else {
+                const placeholder = document.createElement("span");
+                placeholder.classList.add("favicon");
+                placeholder.textContent = "📄";
+                listItem.appendChild(placeholder);
+            }
 
-    // Fuzzy search function - MODIFIED FOR PRIORITY
-    const fuzzySearch = (query, tabs) => {
-        if (!query) {
-            return tabs; // If no query, return all tabs without sorting
-        }
+            const titleSpan = document.createElement("span");
+            titleSpan.classList.add("tab-title");
+            titleSpan.innerHTML = highlightText(tab.title || "", currentQuery);
+            listItem.appendChild(titleSpan);
 
-        const lowerCaseQuery = query.toLowerCase();
-        const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
+            const urlSpan = document.createElement("span");
+            urlSpan.classList.add("tab-url");
+            urlSpan.innerHTML = highlightText(tab.url || "", currentQuery);
+            listItem.appendChild(urlSpan);
 
-        const titleMatches = [];
-        const urlMatches = [];
-        const processedTabIds = new Set(); // To avoid duplicates
+            listItem.addEventListener("click", () => {
+                switchTab(tab.id, tab.windowId);
+            });
 
-        tabs.forEach((tab) => {
-            const tabTitle = (tab.title || "").toLowerCase();
-            const tabUrl = (tab.url || "").toLowerCase();
+            tabList.appendChild(listItem);
+        });
 
-            // Check if all query words are in the title
-            const matchesTitle = queryWords.every((word) => tabTitle.includes(word));
-            // Check if all query words are in the URL
-            const matchesUrl = queryWords.every((word) => tabUrl.includes(word));
+        selectedIndex = Math.min(suggestedIndex, tabsToRender.length - 1);
+        selectedIndex = Math.max(-1, selectedIndex);
 
-            if (matchesTitle) {
-                titleMatches.push(tab);
-                processedTabIds.add(tab.id); // Mark this tab ID as processed for title match
-            } else if (matchesUrl && !processedTabIds.has(tab.id)) {
-                // If it didn't match the title, but matches the URL, and hasn't been added yet
-                urlMatches.push(tab);
-                processedTabIds.add(tab.id); // Mark this tab ID as processed for URL match
-            }
-        });
+        if (selectedIndex !== -1) {
+            highlightSelectedItem();
+        }
+    };
 
-        // Combine results: title matches first, then URL matches
-        return [...titleMatches, ...urlMatches];
-    };
+    // Fuzzy search function - MODIFIED FOR PRIORITY
+    const fuzzySearch = (query, tabs) => {
+        if (!query) {
+            return tabs;
+        }
 
-    // Handle search input
-    searchInput.addEventListener("input", () => {
-        currentQuery = searchInput.value.trim(); // Update the current query
-        filteredTabs = fuzzySearch(currentQuery, allTabs);
-        renderTabs(filteredTabs); // Render, starting from index 0 by default
-    });
+        const lowerCaseQuery = query.toLowerCase();
+        const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
 
-    // Highlight selected item
-    const highlightSelectedItem = () => {
-        const items = tabList.querySelectorAll("li");
-        items.forEach((item, index) => {
-            if (index === selectedIndex) {
-                item.classList.add("selected");
-                // Scroll the selected item into view if it's not already
-                item.scrollIntoView({ block: "nearest", behavior: "auto" });
-            } else {
-                item.classList.remove("selected");
-            }
-        });
-    };
+        const titleMatches = [];
+        const urlMatches = [];
+        const processedTabIds = new Set();
 
-    // Function to switch to a tab and close the popup
-    const switchTab = (tabId, targetWindowId) => {
-        chrome.windows.getCurrent((currentWindow) => {
-            if (currentWindow.id === targetWindowId) {
-                // If the target tab is in the current window, just activate the tab
-                chrome.tabs.update(tabId, { active: true }, () => {
-                    window.close(); // Close the popup
-                });
-            } else {
-                // If the target tab is in a different window, first focus that window, then activate the tab
-                chrome.windows.update(targetWindowId, { focused: true }, () => {
-                    chrome.tabs.update(tabId, { active: true }, () => {
-                        window.close(); // Close the popup
-                    });
-                });
-            }
-        });
-    };
+        tabs.forEach((tab) => {
+            const tabTitle = (tab.title || "").toLowerCase();
+            const tabUrl = (tab.url || "").toLowerCase();
 
-    // Function to delete the selected tab
-    const deleteSelectedTab = async () => {
-        if (selectedIndex !== -1 && filteredTabs[selectedIndex]) {
-            const tabToDelete = filteredTabs[selectedIndex];
-            const oldSelectedIndex = selectedIndex; // Store current index before deletion
+            const matchesTitle = queryWords.every((word) => tabTitle.includes(word));
+            const matchesUrl = queryWords.every((word) => tabUrl.includes(word));
 
-            await chrome.tabs.remove(tabToDelete.id);
+            if (matchesTitle) {
+                titleMatches.push(tab);
+                processedTabIds.add(tab.id);
+            } else if (matchesUrl && !processedTabIds.has(tab.id)) {
+                urlMatches.push(tab);
+                processedTabIds.add(tab.id);
+            }
+        });
 
-            // After deletion, re-fetch and display tabs to update the list
-            // and recalculate the new selected index.
-            chrome.tabs.query({}, (tabs) => {
-                allTabs = tabs;
-                filteredTabs = fuzzySearch(currentQuery, allTabs);
+        return [...titleMatches, ...urlMatches];
+    };
 
-                let newSelectedIndex = -1;
-                if (filteredTabs.length === 0) {
-                    newSelectedIndex = -1; // No tabs left to select
-                } else if (oldSelectedIndex < filteredTabs.length) {
-                    // If there's still an item at the old index, select it (this covers non-last deletions)
-                    newSelectedIndex = oldSelectedIndex;
-                } else {
-                    // If oldIndex was past the new length (i.e., the last item was deleted or items before it),
-                    // select the new last item if the list is not empty.
-                    newSelectedIndex = filteredTabs.length - 1;
-                }
-                newSelectedIndex = Math.max(-1, newSelectedIndex); // Ensure it's not negative unless list is empty.
+    // Handle search input
+    searchInput.addEventListener("input", () => {
+        currentQuery = searchInput.value.trim();
+        filteredTabs = fuzzySearch(currentQuery, allTabs);
+        renderTabs(filteredTabs);
+    });
 
-                renderTabs(filteredTabs, newSelectedIndex); // Pass the new desired index
-                searchInput.focus();
-            });
-        }
-    };
+    // Highlight selected item
+    const highlightSelectedItem = () => {
+        const items = tabList.querySelectorAll("li");
+        items.forEach((item, index) => {
+            if (index === selectedIndex) {
+                item.classList.add("selected");
+                item.scrollIntoView({ block: "nearest", behavior: "auto" });
+            } else {
+                item.classList.remove("selected");
+            }
+        });
+    };
 
-    // Function to delete all filtered tabs
-    const deleteAllFilteredTabs = async () => {
-        if (filteredTabs.length > 0) {
-            const tabIdsToDelete = filteredTabs.map(tab => tab.id);
-            await chrome.tabs.remove(tabIdsToDelete);
-            // After deletion, re-fetch and display tabs to update the list
-            chrome.tabs.query({}, (tabs) => {
-                allTabs = tabs;
-                filteredTabs = fuzzySearch(currentQuery, allTabs);
-                if (filteredTabs.length === 0) {
-                    renderTabs(filteredTabs, -1); // No tabs left, no selection
-                } else {
-                    // If there are still tabs, default to the first one for mass delete.
-                    renderTabs(filteredTabs, 0);
-                }
-                searchInput.focus();
-            });
-        }
-    };
+    // Function to switch to a tab and close the popup
+    const switchTab = (tabId, targetWindowId) => {
+        chrome.windows.getCurrent((currentWindow) => {
+            if (currentWindow.id === targetWindowId) {
+                chrome.tabs.update(tabId, { active: true }, () => {
+                    window.close();
+                });
+            } else {
+                chrome.windows.update(targetWindowId, { focused: true }, () => {
+                    chrome.tabs.update(tabId, { active: true }, () => {
+                        window.close();
+                    });
+                });
+            }
+        });
+    };
 
-    // Toggle options section visibility
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "F1") {
-            e.preventDefault(); // Prevent default F1 behavior (e.g., opening help)
-            optionsSection.classList.toggle("hidden");
-            // If options are shown, hide search area and tab list, otherwise show them
-            if (!optionsSection.classList.contains("hidden")) {
-                document.querySelector('.search-area').classList.add('hidden'); // NEW: Hide search area wrapper
-                tabList.classList.add("hidden");
-            } else {
-                document.querySelector('.search-area').classList.remove('hidden'); // NEW: Show search area wrapper
-                tabList.classList.remove("hidden");
-                searchInput.focus(); // Focus search input when tab list is visible
-            }
-        }
-    });
+    // Function to delete the selected tab
+    const deleteSelectedTab = async () => {
+        if (selectedIndex !== -1 && filteredTabs[selectedIndex]) {
+            const tabToDelete = filteredTabs[selectedIndex];
+            const oldSelectedIndex = selectedIndex;
 
-    // Event listeners for checkboxes
-    enableWebNavigatorCheckbox.addEventListener("change", saveSettings);
-    searchOnNoResultsCheckbox.addEventListener("change", saveSettings);
+            await chrome.tabs.remove(tabToDelete.id);
 
-    // Handle keyboard navigation including new delete commands
-    searchInput.addEventListener("keydown", (e) => {
-        // Only process search input keydowns if options section is hidden
-        if (!optionsSection.classList.contains("hidden")) {
-            return; // Do nothing if options are visible
-        }
+            chrome.tabs.query({}, (tabs) => {
+                allTabs = tabs;
+                filteredTabs = fuzzySearch(currentQuery, allTabs);
 
-        const items = tabList.querySelectorAll("li");
+                let newSelectedIndex = -1;
+                if (filteredTabs.length === 0) {
+                    newSelectedIndex = -1;
+                } else if (oldSelectedIndex < filteredTabs.length) {
+                    newSelectedIndex = oldSelectedIndex;
+                } else {
+                    newSelectedIndex = filteredTabs.length - 1;
+                }
+                newSelectedIndex = Math.max(-1, newSelectedIndex);
 
-        if (e.key === "ArrowDown" || (e.altKey && e.key === "j")) {
-            e.preventDefault(); // Prevent cursor movement in input
-            if (items.length > 0) { // Only navigate if there are items
-                selectedIndex = (selectedIndex + 1) % items.length;
-                highlightSelectedItem();
-            }
-        } else if (e.key === "ArrowUp" || (e.altKey && e.key === "k")) {
-            e.preventDefault(); // Prevent cursor movement in input
-            if (items.length > 0) { // Only navigate if there are items
-                selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-                highlightSelectedItem();
-            }
-        } else if (e.key === "Enter") {
-            e.preventDefault();
-            if (selectedIndex !== -1 && filteredTabs[selectedIndex]) {
-                // If a tab is selected, switch to it
-                const selectedTab = filteredTabs[selectedIndex];
-                switchTab(selectedTab.id, selectedTab.windowId);
-            } else if (currentQuery.length > 0 && filteredTabs.length === 0) {
-                // Check setting for "Search on Enter if no results"
-                if (currentSettings.searchOnNoResults) {
-                    // If no tabs are found and a query is typed, open a Google search
-                    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`;
-                    chrome.tabs.create({ url: googleSearchUrl }, () => {
-                        window.close(); // Close the popup after opening the search tab
-                    });
-                }
-            } else {
-                // If no search results and no query, or simply no selection,
-                // and Enter is pressed, close the popup (default behavior if no action)
-                window.close();
-            }
-        } else if (e.key === "Delete") { // NEW: Delete key for deleting selected tab
-            e.preventDefault();
-            deleteSelectedTab();
-        }
-        else if (e.ctrlKey && e.key === "d") { // Ctrl+D for deleting selected tab
-            e.preventDefault();
-            deleteSelectedTab();
-        } else if (e.ctrlKey && e.shiftKey && e.key === "D") { // Ctrl+Shift+D for deleting all filtered tabs (e.key will be 'D' for Shift+d)
-            e.preventDefault();
-            deleteAllFilteredTabs();
-        }
-    });
+                renderTabs(filteredTabs, newSelectedIndex);
+                searchInput.focus();
+            });
+        }
+    };
 
-    // Initial fetch and display of tabs + load settings
-    loadSettings().then(() => {
-        fetchAndDisplayTabs();
-    });
+    // Function to delete all filtered tabs
+    const deleteAllFilteredTabs = async () => {
+        if (filteredTabs.length > 0) {
+            const tabIdsToDelete = filteredTabs.map(tab => tab.id);
+            await chrome.tabs.remove(tabIdsToDelete);
+            chrome.tabs.query({}, (tabs) => {
+                allTabs = tabs;
+                filteredTabs = fuzzySearch(currentQuery, allTabs);
+                if (filteredTabs.length === 0) {
+                    renderTabs(filteredTabs, -1);
+                } else {
+                    renderTabs(filteredTabs, 0);
+                }
+                searchInput.focus();
+            });
+        }
+    };
+
+    // Toggle options section visibility and help page
+    document.addEventListener("keydown", (e) => {
+        const searchArea = document.querySelector('.search-area');
+
+        if (e.key === "F1") {
+            e.preventDefault();
+            optionsSection.classList.toggle("hidden");
+            // Toggle visibility of other UI elements
+            searchArea.classList.toggle('hidden', !optionsSection.classList.contains("hidden"));
+            tabList.classList.toggle("hidden", !optionsSection.classList.contains("hidden"));
+
+            if (optionsSection.classList.contains("hidden")) {
+                searchInput.focus(); // Focus search input when tab list is visible
+            } else {
+                // When options are shown, clear search input and reset filtered tabs
+                currentQuery = "";
+                searchInput.value = "";
+                filteredTabs = [];
+                renderTabs(filteredTabs); // Render an empty list or "no matching tabs"
+            }
+        } else if (e.key === "F2") {
+            e.preventDefault();
+            // Open the help page in a new tab
+            chrome.tabs.create({ url: "help.html" });
+        }
+    });
+
+    // Event listeners for general settings checkboxes
+    enableWebNavigatorCheckbox.addEventListener("change", saveSettings);
+    searchOnNoResultsCheckbox.addEventListener("change", saveSettings);
+
+    // Event listeners for custom tab inputs and checkboxes
+    for (let i = 0; i < 4; i++) {
+        customTabInputs[i].addEventListener("input", saveSettings);
+        customTabExactMatchCheckboxes[i].addEventListener("change", saveSettings);
+    }
+
+    // Handle keyboard navigation including new delete commands
+    searchInput.addEventListener("keydown", (e) => {
+        if (!optionsSection.classList.contains("hidden")) {
+            return; // Do nothing if options are visible
+        }
+
+        const items = tabList.querySelectorAll("li");
+
+        if (e.key === "ArrowDown" || (e.altKey && e.key === "j")) {
+            e.preventDefault();
+            if (items.length > 0) {
+                selectedIndex = (selectedIndex + 1) % items.length;
+                highlightSelectedItem();
+            }
+        } else if (e.key === "ArrowUp" || (e.altKey && e.key === "k")) {
+            e.preventDefault();
+            if (items.length > 0) {
+                selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+                highlightSelectedItem();
+            }
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            if (selectedIndex !== -1 && filteredTabs[selectedIndex]) {
+                const selectedTab = filteredTabs[selectedIndex];
+                switchTab(selectedTab.id, selectedTab.windowId);
+            } else if (currentQuery.length > 0 && filteredTabs.length === 0) {
+                if (currentSettings.searchOnNoResults) {
+                    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`;
+                    chrome.tabs.create({ url: googleSearchUrl }, () => {
+                        window.close();
+                    });
+                }
+            } else {
+                window.close();
+            }
+        } else if (e.key === "Delete") {
+            e.preventDefault();
+            deleteSelectedTab();
+        } else if (e.ctrlKey && e.key === "d") {
+            e.preventDefault();
+            deleteSelectedTab();
+        } else if (e.ctrlKey && e.shiftKey && e.key === "D") {
+            e.preventDefault();
+            deleteAllFilteredTabs();
+        }
+    });
+
+    // Initial fetch and display of tabs + load settings
+    loadSettings().then(() => {
+        fetchAndDisplayTabs();
+    });
 });
