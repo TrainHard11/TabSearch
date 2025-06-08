@@ -456,12 +456,16 @@ function detachContentScriptListeners() {
 
 // Main initialization logic, now conditional
 async function initializeExtension() {
-    // Only proceed if runtime is valid (extension is still active)
+    // Check if the extension runtime is valid.
+    // chrome.runtime.id will be undefined or null if the runtime is invalidated.
     if (chrome.runtime && chrome.runtime.id) {
+        // If runtime is valid, fetch the setting from storage.
         webNavigatorEnabledState = await getWebNavigatorSetting();
     } else {
-        console.warn("Extension runtime is invalidated during initializeExtension. Assuming webNavigatorEnabledState is true.");
-        webNavigatorEnabledState = true;
+        // If runtime is invalidated, log a warning and assume default state.
+        // This prevents attempting to access chrome.storage.local.get() when it's not available.
+        console.warn("Extension runtime is invalidated during initializeExtension. Falling back to default webNavigatorEnabledState = true.");
+        webNavigatorEnabledState = true; // Assume enabled as a safe default
     }
 
     if (webNavigatorEnabledState) {
@@ -475,12 +479,13 @@ async function initializeExtension() {
 // Listen for changes in storage (from popup)
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'local' && changes.webNavigatorEnabled) {
+        // Only proceed if runtime is valid (extension is still active)
         if (chrome.runtime && chrome.runtime.id) {
             webNavigatorEnabledState = changes.webNavigatorEnabled.newValue;
             initializeExtension();
         }
-        // No else block here, as it's typically fine if context is invalidated
-        // just means the content script won't react immediately, but will on next load.
+        // If runtime is invalid here, the content script will simply not react to the setting change
+        // until the page is reloaded or the extension context is restored.
     }
 });
 
