@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabList = document.getElementById("tabList");
     const tabCounter = document.getElementById("tabCounter");
     const optionsSection = document.getElementById("optionsSection");
-    const helpSection = document.getElementById("helpSection"); // NEW: Get reference to help section
+    const helpSection = document.getElementById("helpSection");
     const enableWebNavigatorCheckbox = document.getElementById("enableWebNavigator");
     const searchOnNoResultsCheckbox = document.getElementById("searchOnNoResults");
 
@@ -311,6 +311,20 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 setUIVisibility(true, false, false); // Hide help, show main
             }
+        } else if (e.key === "F3") { // NEW: F3 to open extension shortcuts
+            e.preventDefault();
+            // Check if it's a Chromium-based browser or Firefox
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+                // Assume Chromium-based browser (Chrome, Edge, Brave, etc.)
+                chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+            } else if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.getURL) {
+                // Assume Firefox
+                // Firefox doesn't have a direct "shortcuts" page like Chrome,
+                // but the "about:addons" page is where users start for extensions,
+                // and then can navigate to "Manage Extension Shortcuts"
+                browser.tabs.create({ url: "about:addons" });
+            }
+            window.close(); // Close the popup after opening the shortcuts page
         }
     });
 
