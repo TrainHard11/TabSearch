@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Custom tab input fields and checkboxes
     const customTabInputs = [];
     const customTabExactMatchCheckboxes = [];
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 7; i++) { // Changed to 7 custom tabs
         customTabInputs.push(document.getElementById(`customTab${i}Url`));
         customTabExactMatchCheckboxes.push(document.getElementById(`customTab${i}ExactMatch`));
     }
@@ -27,7 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
         customTab1Url: '', customTab1ExactMatch: false,
         customTab2Url: '', customTab2ExactMatch: false,
         customTab3Url: '', customTab3ExactMatch: false,
-        customTab4Url: '', customTab4ExactMatch: false
+        customTab4Url: '', customTab4ExactMatch: false,
+        customTab5Url: '', customTab5ExactMatch: false, // Added customTab5
+        customTab6Url: '', customTab6ExactMatch: false, // Added customTab6
+        customTab7Url: '', customTab7ExactMatch: false  // Added customTab7
     };
     let currentSettings = {};
 
@@ -40,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
         searchOnNoResultsCheckbox.checked = currentSettings.searchOnNoResults;
 
         // Load custom tab settings
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 7; i++) { // Changed loop to 7
             customTabInputs[i].value = currentSettings[`customTab${i + 1}Url`];
             customTabExactMatchCheckboxes[i].checked = currentSettings[`customTab${i + 1}ExactMatch`];
         }
@@ -52,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentSettings.searchOnNoResults = searchOnNoResultsCheckbox.checked;
 
         // Save custom tab settings
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 7; i++) { // Changed loop to 7
             currentSettings[`customTab${i + 1}Url`] = customTabInputs[i].value.trim();
             currentSettings[`customTab${i + 1}ExactMatch`] = customTabExactMatchCheckboxes[i].checked;
         }
@@ -299,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
     searchOnNoResultsCheckbox.addEventListener("change", saveSettings);
 
     // Event listeners for custom tab inputs and checkboxes
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 7; i++) { // Changed loop to 7
         customTabInputs[i].addEventListener("input", saveSettings);
         customTabExactMatchCheckboxes[i].addEventListener("change", saveSettings);
     }

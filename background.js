@@ -243,25 +243,13 @@ chrome.commands.onCommand.addListener(async (command) => {
         'customTab1Url', 'customTab1ExactMatch',
         'customTab2Url', 'customTab2ExactMatch',
         'customTab3Url', 'customTab3ExactMatch',
-        'customTab4Url', 'customTab4ExactMatch'
+        'customTab4Url', 'customTab4ExactMatch',
+        'customTab5Url', 'customTab5ExactMatch',
+        'customTab6Url', 'customTab6ExactMatch',
+        'customTab7Url', 'customTab7ExactMatch'
     ]);
 
     switch (command) {
-        case "whatsapp_tab":
-            focusOrCreateTab("https://web.whatsapp.com/");
-            break;
-        case "gemini_tab":
-            focusOrCreateTab("https://gemini.google.com/app");
-            break;
-        case "chatgpt_tab":
-            focusOrCreateTab("https://chatgpt.com/");
-            break;
-        case "youtube_homepage_tab":
-            focusOrCreateTab(
-                "https://www.youtube.com/",
-                true, // Set exactMatch to true for this command
-            );
-            break;
         case "custom_tab_1":
             if (settings.customTab1Url) {
                 focusOrCreateTab(settings.customTab1Url, settings.customTab1ExactMatch || false);
@@ -280,6 +268,21 @@ chrome.commands.onCommand.addListener(async (command) => {
         case "custom_tab_4":
             if (settings.customTab4Url) {
                 focusOrCreateTab(settings.customTab4Url, settings.customTab4ExactMatch || false);
+            }
+            break;
+        case "custom_tab_5":
+            if (settings.customTab5Url) {
+                focusOrCreateTab(settings.customTab5Url, settings.customTab5ExactMatch || false);
+            }
+            break;
+        case "custom_tab_6":
+            if (settings.customTab6Url) {
+                focusOrCreateTab(settings.customTab6Url, settings.customTab6ExactMatch || false);
+            }
+            break;
+        case "custom_tab_7":
+            if (settings.customTab7Url) {
+                focusOrCreateTab(settings.customTab7Url, settings.customTab7ExactMatch || false);
             }
             break;
         case "move_tab_to_first":

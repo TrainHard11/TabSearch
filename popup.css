@@ -225,12 +225,37 @@ body {
     border-top: 1px dashed #555; /* Dotted line separator */
 }
 
+.custom-tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
 .custom-tab-section h3 {
     color: #98c379; /* Green for sub-headings */
     margin-top: 0;
-    margin-bottom: 10px;
+    margin-bottom: 0; /* Adjust margin as it's part of a flex container */
     font-size: 1em;
 }
+
+.custom-tab-section .option-item {
+    margin-bottom: 0; /* Remove bottom margin from this specific option item */
+    align-items: center;
+    display: flex; /* Ensure it's a flex container to align checkbox and label */
+}
+
+.custom-tab-section .option-item input[type="checkbox"] {
+    margin-right: 5px; /* Reduce space between checkbox and label */
+    width: 16px;
+    height: 16px;
+}
+
+.custom-tab-section .option-item label {
+    font-size: 0.85em; /* Smaller font for "Exact Match" label */
+    white-space: nowrap; /* Prevent label from wrapping */
+}
+
 
 .custom-tab-section input[type="text"] {
     width: calc(100% - 20px); /* Adjust for padding */
@@ -240,14 +265,6 @@ body {
     border-radius: 4px;
     background-color: #2c313a;
     color: #e0e0e0;
-}
-
-.custom-tab-section .option-item {
-    margin-top: 5px;
-}
-
-.custom-tab-section .option-item label {
-    font-size: 0.9em;
 }
 
 

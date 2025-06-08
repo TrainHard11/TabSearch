@@ -27,18 +27,6 @@
             },
             "description": "Open Fuzzy Tab Switcher"
         },
-        "whatsapp_tab": {
-            "description": "WhatsApp tab"
-        },
-        "chatgpt_tab": {
-            "description": "ChatGPT tab"
-        },
-        "youtube_homepage_tab": {
-            "description": "YouTube homepage tab"
-        },
-        "gemini_tab": {
-            "description": "Gemini tab"
-        },
         "custom_tab_1": {
             "description": "Custom Tab 1 (configurable in settings)"
         },
@@ -50,6 +38,15 @@
         },
         "custom_tab_4": {
             "description": "Custom Tab 4 (configurable in settings)"
+        },
+        "custom_tab_5": {
+            "description": "Custom Tab 5 (configurable in settings)"
+        },
+        "custom_tab_6": {
+            "description": "Custom Tab 6 (configurable in settings)"
+        },
+        "custom_tab_7": {
+            "description": "Custom Tab 7 (configurable in settings)"
         },
         "move_tab_to_first": {
             "description": "Move tab to 1st place"
