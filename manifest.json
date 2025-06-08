@@ -59,7 +59,13 @@
 		},
 		"cycle_youtube_tabs": {
 			"description": "Cycle YouTube tabs"
-		}
+		},
+        "move_tab_left": {
+            "description": "Move tab to the left"
+        },
+        "move_tab_right": {
+            "description": "Move tab to the right"
+        }
 	},
 	"browser_specific_settings": {
 		"gecko": {
