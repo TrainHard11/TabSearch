@@ -164,68 +164,60 @@ function findAllResultLinks() {
 }
 
 function removeExistingArrows() {
-    const existingArrows = document.querySelectorAll('.extension-arrow');
-    existingArrows.forEach(arrow => {
-        const parentLink = arrow.closest('a');
-        if (parentLink) {
-            // Restore original position if it was changed by us
-            if (parentLink.dataset.originalPosition !== undefined) {
-                parentLink.style.position = parentLink.dataset.originalPosition;
-                delete parentLink.dataset.originalPosition;
-            } else if (parentLink.style.position === 'relative') {
-                // If we set it to relative and didn't store an original, revert to default
-                parentLink.style.position = ''; // Revert to browser default/inherited
-            }
-
-            // Restore original z-index if it was changed by us
-            if (parentLink.dataset.originalZIndex !== undefined) {
-                parentLink.style.zIndex = parentLink.dataset.originalZIndex;
-                delete parentLink.dataset.originalZIndex;
-            } else if (parentLink.style.zIndex === '10000') {
-                // If we set it to 10000 and didn't store an original, clear it
-                parentLink.style.zIndex = '';
-            }
+    const existingArrowContainers = document.querySelectorAll('.extension-arrow-container');
+    existingArrowContainers.forEach(container => {
+        // Restore original z-index of the parent link if it was modified
+        const parentLink = container.closest('a');
+        if (parentLink && parentLink.dataset.originalZIndex !== undefined) {
+            parentLink.style.zIndex = parentLink.dataset.originalZIndex;
+            delete parentLink.dataset.originalZIndex;
+        } else if (parentLink && parentLink.style.zIndex === '10000') {
+            // If we set it to 10000 and didn't store an original, clear it
+            parentLink.style.zIndex = '';
         }
-        if (arrow.parentNode) {
-            arrow.parentNode.removeChild(arrow);
+
+        if (container.parentNode) {
+            container.parentNode.removeChild(container);
         }
     });
 }
 
 function injectArrow(linkElement) {
-    // Ensure we always target the actual anchor tag for injecting the arrow
     const targetAnchor = linkElement.tagName === 'A' ? linkElement : linkElement.querySelector('a');
 
-    if (!targetAnchor || targetAnchor.querySelector('.extension-arrow')) {
-        return; // Don't inject if no anchor or arrow already exists
+    if (!targetAnchor || targetAnchor.querySelector('.extension-arrow-container')) {
+        return; // Don't inject if no anchor or arrow container already exists
     }
+
+    // Create a container for our arrow. This container will have position: relative
+    // and hold our absolutely positioned arrow, without affecting the targetAnchor's
+    // own layout or existing children's positioning.
+    const arrowContainer = document.createElement('span');
+    arrowContainer.classList.add('extension-arrow-container');
+    arrowContainer.style.position = 'relative'; // This makes the arrow absolute to this container
+    arrowContainer.style.display = 'inline-block'; // Occupy space, but not block level
+    arrowContainer.style.width = '0'; // Don't take up width in the text flow
+    arrowContainer.style.height = '0'; // Don't take up height
+    arrowContainer.style.verticalAlign = 'middle'; // Adjust vertical alignment if needed
 
     const arrow = document.createElement('span');
     arrow.classList.add('extension-arrow');
     arrow.textContent = '➤';
 
-    // Store original position and set to relative for proper absolute positioning of the arrow.
-    const computedPosition = window.getComputedStyle(targetAnchor).position;
-    if (computedPosition === 'static') {
-        targetAnchor.dataset.originalPosition = 'static'; // Store 'static'
-        targetAnchor.style.position = 'relative';
-    } else {
-        // If it's already non-static, store its current position
-        targetAnchor.dataset.originalPosition = computedPosition;
-    }
+    // Append the arrow to its dedicated container
+    arrowContainer.appendChild(arrow);
+
+    // Prepend the arrow container to the targetAnchor
+    // This places our arrow at the very beginning of the link's content.
+    targetAnchor.prepend(arrowContainer);
 
     // Attempt to bring the target link itself to the front to avoid clipping issues from parents
-    // Store original z-index if it exists
+    // Store original z-index if it exists, before setting a high z-index.
+    // This is still useful for general visibility, even if not for the "small arrows" issue.
     if (targetAnchor.style.zIndex) {
         targetAnchor.dataset.originalZIndex = targetAnchor.style.zIndex;
     }
     targetAnchor.style.zIndex = '10000'; // Very high z-index for the selected link and its arrow
-
-    // Ensure the arrow is visually on top of its immediate siblings within the link
-    arrow.style.zIndex = '10001'; // Even higher than the parent link itself
-
-    // Prepend the arrow to the targetAnchor
-    targetAnchor.prepend(arrow);
 }
 
 function isElementFullyVisibleWithMargin(element, marginPx) {
@@ -382,7 +374,7 @@ function refreshLinksAndArrowPosition() {
             }
         }
         updateArrowPosition(newIndex);
-    } else if (allResultLinks.length > 0 && (currentSelectedIndex === -1 || !allResultLinks[currentSelectedIndex]?.querySelector('.extension-arrow'))) {
+    } else if (allResultLinks.length > 0 && (currentSelectedIndex === -1 || !allResultLinks[currentSelectedIndex]?.querySelector('.extension-arrow-container'))) {
         // If links didn't change but arrow is missing (e.g., page re-render without full DOM reset)
         updateArrowPosition(currentSelectedIndex === -1 ? 0 : currentSelectedIndex);
     }
