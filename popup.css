@@ -158,23 +158,18 @@ body {
 	/* Blue on hover for scrollbar */
 }
 
-/* UPDATED Styles for the extension-arrow on search results pages (Lowered) */
 .extension-arrow {
 	position: absolute;
 	/* Take it out of the normal document flow */
 	left: -35px; /* Adjusted from -28px to -35px */
 	/* Position to the left of the link. Adjust as needed. */
-	top: 0%;
-	/* Adjusted to 60% to lower the arrow */
-	transform: translateY(-50%);
+	top: 50%;
+	transform: translateY(-80%);
 	/* Adjust for perfect vertical centering, now relative to the new 'top' */
 	font-size: 1.2em;
 	font-weight: bold;
 	color: #FFA500;
-	/* Orange color */
 	pointer-events: none;
-	/* Ensure it doesn't interfere with link clicks */
-	/* Remove any transition properties if they exist, to prevent animation */
 	transition: none !important;
 	animation: none !important;
 }
