@@ -176,6 +176,15 @@ function removeExistingArrows() {
                 // If we set it to relative and didn't store an original, revert to default
                 parentLink.style.position = ''; // Revert to browser default/inherited
             }
+
+            // Restore original z-index if it was changed by us
+            if (parentLink.dataset.originalZIndex !== undefined) {
+                parentLink.style.zIndex = parentLink.dataset.originalZIndex;
+                delete parentLink.dataset.originalZIndex;
+            } else if (parentLink.style.zIndex === '10000') {
+                // If we set it to 10000 and didn't store an original, clear it
+                parentLink.style.zIndex = '';
+            }
         }
         if (arrow.parentNode) {
             arrow.parentNode.removeChild(arrow);
@@ -204,9 +213,16 @@ function injectArrow(linkElement) {
         // If it's already non-static, store its current position
         targetAnchor.dataset.originalPosition = computedPosition;
     }
-    
-    // Ensure the arrow is visually on top
-    arrow.style.zIndex = '9999';
+
+    // Attempt to bring the target link itself to the front to avoid clipping issues from parents
+    // Store original z-index if it exists
+    if (targetAnchor.style.zIndex) {
+        targetAnchor.dataset.originalZIndex = targetAnchor.style.zIndex;
+    }
+    targetAnchor.style.zIndex = '10000'; // Very high z-index for the selected link and its arrow
+
+    // Ensure the arrow is visually on top of its immediate siblings within the link
+    arrow.style.zIndex = '10001'; // Even higher than the parent link itself
 
     // Prepend the arrow to the targetAnchor
     targetAnchor.prepend(arrow);
@@ -470,9 +486,9 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
         if (chrome.runtime && chrome.runtime.id) {
             webNavigatorEnabledState = changes.webNavigatorEnabled.newValue;
             initializeExtension();
-        } else {
-            console.warn("Extension runtime invalidated during storage change listener.");
         }
+        // No else block here, as it's typically fine if context is invalidated
+        // just means the content script won't react immediately, but will on next load.
     }
 });
 

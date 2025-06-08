@@ -162,7 +162,7 @@ body {
 .extension-arrow {
 	position: absolute;
 	/* Take it out of the normal document flow */
-	left: -28px;
+	left: -35px; /* Adjusted from -28px to -35px */
 	/* Position to the left of the link. Adjust as needed. */
 	top: 0%;
 	/* Adjusted to 60% to lower the arrow */
