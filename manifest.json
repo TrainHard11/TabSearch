@@ -28,25 +28,25 @@
             "description": "Open Fuzzy Tab Switcher"
         },
         "custom_tab_1": {
-            "description": "Custom Tab 1 (configurable in settings)"
+            "description": "Custom Tab 1"
         },
         "custom_tab_2": {
-            "description": "Custom Tab 2 (configurable in settings)"
+            "description": "Custom Tab 2"
         },
         "custom_tab_3": {
-            "description": "Custom Tab 3 (configurable in settings)"
+            "description": "Custom Tab 3"
         },
         "custom_tab_4": {
-            "description": "Custom Tab 4 (configurable in settings)"
+            "description": "Custom Tab 4"
         },
         "custom_tab_5": {
-            "description": "Custom Tab 5 (configurable in settings)"
+            "description": "Custom Tab 5"
         },
         "custom_tab_6": {
-            "description": "Custom Tab 6 (configurable in settings)"
+            "description": "Custom Tab 6"
         },
         "custom_tab_7": {
-            "description": "Custom Tab 7 (configurable in settings)"
+            "description": "Custom Tab 7"
         },
         "move_tab_to_first": {
             "description": "Move tab to 1st place"
@@ -70,21 +70,12 @@
             "description": "Cycle YouTube tabs"
         },
         "move_tab_left": {
-            "suggested_key": {
-                "default": "Ctrl+Shift+Left"
-            },
             "description": "Move current tab to the left"
         },
         "move_tab_right": {
-            "suggested_key": {
-                "default": "Ctrl+Shift+Right"
-            },
             "description": "Move current tab to the right"
         },
         "cycle_media_tabs": {
-            "suggested_key": {
-                "default": "Alt+M"
-            },
             "description": "Cycle media tabs"
         }
     },
