@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabCounter = document.getElementById("tabCounter");
     const optionsSection = document.getElementById("optionsSection");
     const helpSection = document.getElementById("helpSection");
+    const harpoonSection = document.getElementById("harpoonSection"); // Get the new harpoon section
     const enableWebNavigatorCheckbox = document.getElementById("enableWebNavigator");
     const searchOnNoResultsCheckbox = document.getElementById("searchOnNoResults");
 
@@ -272,13 +273,14 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Helper to manage visibility of UI sections
-    const setUIVisibility = (mainVisible, optionsVisible, helpVisible) => {
+    const setUIVisibility = (mainVisible, optionsVisible, helpVisible, harpoonVisible) => {
         const searchArea = document.querySelector('.search-area');
 
         searchArea.classList.toggle('hidden', !mainVisible);
         tabList.classList.toggle("hidden", !mainVisible);
         optionsSection.classList.toggle("hidden", !optionsVisible);
         helpSection.classList.toggle("hidden", !helpVisible);
+        harpoonSection.classList.toggle("hidden", !harpoonVisible); // Toggle harpoon visibility
 
         if (mainVisible) {
             searchInput.focus();
@@ -290,28 +292,40 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === "F1") {
             e.preventDefault();
             if (optionsSection.classList.contains("hidden")) {
-                setUIVisibility(false, true, false); // Show options, hide main and help
+                setUIVisibility(false, true, false, false); // Show options, hide main, help, harpoon
                 // Clear search input and reset filtered tabs when showing options
                 currentQuery = "";
                 searchInput.value = "";
                 filteredTabs = [];
                 renderTabs(filteredTabs); // Render an empty list or "no matching tabs"
             } else {
-                setUIVisibility(true, false, false); // Hide options, show main
+                setUIVisibility(true, false, false, false); // Hide options, show main
             }
         } else if (e.key === "F2") {
             e.preventDefault();
             if (helpSection.classList.contains("hidden")) {
-                setUIVisibility(false, false, true); // Show help, hide main and options
+                setUIVisibility(false, false, true, false); // Show help, hide main, options, harpoon
                 // Clear search input and reset filtered tabs when showing help
                 currentQuery = "";
                 searchInput.value = "";
                 filteredTabs = [];
                 renderTabs(filteredTabs); // Render an empty list or "no matching tabs"
             } else {
-                setUIVisibility(true, false, false); // Hide help, show main
+                setUIVisibility(true, false, false, false); // Hide help, show main
             }
-        } else if (e.key === "F3") { // NEW: F3 to open extension shortcuts
+        } else if (e.key === "F3") { // NEW: F3 to toggle Harpoon
+            e.preventDefault();
+            if (harpoonSection.classList.contains("hidden")) {
+                setUIVisibility(false, false, false, true); // Show harpoon, hide others
+                currentQuery = "";
+                searchInput.value = "";
+                filteredTabs = [];
+                renderTabs(filteredTabs);
+            } else {
+                setUIVisibility(true, false, false, false); // Hide harpoon, show main
+            }
+        }
+        else if (e.key === "F4") { // NEW: F4 for extension shortcuts
             e.preventDefault();
             // Check if it's a Chromium-based browser or Firefox
             if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
@@ -319,12 +333,39 @@ document.addEventListener("DOMContentLoaded", () => {
                 chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
             } else if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.getURL) {
                 // Assume Firefox
-                // Firefox doesn't have a direct "shortcuts" page like Chrome,
-                // but the "about:addons" page is where users start for extensions,
-                // and then can navigate to "Manage Extension Shortcuts"
                 browser.tabs.create({ url: "about:addons" });
             }
             window.close(); // Close the popup after opening the shortcuts page
+        } else if (e.key === '1' && e.altKey) {
+            e.preventDefault();
+            chrome.runtime.sendMessage({ action: "executeMoveTabCommand", command: "moveCurrentTabToPosition", index: 0 })
+                .then(() => fetchAndDisplayTabs(selectedIndex))
+                .catch(console.error);
+        } else if (e.key === '2' && e.altKey) {
+            e.preventDefault();
+            chrome.runtime.sendMessage({ action: "executeMoveTabCommand", command: "moveCurrentTabToPosition", index: 1 })
+                .then(() => fetchAndDisplayTabs(selectedIndex))
+                .catch(console.error);
+        } else if (e.key === '3' && e.altKey) {
+            e.preventDefault();
+            chrome.runtime.sendMessage({ action: "executeMoveTabCommand", command: "moveCurrentTabToPosition", index: 2 })
+                .then(() => fetchAndDisplayTabs(selectedIndex))
+                .catch(console.error);
+        } else if (e.key === '4' && e.altKey) {
+            e.preventDefault();
+            chrome.runtime.sendMessage({ action: "executeMoveTabCommand", command: "moveCurrentTabToPosition", index: 3 })
+                .then(() => fetchAndDisplayTabs(selectedIndex))
+                .catch(console.error);
+        } else if (e.key === "ArrowLeft" && e.altKey) {
+            e.preventDefault();
+            chrome.runtime.sendMessage({ action: "executeMoveTabCommand", command: "moveCurrentTabLeft" })
+                .then(() => fetchAndDisplayTabs(selectedIndex))
+                .catch(console.error);
+        } else if (e.key === "ArrowRight" && e.altKey) {
+            e.preventDefault();
+            chrome.runtime.sendMessage({ action: "executeMoveTabCommand", command: "moveCurrentTabRight" })
+                .then(() => fetchAndDisplayTabs(selectedIndex))
+                .catch(console.error);
         }
     });
 
@@ -340,8 +381,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Handle keyboard navigation including new delete commands
     searchInput.addEventListener("keydown", (e) => {
-        // Prevent navigation if settings or help is visible
-        if (!optionsSection.classList.contains("hidden") || !helpSection.classList.contains("hidden")) {
+        // Prevent navigation if settings or help or harpoon is visible
+        if (!optionsSection.classList.contains("hidden") || !helpSection.classList.contains("hidden") || !harpoonSection.classList.contains("hidden")) {
             return;
         }
 
