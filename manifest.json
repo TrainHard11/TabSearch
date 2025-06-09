@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "Fuzzy Tab & Search Navigator",
-    "version": "1.8",
-    "description": "Quickly switch between Chrome tabs using fuzzy search and navigate search results.",
+    "version": "2.0",
+    "description": "Fuzy switch between Chrome tabs and navigate search results.",
     "permissions": [
         "tabs",
         "scripting",
