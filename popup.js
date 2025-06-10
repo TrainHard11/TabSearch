@@ -3,10 +3,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabList = document.getElementById("tabList");
     const tabCounter = document.getElementById("tabCounter");
     const optionsSection = document.getElementById("optionsSection");
-    const helpSection = document.getElementById("helpSection");
-    const harpoonSection = document.getElementById("harpoonSection"); // Get the new harpoon section
+    const helpContentContainer = document.getElementById("helpContentContainer");
+    const harpoonSection = document.getElementById("harpoonSection");
     const enableWebNavigatorCheckbox = document.getElementById("enableWebNavigator");
     const searchOnNoResultsCheckbox = document.getElementById("searchOnNoResults");
+    const infoText = document.querySelector('.info-text'); // Get the info text element
 
     // Custom tab input fields and checkboxes
     const customTabInputs = [];
@@ -16,11 +17,11 @@ document.addEventListener("DOMContentLoaded", () => {
         customTabExactMatchCheckboxes.push(document.getElementById(`customTab${i}ExactMatch`));
     }
 
-
     let allTabs = [];
     let filteredTabs = [];
     let selectedIndex = -1;
     let currentQuery = "";
+    let helpContentLoaded = false; // Flag to ensure content is loaded only once
 
     // Default settings including custom tabs
     const defaultSettings = {
@@ -202,6 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
         items.forEach((item, index) => {
             if (index === selectedIndex) {
                 item.classList.add("selected");
+                // Ensure the item is visible within its scrollable parent
                 item.scrollIntoView({ block: "nearest", behavior: "auto" });
             } else {
                 item.classList.remove("selected");
@@ -272,23 +274,71 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Helper to manage visibility of UI sections
+    // Helper to manage visibility of UI sections AND their scrollbars
     const setUIVisibility = (mainVisible, optionsVisible, helpVisible, harpoonVisible) => {
-        const searchArea = document.querySelector('.search-area');
+        // First, remove scrollable-content from all potential content areas
+        tabList.classList.remove('scrollable-content');
+        optionsSection.classList.remove('scrollable-content');
+        helpContentContainer.classList.remove('scrollable-content');
+        harpoonSection.classList.remove('scrollable-content'); // Assuming harpoon also needs scrolling
 
+        // Toggle visibility of main elements
+        const searchArea = document.querySelector('.search-area');
         searchArea.classList.toggle('hidden', !mainVisible);
         tabList.classList.toggle("hidden", !mainVisible);
-        optionsSection.classList.toggle("hidden", !optionsVisible);
-        helpSection.classList.toggle("hidden", !helpVisible);
-        harpoonSection.classList.toggle("hidden", !harpoonVisible); // Toggle harpoon visibility
+        infoText.classList.toggle('hidden', !mainVisible);
 
+        // Toggle visibility of sections and add scrollbar class to the active one
+        optionsSection.classList.toggle("hidden", !optionsVisible);
+        if (optionsVisible) {
+            optionsSection.classList.add('scrollable-content');
+        }
+
+        helpContentContainer.classList.toggle("hidden", !helpVisible);
+        if (helpVisible) {
+            helpContentContainer.classList.add('scrollable-content');
+        }
+
+        harpoonSection.classList.toggle("hidden", !harpoonVisible);
+        if (harpoonVisible) {
+            harpoonSection.classList.add('scrollable-content');
+        }
+
+        // If main is visible, make tabList scrollable (if it's not empty)
         if (mainVisible) {
+            // Only add scrollable-content if there are actual tabs to display
+            if (filteredTabs.length > 0) { // Or allTabs.length > 0 if you want it always scrollable when main is shown
+                tabList.classList.add('scrollable-content');
+            }
             searchInput.focus();
         }
     };
 
+
+    // Function to load help content
+    const loadHelpContent = async () => {
+        if (!helpContentLoaded) {
+            try {
+                const response = await fetch(chrome.runtime.getURL('help.html'));
+                if (response.ok) {
+                    const html = await response.text();
+                    helpContentContainer.innerHTML = html; // Inject the content
+                    helpContentLoaded = true;
+                    console.log('Help content loaded successfully.');
+                } else {
+                    console.error('Failed to load help.html:', response.statusText);
+                    helpContentContainer.innerHTML = '<p>Error loading help content.</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching help.html:', error);
+                helpContentContainer.innerHTML = '<p>Error fetching help content.</p>';
+            }
+        }
+    };
+
+
     // Toggle options section visibility and help page
-    document.addEventListener("keydown", (e) => {
+    document.addEventListener("keydown", async (e) => { // Made async to await loadHelpContent
         if (e.key === "F1") {
             e.preventDefault();
             if (optionsSection.classList.contains("hidden")) {
@@ -303,7 +353,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } else if (e.key === "F2") {
             e.preventDefault();
-            if (helpSection.classList.contains("hidden")) {
+            await loadHelpContent(); // Load content if not already loaded
+            if (helpContentContainer.classList.contains("hidden")) {
                 setUIVisibility(false, false, true, false); // Show help, hide main, options, harpoon
                 // Clear search input and reset filtered tabs when showing help
                 currentQuery = "";
@@ -313,7 +364,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 setUIVisibility(true, false, false, false); // Hide help, show main
             }
-        } else if (e.key === "F3") { // NEW: F3 to toggle Harpoon
+        } else if (e.key === "F3") { // F3 to toggle Harpoon
             e.preventDefault();
             if (harpoonSection.classList.contains("hidden")) {
                 setUIVisibility(false, false, false, true); // Show harpoon, hide others
@@ -325,7 +376,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 setUIVisibility(true, false, false, false); // Hide harpoon, show main
             }
         }
-        else if (e.key === "F4") { // NEW: F4 for extension shortcuts
+        else if (e.key === "F4") { // F4 for extension shortcuts
             e.preventDefault();
             // Check if it's a Chromium-based browser or Firefox
             if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
@@ -381,8 +432,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Handle keyboard navigation including new delete commands
     searchInput.addEventListener("keydown", (e) => {
-        // Prevent navigation if settings or help or harpoon is visible
-        if (!optionsSection.classList.contains("hidden") || !helpSection.classList.contains("hidden") || !harpoonSection.classList.contains("hidden")) {
+        // Prevent navigation if settings, help, or harpoon is visible
+        if (!optionsSection.classList.contains("hidden") || !helpContentContainer.classList.contains("hidden") || !harpoonSection.classList.contains("hidden")) {
             return;
         }
 
@@ -430,5 +481,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initial fetch and display of tabs + load settings
     loadSettings().then(() => {
         fetchAndDisplayTabs();
+        // Set initial scroll state for tabList
+        setUIVisibility(true, false, false, false);
     });
 });
