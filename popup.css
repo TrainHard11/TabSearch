@@ -1,377 +1,273 @@
 body {
-    font-family: "Inter", sans-serif;
-    width: 750px;
-    margin: 0;
-    padding: 0;
-    background-color: #282c34;
-    border-radius: 8px;
-    color: #e0e0e0;
+	font-family: "Inter", sans-serif;
+	width: 750px;
+	margin: 0;
+	padding: 0;
+	background-color: #282c34;
+	border-radius: 8px;
+	color: #e0e0e0;
 }
 
 .container {
-    padding: 15px;
+	padding: 15px;
 }
 
-/* NEW: Style for search input and counter wrapper */
 .search-area {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    /* Space between search area and tab list */
-    gap: 10px;
-    /* Space between input and counter */
+	display: flex;
+	align-items: center;
+	margin-bottom: 10px;
+	gap: 10px;
 }
 
 #searchInput {
-    flex-grow: 1;
-    /* Allow search input to take available space */
-    padding: 10px;
-    border: 1px solid #444;
-    /* Darker border */
-    border-radius: 6px;
-    font-size: 16px;
-    box-sizing: border-box;
-    outline: none;
-    background-color: #3b4048;
-    /* Dark background for input */
-    color: #e0e0e0;
-    /* Light text for input */
+	flex-grow: 1;
+	/* Allow search input to take available space */
+	padding: 10px;
+	border: 1px solid #444;
+	border-radius: 6px;
+	font-size: 16px;
+	box-sizing: border-box;
+	outline: none;
+	background-color: #3b4048;
+	color: #e0e0e0;
 }
 
 #searchInput::placeholder {
-    color: #a0a0a0;
-    /* Lighter placeholder text */
+	color: #a0a0a0;
 }
 
 #searchInput:focus {
-    border-color: #61afef;
-    /* A pleasing blue for focus */
+	border-color: #61afef;
 }
 
-/* NEW: Style for the tab counter */
 .tab-counter {
-    padding: 5px 10px;
-    background-color: #61afef;
-    /* Blue background */
-    color: #282c34;
-    /* Dark text */
-    border-radius: 5px;
-    font-weight: bold;
-    font-size: 0.9em;
-    flex-shrink: 0;
-    /* Prevent counter from shrinking */
+	padding: 5px 10px;
+	background-color: #61afef;
+	color: #282c34;
+	border-radius: 5px;
+	font-weight: bold;
+	font-size: 0.9em;
+	flex-shrink: 0;
 }
 
 #tabList {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    max-height: 8000px;
-    /* Limit height for scrollability */
-    overflow-y: auto;
-    background-color: #21252b;
-    /* Even darker background for the list */
-    border-radius: 6px;
-    border: 1px solid #333;
-    /* Darker border for the list */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    /* More pronounced shadow */
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	max-height: 8000px;
+	overflow-y: auto;
+	background-color: #21252b;
+	border-radius: 6px;
+	border: 1px solid #333;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 #tabList li {
-    padding: 10px 15px;
-    cursor: pointer;
-    border-bottom: 1px solid #2c313a;
-    /* Darker separator */
-    display: flex;
-    align-items: center;
-    border-radius: 4px;
+	padding: 10px 15px;
+	cursor: pointer;
+	border-bottom: 1px solid #2c313a;
+	display: flex;
+	align-items: center;
+	border-radius: 4px;
 }
 
 #tabList li:last-child {
-    border-bottom: none;
+	border-bottom: none;
 }
 
 #tabList li:hover,
 #tabList li.selected {
-    background-color: #3a4049;
-    /* Darker hover/selection color */
-    color: #f8f8f8;
-    /* Very light text on hover/selection */
+	background-color: #3a4049;
+	color: #f8f8f8;
 }
 
 #tabList li .favicon {
-    width: 16px;
-    height: 16px;
-    margin-right: 10px;
-    flex-shrink: 0;
+	width: 16px;
+	height: 16px;
+	margin-right: 10px;
+	flex-shrink: 0;
 }
 
 #tabList li .tab-title {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex-grow: 1;
-    color: #e0e0e0;
-    /* Ensure title is light */
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex-grow: 1;
+	color: #e0e0e0;
 }
 
 #tabList li .tab-url {
-    font-size: 0.8em;
-    color: #8a8a8a;
-    /* Slightly desaturated light grey for URL */
-    margin-left: 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 150px;
+	font-size: 0.8em;
+	color: #8a8a8a;
+	margin-left: 10px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 150px;
 }
 
-/* NEW: Highlight styling for search matches */
 .highlight {
-    background-color: #ffd580;
-    color: #1a1a1a;
-    padding: 1px 2px;
-    border-radius: 2px;
+	background-color: #ffd580;
+	color: #1a1a1a;
+	padding: 1px 2px;
+	border-radius: 2px;
 }
 
 /* Scrollbar styling for dark mode */
 #tabList::-webkit-scrollbar {
-    width: 8px;
+	width: 8px;
 }
 
 #tabList::-webkit-scrollbar-track {
-    background: #2c313a;
-    /* Darker scrollbar track */
-    border-radius: 4px;
+	background: #2c313a;
+	border-radius: 4px;
 }
 
 #tabList::-webkit-scrollbar-thumb {
-    background: #555;
-    /* Darker scrollbar thumb */
-    border-radius: 4px;
+	background: #555;
+	border-radius: 4px;
 }
 
 #tabList::-webkit-scrollbar-thumb:hover {
-    background: #61afef;
-    /* Blue on hover for scrollbar */
+	background: #61afef;
+	/* Blue on hover for scrollbar */
 }
 
+
+/* ========= CURSOR ARROW THEME =========== */
+
+
 .extension-arrow {
-    position: absolute;
-    /* Take it out of the normal document flow */
-    left: -35px;
-    /* Adjusted from -28px to -35px */
-    /* Position to the left of the link. Adjust as needed. */
-    top: 50%;
-    transform: translateY(-80%);
-    /* Adjust for perfect vertical centering, now relative to the new 'top' */
-    font-size: 1.2em;
-    font-weight: bold;
-    color: #FFA500;
-    pointer-events: none;
-    transition: none !important;
-    animation: none !important;
+	position: absolute;
+	left: -35px;
+	top: 150%;
+	transform: translateY(-80%);
+	font-size: 1.2em;
+	font-weight: bold;
+	color: #FFA500;
+	/* color: #2FA500; */
+	pointer-events: none;
+	transition: none !important;
+	animation: none !important;
 }
 
 /* Styles for the options section */
 .options-container {
-    margin-top: 15px;
-    padding: 15px;
-    background-color: #363a42;
-    /* Slightly different background for options */
-    border-radius: 8px;
-    border: 1px solid #444;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-    /* Inset shadow */
+	margin-top: 15px;
+	padding: 15px;
+	background-color: #363a42;
+	/* Slightly different background for options */
+	border-radius: 8px;
+	border: 1px solid #444;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+	/* Inset shadow */
 }
 
 .options-container h2 {
-    color: #61afef;
-    /* Blue heading */
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 1.1em;
-    border-bottom: 1px solid #444;
-    padding-bottom: 10px;
+	color: #61afef;
+	/* Blue heading */
+	margin-top: 0;
+	margin-bottom: 15px;
+	font-size: 1.1em;
+	border-bottom: 1px solid #444;
+	padding-bottom: 10px;
 }
 
 .option-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
+	display: flex;
+	align-items: center;
+	margin-bottom: 10px;
 }
 
 .option-item input[type="checkbox"] {
-    margin-right: 10px;
-    width: 18px;
-    height: 18px;
-    accent-color: #98c379;
-    /* Green accent color */
-    cursor: pointer;
+	margin-right: 10px;
+	width: 18px;
+	height: 18px;
+	accent-color: #98c379;
+	/* Green accent color */
+	cursor: pointer;
 }
 
 .option-item label {
-    font-size: 0.95em;
-    color: #e0e0e0;
-    cursor: pointer;
+	font-size: 0.95em;
+	color: #e0e0e0;
+	cursor: pointer;
 }
 
-/* New styles for custom tab settings */
+
+/* ========= SETTINGS MENU =========== */
+
 .custom-tab-section {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px dashed #555; /* Dotted line separator */
+	margin-top: 20px;
+	padding-top: 15px;
+	border-top: 1px dashed #555;
+	/* Dotted line separator */
 }
 
 .custom-tab-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
 }
 
 .custom-tab-section h3 {
-    color: #98c379; /* Green for sub-headings */
-    margin-top: 0;
-    margin-bottom: 0; /* Adjust margin as it's part of a flex container */
-    font-size: 1em;
+	color: #98c379;
+	/* Green for sub-headings */
+	margin-top: 0;
+	margin-bottom: 0;
+	/* Adjust margin as it's part of a flex container */
+	font-size: 1em;
 }
 
 .custom-tab-section .option-item {
-    margin-bottom: 0; /* Remove bottom margin from this specific option item */
-    align-items: center;
-    display: flex; /* Ensure it's a flex container to align checkbox and label */
+	margin-bottom: 0;
+	/* Remove bottom margin from this specific option item */
+	align-items: center;
+	display: flex;
+	/* Ensure it's a flex container to align checkbox and label */
 }
 
 .custom-tab-section .option-item input[type="checkbox"] {
-    margin-right: 5px; /* Reduce space between checkbox and label */
-    width: 16px;
-    height: 16px;
+	margin-right: 5px;
+	/* Reduce space between checkbox and label */
+	width: 16px;
+	height: 16px;
 }
 
 .custom-tab-section .option-item label {
-    font-size: 0.85em; /* Smaller font for "Exact Match" label */
-    white-space: nowrap; /* Prevent label from wrapping */
+	font-size: 0.85em;
+	/* Smaller font for "Exact Match" label */
+	white-space: nowrap;
+	/* Prevent label from wrapping */
 }
 
 
 .custom-tab-section input[type="text"] {
-    width: calc(100% - 20px); /* Adjust for padding */
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #555;
-    border-radius: 4px;
-    background-color: #2c313a;
-    color: #e0e0e0;
+	width: calc(100% - 20px);
+	/* Adjust for padding */
+	padding: 8px;
+	margin-bottom: 10px;
+	border: 1px solid #555;
+	border-radius: 4px;
+	background-color: #2c313a;
+	color: #e0e0e0;
 }
 
 
 /* Info text at the bottom of the main UI */
 .info-text {
-    text-align: center;
-    color: #888;
-    font-size: 0.85em;
-    margin-top: 15px;
-    padding-top: 10px;
-    border-top: 1px solid #333;
+	text-align: center;
+	color: #888;
+	font-size: 0.85em;
+	margin-top: 0.5rem;
+	border-top: 1px solid #333;
 }
 
 /* Utility class to hide elements */
 .hidden {
-    display: none !important;
+	display: none !important;
 }
 
-/* Start of help.css merged into popup.css */
-
-.help-container {
-    padding: 15px;
-    background-color: #21252b; /* Darker background similar to tab list */
-    border-radius: 8px;
-    color: #e0e0e0;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    margin-top: 15px; /* Space from info-text */
-    max-height: 80vh; /* Limit height for scrollability */
-    overflow-y: auto; /* Enable scrolling for help content */
-}
-
-.help-container h1 {
-    color: #61afef; /* Blue heading */
-    font-size: 1.5em;
-    margin-top: 0;
-    margin-bottom: 20px;
-    text-align: center;
-    border-bottom: 1px solid #444;
-    padding-bottom: 10px;
-}
-
-.help-container h2 {
-    color: #98c379; /* Green sub-heading */
-    font-size: 1.2em;
-    margin-top: 25px;
-    margin-bottom: 10px;
-    border-bottom: 1px dashed #555;
-    padding-bottom: 5px;
-}
-
-.help-container p {
-    line-height: 1.6;
-    margin-bottom: 10px;
-}
-
-.help-container ul {
-    list-style: disc;
-    margin-left: 20px;
-    margin-bottom: 15px;
-    padding: 0;
-}
-
-.help-container ul ul {
-    list-style: circle;
-    margin-left: 15px;
-    margin-top: 5px;
-    margin-bottom: 5px;
-}
-
-.help-container li {
-    margin-bottom: 5px;
-    line-height: 1.4;
-}
-
-.help-container code {
-    background-color: #3b4048; /* Darker background for code */
-    color: #f8f8f8;
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-family: monospace;
-    font-size: 0.9em;
-}
-
-.help-footer {
-    text-align: center;
-    margin-top: 30px;
-    padding-top: 15px;
-    border-top: 1px solid #333;
-    color: #888;
-    font-size: 0.8em;
-}
-
-/* Scrollbar styling for help-container, similar to tabList */
-.help-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.help-container::-webkit-scrollbar-track {
-    background: #2c313a;
-    border-radius: 4px;
-}
-
-.help-container::-webkit-scrollbar-thumb {
-    background: #555;
-    border-radius: 4px;
-}
-
-.help-container::-webkit-scrollbar-thumb:hover {
-    background: #61afef;
-}
+/* Start of help.css */
 
