@@ -12,3 +12,5 @@ or allow them to set links where you can also fuzzy saerch them
 Maybe we can have a alist which is checked against the opened tab list and if its there dont show it, also please implement a checkbox option for the user, to either search through it or nah
 
 
+
+in the TabSaerch section , implement c-1 c-2 keymaps to move the tabs from there directly to first second position 
