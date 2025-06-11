@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
   // --- DOM Element References ---
-  // These are for elements consistently present in popup.html
   const searchInput = document.getElementById("searchInput");
   const tabList = document.getElementById("tabList");
   const tabCounter = document.getElementById("tabCounter");
@@ -226,7 +225,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadSettingsContent = async () => {
     if (!settingsContentLoaded) {
       try {
-        const response = await fetch(chrome.runtime.getURL("settings.html"));
+        const response = await fetch(
+          chrome.runtime.getURL("html/settings.html"),
+        );
         if (response.ok) {
           const html = await response.text();
           const parser = new DOMParser();
@@ -436,7 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadHelpContent = async () => {
     if (!helpContentLoaded) {
       try {
-        const response = await fetch(chrome.runtime.getURL("help.html"));
+        const response = await fetch(chrome.runtime.getURL("html/help.html"));
         if (response.ok) {
           const html = await response.text();
           const parser = new DOMParser();

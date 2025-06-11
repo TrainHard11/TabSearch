@@ -1,105 +1,93 @@
 {
-    "manifest_version": 3,
-    "name": "Fuzzy Tab & Search Navigator",
-    "version": "2.0",
-    "description": "Fuzy switch between Chrome tabs and navigate search results.",
-    "permissions": [
-        "tabs",
-        "scripting",
-        "storage"
-    ],
-    "host_permissions": [
-        "*://www.google.com/search?*"
-    ],
-    "action": {
-        "default_popup": "popup.html",
-        "default_icon": {
-            "16": "icon.png"
-        }
+  "manifest_version": 3,
+  "name": "Fuzzy Tab & Search Navigator",
+  "version": "2.0",
+  "description": "Fuzy switch between Chrome tabs and navigate search results.",
+  "permissions": ["tabs", "scripting", "storage"],
+  "host_permissions": ["*://www.google.com/search?*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "img/SGN24.png"
+    }
+  },
+  "icons": {
+    "16": "img/SGN24.png"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+A"
+      },
+      "description": "Open Fuzzy Tab Switcher"
     },
-    "icons": {
-        "16": "icon.png"
+    "custom_tab_1": {
+      "description": "Custom Tab 1"
     },
-    "commands": {
-        "_execute_action": {
-            "suggested_key": {
-                "default": "Alt+A"
-            },
-            "description": "Open Fuzzy Tab Switcher"
-        },
-        "custom_tab_1": {
-            "description": "Custom Tab 1"
-        },
-        "custom_tab_2": {
-            "description": "Custom Tab 2"
-        },
-        "custom_tab_3": {
-            "description": "Custom Tab 3"
-        },
-        "custom_tab_4": {
-            "description": "Custom Tab 4"
-        },
-        "custom_tab_5": {
-            "description": "Custom Tab 5"
-        },
-        "custom_tab_6": {
-            "description": "Custom Tab 6"
-        },
-        "custom_tab_7": {
-            "description": "Custom Tab 7"
-        },
-        "move_tab_to_first": {
-            "description": "Move tab to 1st place"
-        },
-        "move_tab_to_second": {
-            "description": "Move tab to 2nd place"
-        },
-        "move_tab_to_third": {
-            "description": "Move tab to 3rd place"
-        },
-        "move_tab_to_fourth": {
-            "description": "Move tab to 4th place"
-        },
-        "open_new_empty_tab": {
-            "description": "New empty tab"
-        },
-        "cycle_audible_tabs": {
-            "description": "Cycle tabs playing audio"
-        },
-        "cycle_youtube_tabs": {
-            "description": "Cycle YouTube tabs"
-        },
-        "move_tab_left": {
-            "description": "Move current tab to the left"
-        },
-        "move_tab_right": {
-            "description": "Move current tab to the right"
-        },
-        "cycle_media_tabs": {
-            "description": "Cycle media tabs"
-        }
+    "custom_tab_2": {
+      "description": "Custom Tab 2"
     },
-    "browser_specific_settings": {
-        "gecko": {
-            "id": "fuzzy-tab-switcher@SergiuNani.private",
-            "strict_min_version": "109.0"
-        }
+    "custom_tab_3": {
+      "description": "Custom Tab 3"
     },
-    "background": {
-        "service_worker": "background.js"
+    "custom_tab_4": {
+      "description": "Custom Tab 4"
     },
-    "content_scripts": [
-        {
-            "matches": [
-                "*://www.google.com/search?*"
-            ],
-            "js": [
-                "WebNavigator.js"
-            ],
-            "css": [
-                "popup.css"
-            ],
-            "run_at": "document_idle"
-        }
-    ]
+    "custom_tab_5": {
+      "description": "Custom Tab 5"
+    },
+    "custom_tab_6": {
+      "description": "Custom Tab 6"
+    },
+    "custom_tab_7": {
+      "description": "Custom Tab 7"
+    },
+    "move_tab_to_first": {
+      "description": "Move tab to 1st place"
+    },
+    "move_tab_to_second": {
+      "description": "Move tab to 2nd place"
+    },
+    "move_tab_to_third": {
+      "description": "Move tab to 3rd place"
+    },
+    "move_tab_to_fourth": {
+      "description": "Move tab to 4th place"
+    },
+    "open_new_empty_tab": {
+      "description": "New empty tab"
+    },
+    "cycle_audible_tabs": {
+      "description": "Cycle tabs playing audio"
+    },
+    "cycle_youtube_tabs": {
+      "description": "Cycle YouTube tabs"
+    },
+    "move_tab_left": {
+      "description": "Move current tab to the left"
+    },
+    "move_tab_right": {
+      "description": "Move current tab to the right"
+    },
+    "cycle_media_tabs": {
+      "description": "Cycle media tabs"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "fuzzy-tab-switcher@SergiuNani.private",
+      "strict_min_version": "109.0"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://www.google.com/search?*"],
+      "js": ["WebNavigator.js"],
+      "css": ["popup.css"],
+      "run_at": "document_idle"
+    }
+  ]
 }
