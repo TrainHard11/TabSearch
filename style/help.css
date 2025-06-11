@@ -1,102 +1,92 @@
-/*
-    No changes to this file itself.
-    The relevant style for .help-container from this file
-    will be applied when the content is loaded into popup.html.
-    However, we need to ensure its max-height and overflow are set correctly
-    in the context of the new .container flexbox structure.
-*/
-
 .help-container {
-    padding: 15px;
-    background-color: #21252b;
-    border-radius: 8px;
-    color: #e0e0e0;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    margin-top: 15px;
-    /* REMOVE OR ADJUST THIS: max-height: 80vh; */
-    /* It should now primarily rely on flex-grow and the parent's max-height */
-    /* Add this if you want internal scrolling within the help content when it's very long */
-    overflow-y: auto;
-    flex-grow: 1; /* Allow it to take available space in the flex container */
+  padding: 15px;
+  background-color: #21252b;
+  border-radius: 8px;
+  color: #e0e0e0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  /* margin-top: 15px; */
+  /* overflow-y: auto; */
+  overflow-y: hidden;
+  flex-grow: 1;
 }
 
 /* Rest of help.css content remains the same */
 .help-container h1 {
-    color: #61afef;
-    font-size: 1.5em;
-    margin-top: 0;
-    margin-bottom: 20px;
-    text-align: center;
-    border-bottom: 1px solid #444;
-    padding-bottom: 10px;
+  color: #61afef;
+  font-size: 1.5em;
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-align: center;
+  border-bottom: 1px solid #444;
+  padding-bottom: 10px;
 }
 
 .help-container h2 {
-    color: #98c379;
-    font-size: 1.2em;
-    margin-top: 25px;
-    margin-bottom: 10px;
-    border-bottom: 1px dashed #555;
-    padding-bottom: 5px;
+  color: #98c379;
+  font-size: 1.2em;
+  margin-top: 25px;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #555;
+  padding-bottom: 5px;
 }
 
 .help-container p {
-    line-height: 1.6;
-    margin-bottom: 10px;
+  line-height: 1.6;
+  margin-bottom: 10px;
 }
 
 .help-container ul {
-    list-style: disc;
-    margin-left: 20px;
-    margin-bottom: 15px;
-    padding: 0;
+  list-style: disc;
+  margin-left: 20px;
+  margin-bottom: 15px;
+  padding: 0;
 }
 
 .help-container ul ul {
-    list-style: circle;
-    margin-left: 15px;
-    margin-top: 5px;
-    margin-bottom: 5px;
+  list-style: circle;
+  margin-left: 15px;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 
 .help-container li {
-    margin-bottom: 5px;
-    line-height: 1.4;
+  margin-bottom: 5px;
+  line-height: 1.4;
 }
 
 .help-container code {
-    background-color: #3b4048;
-    color: #f8f8f8;
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-family: monospace;
-    font-size: 0.9em;
+  background-color: #3b4048;
+  color: #f8f8f8;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
 }
 
 .help-footer {
-    text-align: center;
-    margin-top: 30px;
-    padding-top: 15px;
-    border-top: 1px solid #333;
-    color: #888;
-    font-size: 0.8em;
+  text-align: center;
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px solid #333;
+  color: #888;
+  font-size: 0.8em;
 }
 
 /* Scrollbar styling for help-container, similar to tabList */
 .help-container::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
 
 .help-container::-webkit-scrollbar-track {
-    background: #2c313a;
-    border-radius: 4px;
+  background: #2c313a;
+  border-radius: 4px;
 }
 
 .help-container::-webkit-scrollbar-thumb {
-    background: #555;
-    border-radius: 4px;
+  background: #555;
+  border-radius: 4px;
 }
 
 .help-container::-webkit-scrollbar-thumb:hover {
-    background: #61afef;
+  background: #61afef;
 }
