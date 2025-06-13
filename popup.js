@@ -160,7 +160,9 @@ document.addEventListener("DOMContentLoaded", () => {
    * @param {boolean} [exactMatch=false] Whether to match the URL exactly or partially.
    */
   const focusOrCreateTabByUrl = (url, exactMatch = false) => {
-    const queryOptions = exactMatch ? { url: url } : { url: `${url}*` };
+    // Normalizing URL for better matching (removing hash, query params if desired, though current request implies full URL match)
+    // For now, using the raw URL for query, as requested by "if the url is the same"
+    const queryOptions = exactMatch ? { url: url } : { url: `${url}*` }; // Default to partial match if not exact
     chrome.tabs.query(queryOptions, (tabs) => {
       if (tabs.length > 0) {
         const existingTab = tabs[0];
@@ -632,23 +634,43 @@ document.addEventListener("DOMContentLoaded", () => {
     let marksToSearch = [];
 
     // Conditionally fetch marks if setting is enabled and marks.js is initialized
-    if (currentSettings.searchMarksEnabled && typeof window.getAllBookmarks === 'function') {
-        allMarks = window.getAllBookmarks(); // Get the latest marks from marks.js
-        marksToSearch = allMarks;
+    if (
+      currentSettings.searchMarksEnabled &&
+      typeof window.getAllBookmarks === "function"
+    ) {
+      allMarks = window.getAllBookmarks(); // Get the latest marks from marks.js
+      marksToSearch = allMarks;
     } else {
-        allMarks = []; // Clear marks if feature is disabled
+      allMarks = []; // Clear marks if feature is disabled
     }
 
-    const filteredTabs = fuzzySearchItems(query, tabsToSearch, "title").map(
+    const filteredTabsRaw = fuzzySearchItems(query, tabsToSearch, "title").map(
       (tab) => ({ ...tab, type: "tab" }),
     );
-    const filteredMarks = fuzzySearchItems(query, marksToSearch, "name").map(
+    const filteredMarksRaw = fuzzySearchItems(query, marksToSearch, "name").map(
       (mark) => ({ ...mark, type: "mark" }),
     );
 
-    // Combine results, tabs first, then marks.
-    // Consider adding a scoring/sorting mechanism for more advanced results.
-    filteredResults = [...filteredTabs, ...filteredMarks];
+    // --- NEW: De-duplication Logic ---
+    const combinedResultsMap = new Map(); // Map to store items by URL, prioritizing marks
+
+    // Add filtered marks first.
+    filteredMarksRaw.forEach((mark) => {
+      // Use the raw URL as the key for de-duplication
+      if (mark.url) {
+        combinedResultsMap.set(mark.url, mark);
+      }
+    });
+
+    // Add filtered tabs. If a URL from a tab already exists in the map (meaning a mark with that URL was added), skip the tab.
+    filteredTabsRaw.forEach((tab) => {
+      if (tab.url && !combinedResultsMap.has(tab.url)) {
+        combinedResultsMap.set(tab.url, tab);
+      }
+    });
+
+    filteredResults = Array.from(combinedResultsMap.values());
+    // --- END NEW: De-duplication Logic ---
 
     // Re-render the list with the updated filtered results
     renderResults(filteredResults);
@@ -1003,7 +1025,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (selectedItem.type === "tab") {
           switchTab(selectedItem.id, selectedItem.windowId);
         } else if (selectedItem.type === "mark") {
-          openUrl(selectedItem.url);
+          // NEW: Use focusOrCreateTabByUrl for bookmark entries
+          focusOrCreateTabByUrl(selectedItem.url);
         }
         // Clear both session and persistent state on successful selection activation
         clearSessionSearchState();
