@@ -552,6 +552,21 @@ document.addEventListener("DOMContentLoaded", () => {
 	// --- Tab Management & UI Rendering ---
 
 	/**
+	 * Highlights the currently selected tab item in the list.
+	 */
+	const highlightSelectedItem = () => {
+		const items = tabList.querySelectorAll("li");
+		items.forEach((item, index) => {
+			if (index === selectedIndex) {
+				item.classList.add("selected");
+				item.scrollIntoView({ block: "nearest", behavior: "auto" });
+			} else {
+				item.classList.remove("selected");
+			}
+		});
+	};
+
+	/**
 	 * Fetches all current tabs and updates the display.
 	 * Prioritizes restoring session state if returning to tabSearch.
 	 * If not restoring session state, checks for persistent short-term memory.
@@ -630,18 +645,24 @@ document.addEventListener("DOMContentLoaded", () => {
 			const favicon = document.createElement("img");
 			favicon.classList.add("favicon");
 
-			// Handle favicon for internal Chrome/about pages vs. regular URLs
-			if (
+			// Corrected favicon logic:
+			// If a favIconUrl is provided by Chrome, use it.
+			// If not, and it's an internal Chrome/about page, use your extension's default icon.
+			// Otherwise (for external URLs without a favIconUrl), use the standard chrome://favicon/ approach.
+			if (tab.favIconUrl) {
+				favicon.src = tab.favIconUrl;
+			} else if (
 				tab.url &&
 				(tab.url.startsWith("chrome://") || tab.url.startsWith("about:"))
 			) {
-				// Use a generic Chrome icon for internal pages if favIconUrl is missing
-				favicon.src =
-					tab.favIconUrl || "chrome://branding/product/2x/logo_chrome_96dp.png";
+				// Use an icon from your extension's own files for internal Chrome/about pages
+				// Ensure that 'img/SGN256.png' exists in your extension's 'img' directory.
+				favicon.src = chrome.runtime.getURL("img/SGN256.png");
 			} else {
-				// For regular web pages, use favIconUrl or fallback to chrome://favicon/
-				favicon.src = tab.favIconUrl || "chrome://favicon/" + tab.url;
+				// Fallback for external URLs that don't provide a favIconUrl
+				favicon.src = "chrome://favicon/" + tab.url;
 			}
+
 			favicon.alt = "favicon";
 			listItem.appendChild(favicon);
 
@@ -665,21 +686,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (selectedIndex !== -1) {
 			highlightSelectedItem();
 		}
-	};
-
-	/**
-	 * Highlights the currently selected tab item in the list.
-	 */
-	const highlightSelectedItem = () => {
-		const items = tabList.querySelectorAll("li");
-		items.forEach((item, index) => {
-			if (index === selectedIndex) {
-				item.classList.add("selected");
-				item.scrollIntoView({ block: "nearest", behavior: "auto" });
-			} else {
-				item.classList.remove("selected");
-			}
-		});
 	};
 
 	/**
