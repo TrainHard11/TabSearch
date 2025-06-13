@@ -189,5 +189,8 @@ window.initMarksFeature = async (defaultUrl = '', defaultTitle = '') => {
     // Initial load of bookmarks when the initMarksFeature function is called
     await loadBookmarks();
 
+    // Expose the bookmarks array for other scripts (e.g., popup.js)
+    window.getAllBookmarks = () => bookmarks;
+
     console.log("Marks.js initialization complete!");
 };
