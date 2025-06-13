@@ -1,37 +1,240 @@
-/* Basic styling for the marks section */
+/* Styling for the marks section, inspired by popup.css theme */
 .marks-container {
   display: flex;
   flex-direction: column;
-  padding: 10px;
-  gap: 10px;
-  color: var(--text-color); /* Assuming you have this defined in popup.css */
-  background-color: var(
-    --background-color
-  ); /* Assuming you have this defined */
+  padding: 15px;
+  gap: 15px;
+  background-color: #21252b; /* Matches tabList background */
+  border-radius: 8px;
+  color: #e0e0e0; /* Matches main text color */
+  border: 1px solid #333; /* Matches tabList border */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Matches tabList shadow */
+  flex-grow: 1; /* Allow it to take available space */
+  overflow-y: hidden; /* Default: no scrollbar */
+}
+
+.marks-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .marks-container h2 {
-  color: var(--accent-color); /* Example accent color */
+  color: #61afef; /* Matches accent color from popup.css */
   margin-top: 0;
   margin-bottom: 10px;
+  font-size: 1.8em;
+  text-align: center;
+  border-bottom: 1px solid #444; /* Matches settings header border */
+  padding-bottom: 10px;
 }
 
-.marks-container p {
-  margin-bottom: 5px;
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
-/* Style for the list of marksed items, if you add one later */
+.input-label {
+  font-weight: 600;
+  color: #a0a0a0; /* Lighter text for labels */
+  font-size: 0.9em;
+}
+
+.marks-input {
+  padding: 10px 12px;
+  border: 1px solid #444; /* Matches searchInput border */
+  border-radius: 6px;
+  background-color: #3b4048; /* Matches searchInput background */
+  color: #e0e0e0;
+  font-size: 1em;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.marks-input::placeholder {
+  color: #a0a0a0;
+}
+
+.marks-input:focus {
+  border-color: #61afef;
+  box-shadow: 0 0 0 2px rgba(97, 175, 239, 0.3); /* Blue glow */
+}
+
+.marks-input.input-error {
+  border-color: #f44336; /* Red border for error */
+  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.3);
+}
+
+.marks-button {
+  padding: 12px 20px;
+  background-color: #98c379; /* A green-like accent for buttons */
+  color: #282c34; /* Dark text on green button */
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: 700;
+  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.marks-button:hover {
+  background-color: #82b36a; /* Slightly darker green on hover */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.marks-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.bookmarks-list-title {
+  color: #61afef;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 1.4em;
+  text-align: center;
+  border-top: 1px dashed #555; /* Matches custom tab section border */
+  padding-top: 15px;
+}
+
 .marks-list {
-  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   padding: 0;
   margin: 0;
+  max-height: 300px; /* Limit height for scrollability */
+  overflow-y: auto; /* Enable scroll for bookmarks list */
+  padding-right: 5px; /* Space for scrollbar */
 }
 
-.marks-list li {
-  padding: 5px 0;
-  border-bottom: 1px solid var(--border-color); /* Example border */
+/* Scrollbar styling for .marks-list */
+.marks-list::-webkit-scrollbar {
+  width: 8px;
 }
 
-.marks-list li:last-child {
-  border-bottom: none;
+.marks-list::-webkit-scrollbar-track {
+  background: #2c313a;
+  border-radius: 4px;
+}
+
+.marks-list::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+.marks-list::-webkit-scrollbar-thumb:hover {
+  background: #61afef;
+}
+
+
+.no-marks-message {
+  text-align: center;
+  color: #8a8a8a; /* Matches tab-url color for consistency */
+  font-style: italic;
+  padding: 20px 0;
+}
+
+.mark-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #2c313a; /* Slightly lighter than main background */
+  padding: 10px 15px;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.1s ease, background-color 0.2s ease;
+}
+
+.mark-item:hover {
+  transform: translateY(-2px);
+  background-color: #3a4049; /* Matches tabList li:hover */
+}
+
+.mark-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  margin-right: 10px;
+  overflow: hidden;
+}
+
+.mark-name {
+  font-weight: 600;
+  color: #e0e0e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mark-url {
+  font-size: 0.85em;
+  color: #8a8a8a;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mark-url:hover {
+  text-decoration: underline;
+  color: #61afef; /* Accent color on hover */
+}
+
+.remove-mark-button {
+  background-color: #e06c75; /* A subtle red */
+  color: #282c34;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  flex-shrink: 0;
+}
+
+.remove-mark-button:hover {
+  background-color: #be504c; /* Darker red on hover */
+  transform: scale(1.1);
+}
+
+.remove-mark-button:active {
+  transform: scale(1);
+}
+
+.settings-hint {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.9em;
+  color: #888;
+}
+
+/* Responsive adjustments */
+@media (max-width: 350px) {
+  .marks-container {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .marks-input,
+  .marks-button {
+    padding: 10px;
+    font-size: 0.95em;
+  }
+
+  .mark-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 8px 10px;
+  }
 }

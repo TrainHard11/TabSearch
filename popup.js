@@ -520,8 +520,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	};
 
 	/**
-	 * Loads Marks content dynamically from Marks/marks.html.
-	 * This is new for the Marks feature.
+	 * Loads Marks content dynamically from Marks/marks.html and initializes its script.
 	 */
 	const loadMarksContent = async () => {
 		if (!marksContentLoaded) {
@@ -533,11 +532,27 @@ document.addEventListener("DOMContentLoaded", () => {
 					const html = await response.text();
 					const parser = new DOMParser();
 					const doc = parser.parseFromString(html, "text/html");
-					// Assuming the main content is within a div with class 'marks-content' or similar
 					const marksHtmlContent =
 						doc.querySelector(".marks-content").innerHTML;
 					marksSection.innerHTML = marksHtmlContent;
 					marksContentLoaded = true;
+
+					// Get the current active tab's URL and title to set as defaults
+					// Ensure 'tabs' permission is in manifest.json for this to work.
+					const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                    const currentTabUrl = activeTab ? activeTab.url : '';
+                    const currentTabTitle = activeTab ? activeTab.title : '';
+
+                    console.log("popup.js: Calling initMarksFeature with URL:", currentTabUrl, "and Title:", currentTabTitle);
+
+                    // Call the global initialization function from marks.js
+                    // This function should be defined on the window object by marks.js
+                    if (typeof window.initMarksFeature === 'function') {
+                        await window.initMarksFeature(currentTabUrl, currentTabTitle); // Pass both URL and Title
+                    } else {
+                        console.error("window.initMarksFeature is not defined. Ensure Marks/marks.js is loaded and defines window.initMarksFeature globally.");
+                    }
+
 				} else {
 					console.error(
 						"Failed to load Marks/marks.html:",

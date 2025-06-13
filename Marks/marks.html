@@ -1,14 +1,34 @@
 <div class="marks-content">
-  <h2>Marks Feature</h2>
-  <p>
-    This is the Marks view. Content and functionality for Marks will be
-    implemented here.
-  </p>
-  <p>You can define quick actions or saved items in this section.</p>
-  <ul class="marks-list">
-    <li>Marksed Item 1</li>
-    <li>Marksed Item 2</li>
-    <li>Marksed Item 3</li>
-  </ul>
+  <h2>My Bookmarks</h2>
+
+  <div class="input-group">
+    <label for="urlNameInput" class="input-label">Bookmark Name:</label>
+    <input
+      type="text"
+      id="urlNameInput"
+      placeholder="e.g., Google Search"
+      class="marks-input"
+      aria-label="Bookmark Name"
+    />
+  </div>
+
+  <div class="input-group">
+    <label for="urlInput" class="input-label">URL:</label>
+    <input
+      type="url"
+      id="urlInput"
+      placeholder="e.g., https://www.google.com"
+      class="marks-input"
+      aria-label="URL"
+    />
+  </div>
+
+  <button id="addMarkButton" class="marks-button">Add Bookmark</button>
+
+  <h3 class="bookmarks-list-title">Saved Bookmarks</h3>
+  <div id="marksList" class="marks-list">
+    <!-- Bookmarks will be dynamically added here by JavaScript -->
+    <p class="no-marks-message">No bookmarks added yet.</p>
+  </div>
 </div>
-<p class="settings-hint">Press F3 again to hide Marks.</p>
+<p class="settings-hint">Press F3 again to hide Bookmarks.</p>
