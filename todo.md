@@ -22,6 +22,4 @@ in the TabSaerch section , implement c-1 c-2 keymaps to move the tabs from there
 2.  default permanent links dont work unless u set a new link then the old ones work as well
 3. On some browsers the search navigator dont work
 
-Implement the history 20s part as a user command toggle option
 
-Also , if the search result is only one tab then its evident we dont need this feature.
