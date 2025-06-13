@@ -1,5 +1,5 @@
-/* Basic styling for the harpoon section */
-.harpoon-container {
+/* Basic styling for the marks section */
+.marks-container {
   display: flex;
   flex-direction: column;
   padding: 10px;
@@ -10,28 +10,28 @@
   ); /* Assuming you have this defined */
 }
 
-.harpoon-container h2 {
+.marks-container h2 {
   color: var(--accent-color); /* Example accent color */
   margin-top: 0;
   margin-bottom: 10px;
 }
 
-.harpoon-container p {
+.marks-container p {
   margin-bottom: 5px;
 }
 
-/* Style for the list of harpooned items, if you add one later */
-.harpoon-list {
+/* Style for the list of marksed items, if you add one later */
+.marks-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.harpoon-list li {
+.marks-list li {
   padding: 5px 0;
   border-bottom: 1px solid var(--border-color); /* Example border */
 }
 
-.harpoon-list li:last-child {
+.marks-list li:last-child {
   border-bottom: none;
 }

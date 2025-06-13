@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	const tabList = document.getElementById("tabList");
 	const tabCounter = document.getElementById("tabCounter");
 	const helpContentContainer = document.getElementById("helpContentContainer");
-	const harpoonSection = document.getElementById("harpoonSection"); // Harpoon Section reference
+	const marksSection = document.getElementById("marksSection"); // Marks Section reference
 	const infoText = document.querySelector(".info-text");
 	const searchArea = document.querySelector(".search-area");
 	const settingsContentContainer = document.getElementById(
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	let currentQuery = "";
 	let helpContentLoaded = false;
 	let settingsContentLoaded = false;
-	let harpoonContentLoaded = false; // New state variable for Harpoon content
+	let marksContentLoaded = false; // New state variable for Marks content
 
 	// NEW: Flag to indicate if the current searchInput value came from a persistent query
 	let isPersistentQueryActive = false;
@@ -273,7 +273,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				content: settingsContentContainer,
 			},
 			help: { container: helpContentContainer, content: helpContentContainer },
-			harpoon: { container: harpoonSection, content: harpoonSection }, // Harpoon view element
+			marks: { container: marksSection, content: marksSection }, // Marks view element
 		};
 
 		const hideAllViews = () => {
@@ -520,34 +520,34 @@ document.addEventListener("DOMContentLoaded", () => {
 	};
 
 	/**
-	 * Loads Harpoon content dynamically from Harpoon/harpoon.html.
-	 * This is new for the Harpoon feature.
+	 * Loads Marks content dynamically from Marks/marks.html.
+	 * This is new for the Marks feature.
 	 */
-	const loadHarpoonContent = async () => {
-		if (!harpoonContentLoaded) {
+	const loadMarksContent = async () => {
+		if (!marksContentLoaded) {
 			try {
 				const response = await fetch(
-					chrome.runtime.getURL("Harpoon/harpoon.html"),
+					chrome.runtime.getURL("Marks/marks.html"),
 				);
 				if (response.ok) {
 					const html = await response.text();
 					const parser = new DOMParser();
 					const doc = parser.parseFromString(html, "text/html");
-					// Assuming the main content is within a div with class 'harpoon-content' or similar
-					const harpoonHtmlContent =
-						doc.querySelector(".harpoon-content").innerHTML;
-					harpoonSection.innerHTML = harpoonHtmlContent;
-					harpoonContentLoaded = true;
+					// Assuming the main content is within a div with class 'marks-content' or similar
+					const marksHtmlContent =
+						doc.querySelector(".marks-content").innerHTML;
+					marksSection.innerHTML = marksHtmlContent;
+					marksContentLoaded = true;
 				} else {
 					console.error(
-						"Failed to load Harpoon/harpoon.html:",
+						"Failed to load Marks/marks.html:",
 						response.statusText,
 					);
-					harpoonSection.innerHTML = "<p>Error loading Harpoon content.</p>";
+					marksSection.innerHTML = "<p>Error loading Marks content.</p>";
 				}
 			} catch (error) {
-				console.error("Error fetching Harpoon/harpoon.html:", error);
-				harpoonSection.innerHTML = "<p>Error fetching Harpoon content.</p>";
+				console.error("Error fetching Marks/marks.html:", error);
+				marksSection.innerHTML = "<p>Error fetching Marks content.</p>";
 			}
 		}
 	};
@@ -772,7 +772,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			await ViewManager.toggle("help", loadHelpContent);
 		} else if (e.key === "F3") {
 			e.preventDefault();
-			await ViewManager.toggle("harpoon", loadHarpoonContent);
+			await ViewManager.toggle("marks", loadMarksContent);
 		} else if (e.key === "F4") {
 			e.preventDefault();
 			const shortcutsUrl =

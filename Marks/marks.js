@@ -1,8 +1,8 @@
-// This file will contain the main logic for the Harpoon feature.
+// This file will contain the main logic for the Marks feature.
 // It will be loaded and executed when popup.html is loaded.
 
 document.addEventListener("DOMContentLoaded", () => {
-  const harpoonContent = document.querySelector(".harpoon-content");
+  const marksContent = document.querySelector(".marks-content");
 
-  console.log("Harpoon.js script is active!");
+  console.log("Marks.js script is active!");
 });
