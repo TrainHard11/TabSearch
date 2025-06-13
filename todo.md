@@ -23,3 +23,5 @@ in the TabSaerch section , implement c-1 c-2 keymaps to move the tabs from there
 3. On some browsers the search navigator dont work
 
 Implement the history 20s part as a user command toggle option
+
+Also , if the search result is only one tab then its evident we dont need this feature.
