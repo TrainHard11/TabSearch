@@ -6,10 +6,10 @@
     <title>Fuzzy Tab Switcher</title>
     <link rel="stylesheet" href="popup.css" />
     <link rel="stylesheet" href="style/help.css" />
+    <link rel="stylesheet" href="Harpoon/harpoon.css" />
   </head>
   <body>
     <div class="container">
-      <!-- Main Tab Search View -->
       <div class="search-area">
         <input
           type="text"
@@ -25,24 +25,15 @@
         Press F1 for Settings, F2 for Help, F3 for Harpoon, F4 for Keymaps.
       </div>
 
-      <!-- Settings Content Section View -->
-      <div id="settingsContentContainer" class="options-container hidden">
-        <!-- Content will be loaded here by popup.js from settings.html -->
-      </div>
+      <div id="settingsContentContainer" class="options-container hidden"></div>
 
-      <!-- Help Content Section View -->
       <div id="helpContentContainer" class="help-container hidden">
-        <!-- Content will be loaded here by popup.js from help.html -->
         <p class="settings-hint">Press F2 again to hide help.</p>
       </div>
 
-      <!-- Harpoon Section View -->
-      <div id="harpoonSection" class="harpoon-container hidden">
-        <!-- Harpoon content will go here -->
-        <p class="settings-hint">Press F3 again to hide Harpoon.</p>
-      </div>
+      <div id="harpoonSection" class="harpoon-container hidden"></div>
     </div>
     <script src="popup.js"></script>
-    <script src="harpoon.js"></script>
+    <script src="Harpoon/harpoon.js"></script>
   </body>
 </html>

@@ -1,42 +1,37 @@
-/* Styles for the harpoon section */
+/* Basic styling for the harpoon section */
 .harpoon-container {
-    background-color: #282c34;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    color: #abb2bf;
-    overflow-y: auto;
-    flex-grow: 1;
-    max-height: 100%;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    text-align: center; /* Center content */
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  gap: 10px;
+  color: var(--text-color); /* Assuming you have this defined in popup.css */
+  background-color: var(
+    --background-color
+  ); /* Assuming you have this defined */
 }
 
 .harpoon-container h2 {
-    color: #61afef;
-    margin-top: 0;
-    margin-bottom: 15px;
-    border-bottom: 1px solid #4b5263;
-    padding-bottom: 10px;
+  color: var(--accent-color); /* Example accent color */
+  margin-top: 0;
+  margin-bottom: 10px;
 }
 
 .harpoon-container p {
-    margin-bottom: 10px;
-    line-height: 1.5;
-    font-size: 0.95em;
+  margin-bottom: 5px;
 }
 
-.harpoon-container .harpoon-info {
-    font-size: 1.1em;
-    font-weight: bold;
-    color: #98c379;
-    margin-top: 20px;
+/* Style for the list of harpooned items, if you add one later */
+.harpoon-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.harpoon-container .settings-hint {
-    margin-top: auto; /* Push to the bottom */
-    padding-top: 10px;
-    border-top: 1px solid #4b5263;
+.harpoon-list li {
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-color); /* Example border */
+}
+
+.harpoon-list li:last-child {
+  border-bottom: none;
 }

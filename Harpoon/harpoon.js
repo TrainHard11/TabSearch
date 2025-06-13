@@ -1,19 +1,24 @@
-// This file is currently minimal as per your request for a simple toggle window.
-// Its content will be dynamically loaded into popup.html's #harpoonSection.
+// This file will contain the main logic for the Harpoon feature.
+// It will be loaded and executed when popup.html is loaded.
 
-// Load the content of harpoon.html into the #harpoonSection div.
-// This ensures that the HTML structure and content are present when the harpoon section is shown.
 document.addEventListener("DOMContentLoaded", () => {
-    const harpoonSection = document.getElementById("harpoonSection");
+  // You can add Harpoon-specific DOM element references here
+  const harpoonContent = document.querySelector(".harpoon-content");
 
-    // Fetch harpoon.html content
-    fetch(chrome.runtime.getURL('harpoon.html'))
-        .then(response => response.text())
-        .then(html => {
-            harpoonSection.innerHTML = html;
-        })
-        .catch(err => console.error('Failed to load harpoon.html:', err));
+  // Example: Log to console to confirm this script is active
+  console.log("Harpoon.js script is active!");
+
+  // You can define functions specific to Harpoon here,
+  // for example, saving/loading harpooned items,
+  // handling clicks on harpooned items, etc.
+
+  // Example function:
+  function initializeHarpoon() {
+    // Logic to load previously harpooned items, if any
+    // Logic to render them in the harpoon-content div
+    // Logic to attach event listeners to harpooned items
+  }
+
+  // Call initialization function
+  initializeHarpoon();
 });
-
-// Future Harpoon specific JavaScript logic will go here.
-// For now, it just loads its HTML content.
