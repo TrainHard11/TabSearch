@@ -796,7 +796,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
           favicon.src = chrome.runtime.getURL("img/SGN256.png");
         } else {
-          favicon.src = "chrome://favicon/" + item.url;
+          favicon.src = `chrome://favicon/${item.url}`;
         }
 
         titleSpan.innerHTML = highlightText(item.title || "", currentQuery);
@@ -809,16 +809,10 @@ document.addEventListener("DOMContentLoaded", () => {
         listItem.dataset.url = item.url;
         listItem.dataset.type = "mark"; // Keep this data-attribute for potential future CSS targeting
 
-        // Favicon logic for bookmarks: try chrome://favicon first, then fallback to a generic
-        // Ensure chrome.tabs permission is in manifest.json for chrome://favicon/ to work
-        // For consistent look with tabs, we'll try to get the favicon from the bookmark's URL.
-        favicon.src = "chrome://favicon/" + item.url;
-
-        // Fallback for cases where chrome://favicon might not work or for non-web URLs
-        favicon.onerror = function() {
-          this.onerror = null; // IMPORTANT: Prevent infinite loop
-          this.src = chrome.runtime.getURL("img/bookmark_icon.png"); // Set the fallback image
-        };
+        // --- MODIFICATION: Set bookmark icon ---
+        favicon.src = chrome.runtime.getURL("img/bookmark.png");
+        // No onerror for bookmarks, as we want a consistent, custom icon.
+        // --- END MODIFICATION ---
 
         titleSpan.innerHTML = highlightText(item.name || "", currentQuery); // Use 'name' for bookmarks
         urlSpan.innerHTML = highlightText(item.url || "", currentQuery);
