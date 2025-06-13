@@ -133,10 +133,10 @@ window.initMarksFeature = async (defaultUrl = '', defaultTitle = '') => {
             return;
         }
 
-        // Simple URL validation: prepend 'https://' if no protocol specified
-        if (!/^https?:\/\//i.test(url)) {
-            url = `https://${url}`;
-        }
+        // // Simple URL validation: prepend 'https://' if no protocol specified
+        // if (!/^https?:\/\//i.test(url)) {
+        //     url = `https://${url}`;
+        // }
 
         bookmarks.push({ name, url });
         await saveBookmarks();
