@@ -38,6 +38,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	let settingsContentLoaded = false;
 	let harpoonContentLoaded = false; // New state variable for Harpoon content
 
+	// NEW: Flag to indicate if the current searchInput value came from a persistent query
+	let isPersistentQueryActive = false;
+
 	// Default settings
 	const defaultSettings = {
 		webNavigatorEnabled: true,
@@ -587,6 +590,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				loadedQuery = sessionState.query;
 				loadedTabs = sessionState.tabs;
 				loadedIndex = sessionState.index;
+				isPersistentQueryActive = false; // Session state doesn't count as "persistent" for this specific behavior
 			} else {
 				// 2. If not restoring session state, check for persistent short-term memory
 				loadedQuery = loadPersistentLastQuery();
@@ -594,11 +598,13 @@ document.addEventListener("DOMContentLoaded", () => {
 					// If a query was loaded, re-filter tabs based on current `allTabs`
 					loadedTabs = fuzzySearch(loadedQuery, allTabs);
 					loadedIndex = 0; // Default to first item if restoring via persistent memory
+					isPersistentQueryActive = true; // NEW: Set the flag here
 				} else {
 					// 3. No state to restore, start fresh
 					loadedQuery = "";
 					loadedTabs = fuzzySearch(loadedQuery, allTabs);
 					loadedIndex = preferredIndex;
+					isPersistentQueryActive = false; // NEW: Ensure flag is false
 				}
 			}
 
@@ -814,6 +820,35 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
+		// *** NEW LOGIC FOR HANDLING FIRST KEYSTROKE AFTER PERSISTENT QUERY LOAD ***
+		if (isPersistentQueryActive) {
+			// Check for printable characters (most common scenario for new input)
+			// e.key.length === 1 covers letters, numbers, symbols but excludes 'Enter', 'ArrowUp', 'Shift', etc.
+			// Exclude modifier keys (Ctrl, Alt, Meta) from this logic.
+			if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+				e.preventDefault(); // Prevent default character input
+				searchInput.value = e.key; // Set input to JUST the new character
+				currentQuery = e.key; // Update internal state
+				isPersistentQueryActive = false; // Reset the flag, new search has started
+				clearPersistentLastQuery(); // Clear from local storage
+				filteredTabs = fuzzySearch(currentQuery, allTabs);
+				renderTabs(filteredTabs);
+				return; // Stop further keydown processing for this event
+			}
+			// Handle Backspace/Delete explicitly to clear the whole field
+			else if (e.key === "Backspace" || e.key === "Delete") {
+				e.preventDefault(); // Prevent default action (single char deletion)
+				searchInput.value = ""; // Clear the entire input
+				currentQuery = ""; // Clear internal state
+				isPersistentQueryActive = false; // Reset the flag
+				clearPersistentLastQuery(); // Clear from local storage
+				filteredTabs = fuzzySearch(currentQuery, allTabs);
+				renderTabs(filteredTabs);
+				return; // Stop further keydown processing
+			}
+		}
+		// *** END NEW LOGIC ***
+
 		const items = tabList.querySelectorAll("li");
 
 		if (e.key === "ArrowDown" || (e.altKey && e.key === "j")) {
@@ -862,6 +897,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Handle search input for the main tabSearch view
 	searchInput.addEventListener("input", () => {
 		if (ViewManager.getActive() === "tabSearch") {
+			// If isPersistentQueryActive was true, the keydown handler already dealt with it
+			// and set the flag to false. So this won't fire unless it's a subsequent input.
 			currentQuery = searchInput.value.trim();
 			filteredTabs = fuzzySearch(currentQuery, allTabs);
 			renderTabs(filteredTabs);
