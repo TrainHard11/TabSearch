@@ -8,11 +8,11 @@
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "img/SGN24.png"
+      "16": "img/SGN256.png"
     }
   },
   "icons": {
-    "16": "img/SGN24.png"
+    "16": "img/SGN256.png"
   },
   "commands": {
     "_execute_action": {

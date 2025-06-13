@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   // --- DOM Element References ---
+  console.log("I cant see this message??");
   const searchInput = document.getElementById("searchInput");
   const tabList = document.getElementById("tabList");
   const tabCounter = document.getElementById("tabCounter");
@@ -9,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchArea = document.querySelector(".search-area");
   const settingsContentContainer = document.getElementById(
     "settingsContentContainer",
-  ); // New reference for settings container
+  );
 
   // Variables for settings elements, will be populated after settings.html is loaded
   let enableWebNavigatorCheckbox;
@@ -29,9 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const defaultSettings = {
     webNavigatorEnabled: true,
     searchOnNoResults: true,
-    customTab1Url: "",
+    customTab1Url: "https://web.whatsapp.com/",
     customTab1ExactMatch: false,
-    customTab2Url: "",
+    customTab2Url: "https://gemini.google.com/app",
     customTab2ExactMatch: false,
     customTab3Url: "",
     customTab3ExactMatch: false,
@@ -55,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
       settings: {
         container: settingsContentContainer,
         content: settingsContentContainer,
-      }, // Updated container
+      },
       help: { container: helpContentContainer, content: helpContentContainer },
       harpoon: { container: harpoonSection, content: harpoonSection },
     };
@@ -156,6 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadSettings = async () => {
     const storedSettings = await chrome.storage.local.get(defaultSettings);
     currentSettings = { ...defaultSettings, ...storedSettings };
+    console.log("currentSettings : ", currentSettings);
 
     // Ensure elements exist before trying to set their values
     if (enableWebNavigatorCheckbox) {
@@ -459,17 +461,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Event Listeners ---
 
-  // Global keyboard shortcuts for view switching
+  // Global keyboard shortcuts for View switching
   document.addEventListener("keydown", async (e) => {
     if (e.key === "F1") {
       e.preventDefault();
-      await ViewManager.toggle("settings", loadSettingsContent); // Pass loadSettingsContent
+      await ViewManager.toggle("settings", loadSettingsContent);
     } else if (e.key === "F2") {
       e.preventDefault();
       await ViewManager.toggle("help", loadHelpContent);
     } else if (e.key === "F3") {
       e.preventDefault();
-      // Assuming harpoonSection will load its content separately if needed
       await ViewManager.toggle("harpoon");
     } else if (e.key === "F4") {
       e.preventDefault();
@@ -538,6 +539,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedTab = filteredTabs[selectedIndex];
         switchTab(selectedTab.id, selectedTab.windowId);
       } else if (currentQuery.length > 0 && filteredTabs.length === 0) {
+        console.log(
+          "currentSettings.searchOnNoResults: ",
+          currentSettings.searchOnNoResults,
+        );
         if (currentSettings.searchOnNoResults) {
           const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`;
           chrome.tabs.create({ url: googleSearchUrl }, () => window.close());
@@ -554,7 +559,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Handle search input for the main tab search view
+  // Handle search input for the main tabSearch view
   searchInput.addEventListener("input", () => {
     if (ViewManager.getActive() === "tabSearch") {
       currentQuery = searchInput.value.trim();
