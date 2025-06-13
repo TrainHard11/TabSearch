@@ -134,6 +134,24 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	};
 
+	/**
+	 * Looks for an existing tab with the given URL and switches to it.
+	 * If no such tab is found, it creates a new tab with the URL.
+	 * @param {string} url The URL to open or switch to.
+	 * @param {boolean} [exactMatch=false] Whether to match the URL exactly or partially.
+	 */
+	const focusOrCreateTabByUrl = (url, exactMatch = false) => {
+		const queryOptions = exactMatch ? { url: url } : { url: `${url}*` };
+		chrome.tabs.query(queryOptions, (tabs) => {
+			if (tabs.length > 0) {
+				const existingTab = tabs[0];
+				switchTab(existingTab.id, existingTab.windowId);
+			} else {
+				chrome.tabs.create({ url: url }, () => window.close());
+			}
+		});
+	};
+
 	// --- Session-based Search State (for view switching) ---
 
 	/**
@@ -188,12 +206,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	/**
 	 * Saves the current query and a timestamp to localStorage.
-	 * This is for the 20-second "remember last search" feature.
+	 * This is for the 20-second "remember last search" feature,
+	 * only if there are 2 or more filtered tabs.
 	 */
 	const savePersistentLastQuery = () => {
 		try {
-			localStorage.setItem(LS_LAST_QUERY_PERSISTENT, currentQuery);
-			localStorage.setItem(LS_LAST_QUERY_TIMESTAMP, Date.now().toString());
+			// Only save if there are 2 or more filtered tabs.
+			// This implements the rule: "if the search query resulted in only one tab from beginning it doesn't make sense to keep the history".
+			if (filteredTabs.length > 1) {
+				localStorage.setItem(LS_LAST_QUERY_PERSISTENT, currentQuery);
+				localStorage.setItem(LS_LAST_QUERY_TIMESTAMP, Date.now().toString());
+			} else {
+				clearPersistentLastQuery(); // Clear if condition not met
+			}
 		} catch (error) {
 			console.error("Error saving persistent last query:", error);
 		}
@@ -348,7 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			settingsContentContainer.querySelector("#searchOnNoResults");
 		customTabInputs = [];
 		customTabExactMatchCheckboxes = [];
-		for (let i = 1; i <= 7; i++) {
+		for (let i = 1; i < 7; i++) {
 			customTabInputs.push(
 				settingsContentContainer.querySelector(`#customTab${i}Url`),
 			);
@@ -602,12 +627,22 @@ document.addEventListener("DOMContentLoaded", () => {
 			listItem.dataset.windowId = tab.windowId;
 			listItem.dataset.index = index;
 
-			const faviconSrc =
-				tab.favIconUrl || "chrome://favicon/" + tab.url; // Fallback for favicons
 			const favicon = document.createElement("img");
-			favicon.src = faviconSrc;
-			favicon.alt = "favicon";
 			favicon.classList.add("favicon");
+
+			// Handle favicon for internal Chrome/about pages vs. regular URLs
+			if (
+				tab.url &&
+				(tab.url.startsWith("chrome://") || tab.url.startsWith("about:"))
+			) {
+				// Use a generic Chrome icon for internal pages if favIconUrl is missing
+				favicon.src =
+					tab.favIconUrl || "chrome://branding/product/2x/logo_chrome_96dp.png";
+			} else {
+				// For regular web pages, use favIconUrl or fallback to chrome://favicon/
+				favicon.src = tab.favIconUrl || "chrome://favicon/" + tab.url;
+			}
+			favicon.alt = "favicon";
 			listItem.appendChild(favicon);
 
 			const titleSpan = document.createElement("span");
@@ -701,7 +736,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// Global keyboard shortcuts for View switching
 	document.addEventListener("keydown", async (e) => {
-		if (e.key === "F1") {
+		// Prioritize specific Alt key combinations
+		if (e.altKey && e.key === "F1") {
+			e.preventDefault();
+			const extensionsUrl = "chrome://extensions/";
+			focusOrCreateTabByUrl(extensionsUrl);
+			clearPersistentLastQuery(); // Clear memory on specific navigation actions
+		} else if (e.altKey && e.key === "F2") {
+			e.preventDefault();
+			const shortcutsUrl =
+				typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL
+					? "chrome://extensions/shortcuts" // Chromium
+					: "about:addons"; // Firefox
+			focusOrCreateTabByUrl(shortcutsUrl);
+			clearPersistentLastQuery(); // Clear memory on specific navigation actions
+		}
+		// Then handle regular F-keys
+		else if (e.key === "F1") {
 			e.preventDefault();
 			await ViewManager.toggle("settings", loadSettingsContent);
 		} else if (e.key === "F2") {
@@ -709,27 +760,15 @@ document.addEventListener("DOMContentLoaded", () => {
 			await ViewManager.toggle("help", loadHelpContent);
 		} else if (e.key === "F3") {
 			e.preventDefault();
-			// Call loadHarpoonContent when F3 is pressed
 			await ViewManager.toggle("harpoon", loadHarpoonContent);
 		} else if (e.key === "F4") {
 			e.preventDefault();
 			const shortcutsUrl =
 				typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL
 					? "chrome://extensions/shortcuts" // Chromium
-					: "about:addons"; // Firefox, though Firefox might not have a direct equivalent or needs about:addons
-
-			// Check for an existing tab with the shortcuts URL
-			chrome.tabs.query({ url: shortcutsUrl }, (tabs) => {
-				if (tabs.length > 0) {
-					// If a tab exists, switch to it
-					const existingTab = tabs[0];
-					switchTab(existingTab.id, existingTab.windowId);
-				} else {
-					// If no tab exists, create a new one
-					chrome.tabs.create({ url: shortcutsUrl }, () => window.close());
-				}
-				clearPersistentLastQuery(); // Clear memory if user goes to shortcuts
-			});
+					: "about:addons"; // Firefox
+			focusOrCreateTabByUrl(shortcutsUrl);
+			clearPersistentLastQuery(); // Clear memory if user goes to shortcuts
 		} else if (e.key >= "1" && e.key <= "4" && e.altKey) {
 			e.preventDefault();
 			const index = parseInt(e.key) - 1;
@@ -820,7 +859,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			currentQuery = searchInput.value.trim();
 			filteredTabs = fuzzySearch(currentQuery, allTabs);
 			renderTabs(filteredTabs);
-			// No need to save to persistent here, only on closing the popup
 		}
 	});
 

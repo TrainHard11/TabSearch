@@ -1,39 +1,41 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fuzzy Tab Switcher</title>
-    <link rel="stylesheet" href="popup.css" />
-    <link rel="stylesheet" href="style/help.css" />
-    <link rel="stylesheet" href="Harpoon/harpoon.css" />
-  </head>
-  <body>
-    <div class="container">
-      <div class="search-area">
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="Search tabs..."
-          autofocus
-        />
-        <span id="tabCounter" class="tab-counter"></span>
-      </div>
-      <ul id="tabList"></ul>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Fuzzy Tab Switcher</title>
+		<link rel="stylesheet" href="popup.css" />
+		<link rel="stylesheet" href="style/help.css" />
+		<link rel="stylesheet" href="Harpoon/harpoon.css" />
+	</head>
+	<body>
+		<div class="container">
+			<div class="search-area">
+				<input
+					type="text"
+					id="searchInput"
+					placeholder="Search tabs..."
+					autofocus
+				/>
+				<span id="tabCounter" class="tab-counter"></span>
+			</div>
+			<ul id="tabList"></ul>
 
-      <div class="info-text">
-        Press F1 for Settings, F2 for Help, F3 for Harpoon, F4 for Keymaps.
-      </div>
+			<div class="info-text">
+				Press F1 for Settings, F2 for Help, F3 for Harpoon, F4 for Keymaps.
+				<br />
+				**Alt+F1**: Open Chrome Extensions page | **Alt+F2**: Open Keyboard Shortcuts page
+			</div>
 
-      <div id="settingsContentContainer" class="options-container hidden"></div>
+			<div id="settingsContentContainer" class="options-container hidden"></div>
 
-      <div id="helpContentContainer" class="help-container hidden">
-        <p class="settings-hint">Press F2 again to hide help.</p>
-      </div>
+			<div id="helpContentContainer" class="help-container hidden">
+				<p class="settings-hint">Press F2 again to hide help.</p>
+			</div>
 
-      <div id="harpoonSection" class="harpoon-container hidden"></div>
-    </div>
-    <script src="popup.js"></script>
-    <script src="Harpoon/harpoon.js"></script>
-  </body>
+			<div id="harpoonSection" class="harpoon-container hidden"></div>
+		</div>
+		<script src="popup.js"></script>
+		<script src="Harpoon/harpoon.js"></script>
+	</body>
 </html>
