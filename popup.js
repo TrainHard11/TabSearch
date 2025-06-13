@@ -1,8 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
   // --- Constants and DOM Element References ---
   const LS_PREFIX = "fuzzyTabSearch_"; // Local storage prefix for all keys
-  const LS_LAST_QUERY = `${LS_PREFIX}lastQuery`;
-  const LS_LAST_VIEW = `${LS_PREFIX}lastView`;
+  const LS_LAST_QUERY_PERSISTENT = `${LS_PREFIX}lastQueryPersistent`; // For short-term memory
+  const LS_LAST_QUERY_TIMESTAMP = `${LS_PREFIX}lastQueryTimestamp`; // For short-term memory
+
+  // Constants for view state management (using sessionStorage for current session)
+  const SS_LAST_QUERY_SESSION = `${LS_PREFIX}lastQuerySession`;
+  const SS_FILTERED_TABS_SESSION = `${LS_PREFIX}filteredTabsSession`;
+  const SS_SELECTED_INDEX_SESSION = `${LS_PREFIX}selectedIndexSession`;
+  const SS_LAST_VIEW = `${LS_PREFIX}lastView`;
+
+  const SEARCH_MEMORY_DURATION_MS = 20 * 1000; // 20 seconds
 
   const searchInput = document.getElementById("searchInput");
   const tabList = document.getElementById("tabList");
@@ -125,19 +133,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
+  // --- Session-based Search State (for view switching) ---
+
   /**
    * Stores the current search state (query, filtered tabs, selected index) in sessionStorage.
+   * This is used to preserve state when switching between different views within the same popup session.
    */
-  const saveSearchState = () => {
+  const saveSessionSearchState = () => {
     try {
-      sessionStorage.setItem(LS_LAST_QUERY, currentQuery);
+      sessionStorage.setItem(SS_LAST_QUERY_SESSION, currentQuery);
       sessionStorage.setItem(
-        `${LS_PREFIX}filteredTabs`,
+        SS_FILTERED_TABS_SESSION,
         JSON.stringify(filteredTabs),
       );
-      sessionStorage.setItem(`${LS_PREFIX}selectedIndex`, selectedIndex);
+      sessionStorage.setItem(SS_SELECTED_INDEX_SESSION, selectedIndex);
     } catch (error) {
-      console.error("Error saving search state to sessionStorage:", error);
+      console.error("Error saving session search state:", error);
     }
   };
 
@@ -145,14 +156,12 @@ document.addEventListener("DOMContentLoaded", () => {
    * Loads the search state from sessionStorage.
    * @returns {object|null} The loaded state or null if not found/error.
    */
-  const loadSearchState = () => {
+  const loadSessionSearchState = () => {
     try {
-      const query = sessionStorage.getItem(LS_LAST_QUERY);
-      const tabs = JSON.parse(
-        sessionStorage.getItem(`${LS_PREFIX}filteredTabs`),
-      );
+      const query = sessionStorage.getItem(SS_LAST_QUERY_SESSION);
+      const tabs = JSON.parse(sessionStorage.getItem(SS_FILTERED_TABS_SESSION));
       const index = parseInt(
-        sessionStorage.getItem(`${LS_PREFIX}selectedIndex`),
+        sessionStorage.getItem(SS_SELECTED_INDEX_SESSION),
         10,
       );
 
@@ -160,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return { query, tabs, index };
       }
     } catch (error) {
-      console.error("Error loading search state from sessionStorage:", error);
+      console.error("Error loading session search state:", error);
     }
     return null;
   };
@@ -168,10 +177,60 @@ document.addEventListener("DOMContentLoaded", () => {
   /**
    * Clears the saved search state from sessionStorage.
    */
-  const clearSearchState = () => {
-    sessionStorage.removeItem(LS_LAST_QUERY);
-    sessionStorage.removeItem(`${LS_PREFIX}filteredTabs`);
-    sessionStorage.removeItem(`${LS_PREFIX}selectedIndex`);
+  const clearSessionSearchState = () => {
+    sessionStorage.removeItem(SS_LAST_QUERY_SESSION);
+    sessionStorage.removeItem(SS_FILTERED_TABS_SESSION);
+    sessionStorage.removeItem(SS_SELECTED_INDEX_SESSION);
+  };
+
+  // --- Persistent Short-Term Search Memory (for re-opening popup) ---
+
+  /**
+   * Saves the current query and a timestamp to localStorage.
+   * This is for the 20-second "remember last search" feature.
+   */
+  const savePersistentLastQuery = () => {
+    try {
+      localStorage.setItem(LS_LAST_QUERY_PERSISTENT, currentQuery);
+      localStorage.setItem(LS_LAST_QUERY_TIMESTAMP, Date.now().toString());
+    } catch (error) {
+      console.error("Error saving persistent last query:", error);
+    }
+  };
+
+  /**
+   * Loads the last query from localStorage if it's within the memory duration.
+   * @returns {string} The last query or an empty string if expired or not found.
+   */
+  const loadPersistentLastQuery = () => {
+    try {
+      const lastQuery = localStorage.getItem(LS_LAST_QUERY_PERSISTENT);
+      const timestamp = parseInt(
+        localStorage.getItem(LS_LAST_QUERY_TIMESTAMP),
+        10,
+      );
+
+      if (lastQuery && !isNaN(timestamp)) {
+        const timeElapsed = Date.now() - timestamp;
+        if (timeElapsed <= SEARCH_MEMORY_DURATION_MS) {
+          return lastQuery;
+        } else {
+          // If expired, clear it
+          clearPersistentLastQuery();
+        }
+      }
+    } catch (error) {
+      console.error("Error loading persistent last query:", error);
+    }
+    return "";
+  };
+
+  /**
+   * Clears the persistent last query from localStorage.
+   */
+  const clearPersistentLastQuery = () => {
+    localStorage.removeItem(LS_LAST_QUERY_PERSISTENT);
+    localStorage.removeItem(LS_LAST_QUERY_TIMESTAMP);
   };
 
   // --- View Management ---
@@ -200,20 +259,26 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     };
 
-    const showView = (viewName, restoreSearch = false) => {
+    /**
+     * Shows a specified view, saving current state if switching from tabSearch.
+     * @param {string} viewName The name of the view to show.
+     * @param {boolean} isRestoring If true, indicates a restore operation,
+     * so current state should not be saved.
+     */
+    const showView = (viewName, isRestoring = false) => {
       if (!viewElements[viewName]) {
         console.warn(`Attempted to show unknown view: ${viewName}`);
         return;
       }
 
       // Save the current search state before switching views, unless it's a restore operation
-      if (activeView === "tabSearch" && !restoreSearch) {
-        saveSearchState();
+      if (activeView === "tabSearch" && !isRestoring) {
+        saveSessionSearchState();
       }
 
       hideAllViews();
       activeView = viewName;
-      sessionStorage.setItem(LS_LAST_VIEW, activeView); // Persist active view
+      sessionStorage.setItem(SS_LAST_VIEW, activeView); // Persist active view for session
 
       const { container, content, info } = viewElements[viewName];
 
@@ -236,6 +301,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     };
 
+    /**
+     * Toggles between the current view and the specified view.
+     * @param {string} viewName The name of the view to toggle to.
+     * @param {Function} [loadContentFn=null] Optional function to load view-specific content.
+     */
     const toggleView = async (viewName, loadContentFn = null) => {
       if (activeView === viewName) {
         // If already on this view, go back to tab search and try to restore state
@@ -251,8 +321,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const getActiveView = () => activeView;
 
-    // Initialize with the last active view if available
-    const initialView = sessionStorage.getItem(LS_LAST_VIEW) || "tabSearch";
+    // Initialize with the last active view if available from session storage
+    const initialView = sessionStorage.getItem(SS_LAST_VIEW) || "tabSearch";
     if (initialView !== activeView) {
       activeView = initialView; // Set it initially, but showView will handle actual display
     }
@@ -424,27 +494,45 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /**
    * Fetches all current tabs and updates the display.
-   * Tries to restore the previous search state if available.
+   * Prioritizes restoring session state if returning to tabSearch.
+   * If not restoring session state, checks for persistent short-term memory.
+   * @param {number} [preferredIndex=0] The index to prefer if no state is restored.
    */
   const fetchAndDisplayTabs = (preferredIndex = 0) => {
     chrome.tabs.query({}, (tabs) => {
       allTabs = tabs;
+      let loadedQuery = "";
+      let loadedTabs = [];
+      let loadedIndex = -1;
 
-      // Try to restore previous state if returning to tabSearch
-      const lastActiveView = sessionStorage.getItem(LS_LAST_VIEW);
-      const storedState = loadSearchState();
+      // 1. Try to restore previous session state (for view switching)
+      const lastActiveView = sessionStorage.getItem(SS_LAST_VIEW);
+      const sessionState = loadSessionSearchState();
 
-      if (lastActiveView === "tabSearch" && storedState) {
-        currentQuery = storedState.query;
-        filteredTabs = storedState.tabs;
-        selectedIndex = storedState.index;
-        searchInput.value = currentQuery; // Set input value
+      if (lastActiveView === "tabSearch" && sessionState) {
+        loadedQuery = sessionState.query;
+        loadedTabs = sessionState.tabs;
+        loadedIndex = sessionState.index;
       } else {
-        // If not restoring, reset or use default
-        currentQuery = "";
-        filteredTabs = fuzzySearch(currentQuery, allTabs);
-        selectedIndex = preferredIndex;
+        // 2. If not restoring session state, check for persistent short-term memory
+        loadedQuery = loadPersistentLastQuery();
+        if (loadedQuery) {
+          // If a query was loaded, re-filter tabs based on current `allTabs`
+          loadedTabs = fuzzySearch(loadedQuery, allTabs);
+          loadedIndex = 0; // Default to first item if restoring via persistent memory
+        } else {
+          // 3. No state to restore, start fresh
+          loadedQuery = "";
+          loadedTabs = fuzzySearch(loadedQuery, allTabs);
+          loadedIndex = preferredIndex;
+        }
       }
+
+      currentQuery = loadedQuery;
+      filteredTabs = loadedTabs;
+      selectedIndex = loadedIndex;
+      searchInput.value = currentQuery; // Set input value
+
       renderTabs(filteredTabs, selectedIndex);
 
       if (ViewManager.getActive() === "tabSearch") {
@@ -595,6 +683,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ? "chrome://extensions/shortcuts" // Chromium
           : "about:addons"; // Firefox
       chrome.tabs.create({ url: url }, () => window.close());
+      clearPersistentLastQuery(); // Clear memory if user goes to shortcuts
     } else if (e.key >= "1" && e.key <= "4" && e.altKey) {
       e.preventDefault();
       const index = parseInt(e.key) - 1;
@@ -653,16 +742,22 @@ document.addEventListener("DOMContentLoaded", () => {
       if (selectedIndex !== -1 && filteredTabs[selectedIndex]) {
         const selectedTab = filteredTabs[selectedIndex];
         switchTab(selectedTab.id, selectedTab.windowId);
-        clearSearchState(); // Clear state on successful tab switch
+        // Clear both session and persistent state on successful tab switch
+        clearSessionSearchState();
+        clearPersistentLastQuery();
       } else if (currentQuery.length > 0 && filteredTabs.length === 0) {
         if (currentSettings.searchOnNoResults) {
           const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`;
           chrome.tabs.create({ url: googleSearchUrl }, () => window.close());
-          clearSearchState(); // Clear state after opening search
+          // Clear both session and persistent state after opening search
+          clearSessionSearchState();
+          clearPersistentLastQuery();
         }
       } else {
         window.close(); // Close if no selection and no query
-        clearSearchState(); // Clear state on close
+        // Clear both session and persistent state on close
+        clearSessionSearchState();
+        clearPersistentLastQuery();
       }
     } else if (e.key === "Delete" || (e.ctrlKey && e.key === "d")) {
       e.preventDefault();
@@ -679,17 +774,30 @@ document.addEventListener("DOMContentLoaded", () => {
       currentQuery = searchInput.value.trim();
       filteredTabs = fuzzySearch(currentQuery, allTabs);
       renderTabs(filteredTabs);
+      // No need to save to persistent here, only on closing the popup
     }
+  });
+
+  // Save the current query and timestamp to localStorage when the popup is about to close
+  window.addEventListener("beforeunload", () => {
+    if (ViewManager.getActive() === "tabSearch" && currentQuery.length > 0) {
+      savePersistentLastQuery();
+    } else {
+      // If not in tabSearch or query is empty, ensure persistent memory is cleared
+      clearPersistentLastQuery();
+    }
+    // Session state is handled by ViewManager.show() already
   });
 
   // --- Initialization ---
   // Load settings first as they might influence initial behavior
   loadSettings().then(() => {
     // Determine the initial view based on sessionStorage, or default to tabSearch
-    const initialView = sessionStorage.getItem(LS_LAST_VIEW) || "tabSearch";
-    ViewManager.show(initialView, initialView === "tabSearch"); // Pass true for restore if initial view is tabSearch
+    const initialView = sessionStorage.getItem(SS_LAST_VIEW) || "tabSearch";
+    // Show the initial view (will handle session state restoration if tabSearch)
+    ViewManager.show(initialView, initialView === "tabSearch");
 
-    // Fetch and display tabs (will use restored state if available and in tabSearch view)
+    // Fetch and display tabs (will use restored session state or persistent memory if available)
     fetchAndDisplayTabs();
   });
 });
