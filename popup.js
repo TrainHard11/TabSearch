@@ -1,6 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // --- DOM Element References ---
-  console.log("I cant see this message??");
+  // --- Constants and DOM Element References ---
+  const LS_PREFIX = "fuzzyTabSearch_"; // Local storage prefix for all keys
+  const LS_LAST_QUERY = `${LS_PREFIX}lastQuery`;
+  const LS_LAST_VIEW = `${LS_PREFIX}lastView`;
+
   const searchInput = document.getElementById("searchInput");
   const tabList = document.getElementById("tabList");
   const tabCounter = document.getElementById("tabCounter");
@@ -12,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "settingsContentContainer",
   );
 
-  // Variables for settings elements, will be populated after settings.html is loaded
+  // Variables for settings elements, populated after settings.html is loaded
   let enableWebNavigatorCheckbox;
   let searchOnNoResultsCheckbox;
   let customTabInputs = [];
@@ -23,8 +26,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let filteredTabs = [];
   let selectedIndex = -1;
   let currentQuery = "";
-  let helpContentLoaded = false; // Flag to ensure help content is loaded only once
-  let settingsContentLoaded = false; // Flag to ensure settings content is loaded only once
+  let helpContentLoaded = false;
+  let settingsContentLoaded = false;
 
   // Default settings
   const defaultSettings = {
@@ -46,6 +49,130 @@ document.addEventListener("DOMContentLoaded", () => {
     customTab7ExactMatch: false,
   };
   let currentSettings = {};
+
+  // --- Utility Functions ---
+
+  /**
+   * Highlights the query in the text.
+   * @param {string} text The full text to highlight.
+   * @param {string} query The search query.
+   * @returns {string} HTML string with highlighted text.
+   */
+  const highlightText = (text, query) => {
+    if (!text || !query) return text;
+    const lowerCaseQuery = query.toLowerCase();
+    const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
+    let highlightedHtml = text;
+    queryWords.forEach((word) => {
+      const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`(${escapedWord})`, "gi");
+      highlightedHtml = highlightedHtml.replace(
+        regex,
+        (match) => `<span class="highlight">${match}</span>`,
+      );
+    });
+    return highlightedHtml;
+  };
+
+  /**
+   * Performs a fuzzy search on tabs.
+   * Prioritizes title matches over URL matches.
+   * @param {string} query The search query.
+   * @param {Array<chrome.tabs.Tab>} tabs The array of tabs to search within.
+   * @returns {Array<chrome.tabs.Tab>} The filtered and sorted list of tabs.
+   */
+  const fuzzySearch = (query, tabs) => {
+    if (!query) return tabs;
+    const lowerCaseQuery = query.toLowerCase();
+    const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
+
+    const titleMatches = [];
+    const urlMatches = [];
+    const processedTabIds = new Set();
+
+    tabs.forEach((tab) => {
+      const tabTitle = (tab.title || "").toLowerCase();
+      const tabUrl = (tab.url || "").toLowerCase();
+
+      const matchesTitle = queryWords.every((word) => tabTitle.includes(word));
+      const matchesUrl = queryWords.every((word) => tabUrl.includes(word));
+
+      if (matchesTitle) {
+        titleMatches.push(tab);
+        processedTabIds.add(tab.id);
+      } else if (matchesUrl && !processedTabIds.has(tab.id)) {
+        urlMatches.push(tab);
+        processedTabIds.add(tab.id);
+      }
+    });
+    return [...titleMatches, ...urlMatches];
+  };
+
+  /**
+   * Switches to the specified tab and closes the popup.
+   * @param {number} tabId The ID of the tab to switch to.
+   * @param {number} targetWindowId The ID of the window the tab belongs to.
+   */
+  const switchTab = (tabId, targetWindowId) => {
+    chrome.windows.getCurrent((currentWindow) => {
+      if (currentWindow.id === targetWindowId) {
+        chrome.tabs.update(tabId, { active: true }, () => window.close());
+      } else {
+        chrome.windows.update(targetWindowId, { focused: true }, () => {
+          chrome.tabs.update(tabId, { active: true }, () => window.close());
+        });
+      }
+    });
+  };
+
+  /**
+   * Stores the current search state (query, filtered tabs, selected index) in sessionStorage.
+   */
+  const saveSearchState = () => {
+    try {
+      sessionStorage.setItem(LS_LAST_QUERY, currentQuery);
+      sessionStorage.setItem(
+        `${LS_PREFIX}filteredTabs`,
+        JSON.stringify(filteredTabs),
+      );
+      sessionStorage.setItem(`${LS_PREFIX}selectedIndex`, selectedIndex);
+    } catch (error) {
+      console.error("Error saving search state to sessionStorage:", error);
+    }
+  };
+
+  /**
+   * Loads the search state from sessionStorage.
+   * @returns {object|null} The loaded state or null if not found/error.
+   */
+  const loadSearchState = () => {
+    try {
+      const query = sessionStorage.getItem(LS_LAST_QUERY);
+      const tabs = JSON.parse(
+        sessionStorage.getItem(`${LS_PREFIX}filteredTabs`),
+      );
+      const index = parseInt(
+        sessionStorage.getItem(`${LS_PREFIX}selectedIndex`),
+        10,
+      );
+
+      if (query !== null && tabs !== null && !isNaN(index)) {
+        return { query, tabs, index };
+      }
+    } catch (error) {
+      console.error("Error loading search state from sessionStorage:", error);
+    }
+    return null;
+  };
+
+  /**
+   * Clears the saved search state from sessionStorage.
+   */
+  const clearSearchState = () => {
+    sessionStorage.removeItem(LS_LAST_QUERY);
+    sessionStorage.removeItem(`${LS_PREFIX}filteredTabs`);
+    sessionStorage.removeItem(`${LS_PREFIX}selectedIndex`);
+  };
 
   // --- View Management ---
   const ViewManager = (() => {
@@ -73,14 +200,20 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     };
 
-    const showView = (viewName) => {
+    const showView = (viewName, restoreSearch = false) => {
       if (!viewElements[viewName]) {
         console.warn(`Attempted to show unknown view: ${viewName}`);
         return;
       }
 
+      // Save the current search state before switching views, unless it's a restore operation
+      if (activeView === "tabSearch" && !restoreSearch) {
+        saveSearchState();
+      }
+
       hideAllViews();
       activeView = viewName;
+      sessionStorage.setItem(LS_LAST_VIEW, activeView); // Persist active view
 
       const { container, content, info } = viewElements[viewName];
 
@@ -95,20 +228,19 @@ document.addEventListener("DOMContentLoaded", () => {
       // Specific actions after showing a view
       if (viewName === "tabSearch") {
         searchInput.focus();
-        // Re-render tabs to ensure scrollable-content is applied correctly
-        renderTabs(filteredTabs, selectedIndex);
+        // The renderTabs function will be called by fetchAndDisplayTabs which handles restoring.
       } else {
-        // Clear search input when switching away from tabSearch
-        currentQuery = "";
+        // Clear search input and visual list when switching away from tabSearch
         searchInput.value = "";
-        filteredTabs = [];
-        renderTabs(filteredTabs); // Render an empty list or "no matching tabs"
+        renderTabs([]); // Render an empty list
       }
     };
 
     const toggleView = async (viewName, loadContentFn = null) => {
       if (activeView === viewName) {
-        showView("tabSearch"); // If already on this view, go back to tab search
+        // If already on this view, go back to tab search and try to restore state
+        showView("tabSearch", true); // Pass true to indicate a restore
+        await fetchAndDisplayTabs(); // Re-fetch tabs and re-apply current query
       } else {
         if (loadContentFn) {
           await loadContentFn(); // Load content if provided (e.g., for help or settings)
@@ -119,6 +251,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const getActiveView = () => activeView;
 
+    // Initialize with the last active view if available
+    const initialView = sessionStorage.getItem(LS_LAST_VIEW) || "tabSearch";
+    if (initialView !== activeView) {
+      activeView = initialView; // Set it initially, but showView will handle actual display
+    }
+
     return {
       show: showView,
       toggle: toggleView,
@@ -128,7 +266,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Settings Functions ---
 
-  // Function to get references to settings DOM elements after content is loaded
+  /**
+   * Gets references to settings DOM elements after content is loaded.
+   */
   const getSettingsDOMElements = () => {
     enableWebNavigatorCheckbox = settingsContentContainer.querySelector(
       "#enableWebNavigator",
@@ -145,21 +285,15 @@ document.addEventListener("DOMContentLoaded", () => {
         settingsContentContainer.querySelector(`#customTab${i}ExactMatch`),
       );
     }
-    return {
-      enableWebNavigatorCheckbox,
-      searchOnNoResultsCheckbox,
-      customTabInputs,
-      customTabExactMatchCheckboxes,
-    };
   };
 
-  // Function to load settings into the UI fields
+  /**
+   * Loads settings from chrome.storage.local into the UI fields.
+   */
   const loadSettings = async () => {
     const storedSettings = await chrome.storage.local.get(defaultSettings);
     currentSettings = { ...defaultSettings, ...storedSettings };
-    console.log("currentSettings : ", currentSettings);
 
-    // Ensure elements exist before trying to set their values
     if (enableWebNavigatorCheckbox) {
       enableWebNavigatorCheckbox.checked = currentSettings.webNavigatorEnabled;
     }
@@ -178,9 +312,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Function to save settings from the UI fields
+  /**
+   * Saves settings from the UI fields to chrome.storage.local.
+   */
   const saveSettings = async () => {
-    // Ensure elements exist before trying to get their values
     if (enableWebNavigatorCheckbox) {
       currentSettings.webNavigatorEnabled = enableWebNavigatorCheckbox.checked;
     }
@@ -201,7 +336,9 @@ document.addEventListener("DOMContentLoaded", () => {
     await chrome.storage.local.set(currentSettings);
   };
 
-  // Function to attach event listeners to settings elements
+  /**
+   * Attaches event listeners to settings elements for saving changes.
+   */
   const attachSettingsEventListeners = () => {
     if (enableWebNavigatorCheckbox) {
       enableWebNavigatorCheckbox.addEventListener("change", saveSettings);
@@ -223,7 +360,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Function to load settings content dynamically
+  /**
+   * Loads settings content dynamically from settings.html.
+   */
   const loadSettingsContent = async () => {
     if (!settingsContentLoaded) {
       try {
@@ -238,7 +377,6 @@ document.addEventListener("DOMContentLoaded", () => {
             doc.querySelector(".options-container").innerHTML;
           settingsContentContainer.innerHTML = settingsHtmlContent;
           settingsContentLoaded = true;
-          console.log("Settings content loaded successfully.");
 
           // IMPORTANT: Get references and attach listeners ONLY AFTER content is loaded
           getSettingsDOMElements();
@@ -257,52 +395,82 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // --- Tab Management & UI Rendering ---
-  const highlightText = (text, query) => {
-    if (!text || !query) return text;
-    const lowerCaseQuery = query.toLowerCase();
-    const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
-    let highlightedHtml = text;
-    queryWords.forEach((word) => {
-      const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const regex = new RegExp(`(${escapedWord})`, "gi");
-      highlightedHtml = highlightedHtml.replace(
-        regex,
-        (match) => `<span class="highlight">${match}</span>`,
-      );
-    });
-    return highlightedHtml;
+  /**
+   * Loads help content dynamically from help.html.
+   */
+  const loadHelpContent = async () => {
+    if (!helpContentLoaded) {
+      try {
+        const response = await fetch(chrome.runtime.getURL("html/help.html"));
+        if (response.ok) {
+          const html = await response.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const helpContent = doc.querySelector(".help-container").innerHTML;
+          helpContentContainer.innerHTML = helpContent;
+          helpContentLoaded = true;
+        } else {
+          console.error("Failed to load help.html:", response.statusText);
+          helpContentContainer.innerHTML = "<p>Error loading help content.</p>";
+        }
+      } catch (error) {
+        console.error("Error fetching help.html:", error);
+        helpContentContainer.innerHTML = "<p>Error fetching help content.</p>";
+      }
+    }
   };
 
+  // --- Tab Management & UI Rendering ---
+
+  /**
+   * Fetches all current tabs and updates the display.
+   * Tries to restore the previous search state if available.
+   */
   const fetchAndDisplayTabs = (preferredIndex = 0) => {
     chrome.tabs.query({}, (tabs) => {
       allTabs = tabs;
-      filteredTabs = fuzzySearch(currentQuery, allTabs);
-      renderTabs(filteredTabs, preferredIndex);
+
+      // Try to restore previous state if returning to tabSearch
+      const lastActiveView = sessionStorage.getItem(LS_LAST_VIEW);
+      const storedState = loadSearchState();
+
+      if (lastActiveView === "tabSearch" && storedState) {
+        currentQuery = storedState.query;
+        filteredTabs = storedState.tabs;
+        selectedIndex = storedState.index;
+        searchInput.value = currentQuery; // Set input value
+      } else {
+        // If not restoring, reset or use default
+        currentQuery = "";
+        filteredTabs = fuzzySearch(currentQuery, allTabs);
+        selectedIndex = preferredIndex;
+      }
+      renderTabs(filteredTabs, selectedIndex);
+
       if (ViewManager.getActive() === "tabSearch") {
-        // Only focus if tab search is the active view
         searchInput.focus();
       }
     });
   };
 
+  /**
+   * Renders the list of tabs in the UI.
+   * @param {Array<chrome.tabs.Tab>} tabsToRender The tabs to display.
+   * @param {number} suggestedIndex The index of the tab to highlight.
+   */
   const renderTabs = (tabsToRender, suggestedIndex = 0) => {
     tabList.innerHTML = "";
     tabCounter.textContent = `${tabsToRender.length} tabs`;
 
-    // Only display "No matching tabs found" if we are in the 'tabSearch' view
-    if (tabsToRender.length === 0) {
-      if (ViewManager.getActive() === "tabSearch") {
-        // <--- Condition to prevent message in other views
-        const noResults = document.createElement("li");
-        noResults.textContent = "No matching tabs found.";
-        noResults.className = "no-results";
-        tabList.appendChild(noResults);
-      }
+    if (tabsToRender.length === 0 && ViewManager.getActive() === "tabSearch") {
+      const noResults = document.createElement("li");
+      noResults.textContent = "No matching tabs found.";
+      noResults.className = "no-results";
+      tabList.appendChild(noResults);
       selectedIndex = -1;
       tabList.classList.remove("scrollable-content");
       return;
-    } else {
+    } else if (tabsToRender.length > 0) {
       tabList.classList.add("scrollable-content");
     }
 
@@ -312,7 +480,8 @@ document.addEventListener("DOMContentLoaded", () => {
       listItem.dataset.windowId = tab.windowId;
       listItem.dataset.index = index;
 
-      const faviconSrc = tab.favIconUrl || chrome.runtime.getURL("icon.png"); // Fallback to extension icon
+      const faviconSrc =
+        tab.favIconUrl || chrome.runtime.getURL("img/SGN256.png"); // Fallback to extension icon
       const favicon = document.createElement("img");
       favicon.src = faviconSrc;
       favicon.alt = "favicon";
@@ -341,33 +510,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const fuzzySearch = (query, tabs) => {
-    if (!query) return tabs;
-    const lowerCaseQuery = query.toLowerCase();
-    const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
-
-    const titleMatches = [];
-    const urlMatches = [];
-    const processedTabIds = new Set();
-
-    tabs.forEach((tab) => {
-      const tabTitle = (tab.title || "").toLowerCase();
-      const tabUrl = (tab.url || "").toLowerCase();
-
-      const matchesTitle = queryWords.every((word) => tabTitle.includes(word));
-      const matchesUrl = queryWords.every((word) => tabUrl.includes(word));
-
-      if (matchesTitle) {
-        titleMatches.push(tab);
-        processedTabIds.add(tab.id);
-      } else if (matchesUrl && !processedTabIds.has(tab.id)) {
-        urlMatches.push(tab);
-        processedTabIds.add(tab.id);
-      }
-    });
-    return [...titleMatches, ...urlMatches];
-  };
-
+  /**
+   * Highlights the currently selected tab item in the list.
+   */
   const highlightSelectedItem = () => {
     const items = tabList.querySelectorAll("li");
     items.forEach((item, index) => {
@@ -380,18 +525,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  const switchTab = (tabId, targetWindowId) => {
-    chrome.windows.getCurrent((currentWindow) => {
-      if (currentWindow.id === targetWindowId) {
-        chrome.tabs.update(tabId, { active: true }, () => window.close());
-      } else {
-        chrome.windows.update(targetWindowId, { focused: true }, () => {
-          chrome.tabs.update(tabId, { active: true }, () => window.close());
-        });
-      }
-    });
-  };
-
+  /**
+   * Deletes the currently selected tab.
+   */
   const deleteSelectedTab = async () => {
     if (selectedIndex !== -1 && filteredTabs[selectedIndex]) {
       const tabToDelete = filteredTabs[selectedIndex];
@@ -419,6 +555,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  /**
+   * Deletes all currently filtered tabs.
+   */
   const deleteAllFilteredTabs = async () => {
     if (filteredTabs.length > 0) {
       const tabIdsToDelete = filteredTabs.map((tab) => tab.id);
@@ -433,29 +572,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         searchInput.focus();
       });
-    }
-  };
-
-  const loadHelpContent = async () => {
-    if (!helpContentLoaded) {
-      try {
-        const response = await fetch(chrome.runtime.getURL("html/help.html"));
-        if (response.ok) {
-          const html = await response.text();
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, "text/html");
-          const helpContent = doc.querySelector(".help-container").innerHTML;
-          helpContentContainer.innerHTML = helpContent;
-          helpContentLoaded = true;
-          console.log("Help content loaded successfully.");
-        } else {
-          console.error("Failed to load help.html:", response.statusText);
-          helpContentContainer.innerHTML = "<p>Error loading help content.</p>";
-        }
-      } catch (error) {
-        console.error("Error fetching help.html:", error);
-        helpContentContainer.innerHTML = "<p>Error fetching help content.</p>";
-      }
     }
   };
 
@@ -478,8 +594,7 @@ document.addEventListener("DOMContentLoaded", () => {
         typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL
           ? "chrome://extensions/shortcuts" // Chromium
           : "about:addons"; // Firefox
-      chrome.tabs.create({ url: url });
-      window.close();
+      chrome.tabs.create({ url: url }, () => window.close());
     } else if (e.key >= "1" && e.key <= "4" && e.altKey) {
       e.preventDefault();
       const index = parseInt(e.key) - 1;
@@ -538,17 +653,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (selectedIndex !== -1 && filteredTabs[selectedIndex]) {
         const selectedTab = filteredTabs[selectedIndex];
         switchTab(selectedTab.id, selectedTab.windowId);
+        clearSearchState(); // Clear state on successful tab switch
       } else if (currentQuery.length > 0 && filteredTabs.length === 0) {
-        console.log(
-          "currentSettings.searchOnNoResults: ",
-          currentSettings.searchOnNoResults,
-        );
         if (currentSettings.searchOnNoResults) {
           const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`;
           chrome.tabs.create({ url: googleSearchUrl }, () => window.close());
+          clearSearchState(); // Clear state after opening search
         }
       } else {
         window.close(); // Close if no selection and no query
+        clearSearchState(); // Clear state on close
       }
     } else if (e.key === "Delete" || (e.ctrlKey && e.key === "d")) {
       e.preventDefault();
@@ -569,7 +683,13 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- Initialization ---
-  // Initial fetch and display of tabs for the default 'tabSearch' view
-  fetchAndDisplayTabs();
-  ViewManager.show("tabSearch"); // Ensure tabSearch is the initial active view
+  // Load settings first as they might influence initial behavior
+  loadSettings().then(() => {
+    // Determine the initial view based on sessionStorage, or default to tabSearch
+    const initialView = sessionStorage.getItem(LS_LAST_VIEW) || "tabSearch";
+    ViewManager.show(initialView, initialView === "tabSearch"); // Pass true for restore if initial view is tabSearch
+
+    // Fetch and display tabs (will use restored state if available and in tabSearch view)
+    fetchAndDisplayTabs();
+  });
 });
