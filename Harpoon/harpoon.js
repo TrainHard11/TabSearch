@@ -87,6 +87,8 @@ window.initHarpoonFeature = async () => {
 
     /**
      * Moves the currently highlighted harpooned tab up or down in the list (non-cycling).
+     * This function is called by keymaps and now by the new UI buttons.
+     * It relies on `selectedHarpoonIndex` being set correctly before calling.
      * @param {string} direction "up" or "down".
      */
     const moveHarpoonItem = async (direction) => {
@@ -228,6 +230,37 @@ window.initHarpoonFeature = async () => {
             harpoonInfo.appendChild(harpoonTitle);
             harpoonInfo.appendChild(harpoonUrl);
 
+            // Container for action buttons (move up/down, remove)
+            const actionButtonsContainer = document.createElement("div");
+            actionButtonsContainer.classList.add("harpoon-action-buttons");
+
+            // Up button
+            const upButton = document.createElement("button");
+            upButton.classList.add("harpoon-move-button", "harpoon-move-up");
+            upButton.innerHTML = '&#9650;'; // Up arrow character
+            upButton.title = "Move Up";
+            upButton.addEventListener("click", async (e) => {
+                e.stopPropagation(); // Prevent item activation
+                selectedHarpoonIndex = index; // Set selected index to this item
+                highlightHarpoonItem(); // Highlight it
+                await moveHarpoonItem("up"); // Then move it
+            });
+            actionButtonsContainer.appendChild(upButton);
+
+            // Down button
+            const downButton = document.createElement("button");
+            downButton.classList.add("harpoon-move-button", "harpoon-move-down");
+            downButton.innerHTML = '&#9660;'; // Down arrow character
+            downButton.title = "Move Down";
+            downButton.addEventListener("click", async (e) => {
+                e.stopPropagation(); // Prevent item activation
+                selectedHarpoonIndex = index; // Set selected index to this item
+                highlightHarpoonItem(); // Highlight it
+                await moveHarpoonItem("down"); // Then move it
+            });
+            actionButtonsContainer.appendChild(downButton);
+
+            // Remove button
             const removeButton = document.createElement("button");
             removeButton.classList.add("remove-harpoon-button");
             removeButton.innerHTML = '✕'; // X icon
@@ -241,10 +274,12 @@ window.initHarpoonFeature = async () => {
                 }
                 highlightHarpoonItem(); // Re-highlight after removal and index adjustment
             });
+            actionButtonsContainer.appendChild(removeButton);
+
 
             harpoonItem.appendChild(favicon);
             harpoonItem.appendChild(harpoonInfo);
-            harpoonItem.appendChild(removeButton);
+            harpoonItem.appendChild(actionButtonsContainer); // Append the container with all buttons
 
             // Add click listener for activating the harpooned tab
             harpoonItem.addEventListener("click", () => {
@@ -312,8 +347,8 @@ window.initHarpoonFeature = async () => {
     window.refreshHarpoonedTabs = loadHarpoonedTabs;
     window.navigateHarpoonList = navigateHarpoonList;
     window.activateSelectedHarpoonItem = activateSelectedHarpoonItem;
-    window.moveHarpoonItem = moveHarpoonItem; // NEW: Expose move function
-    window.removeSelectedHarpoonItem = removeSelectedHarpoonItem; // NEW: Expose remove selected function
+    window.moveHarpoonItem = moveHarpoonItem; // Expose move function
+    window.removeSelectedHarpoonItem = removeSelectedHarpoonItem; // Expose remove selected function
 };
 
 // Add a dummy `focusOrCreateTabByUrl` if it's not defined by `popup.js`
