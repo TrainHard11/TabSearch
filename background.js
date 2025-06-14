@@ -273,6 +273,86 @@ async function cycleMediaTabs() {
     }
 }
 
+// --- Harpoon Feature Functions ---
+
+const HARPOON_STORAGE_KEY = "fuzzyTabSearch_harpoonedTabs";
+
+/**
+ * Adds the currently active tab to the harpoon list.
+ */
+async function addCurrentTabToHarpoonList() {
+    try {
+        const [activeTab] = await chrome.tabs.query({
+            active: true,
+            currentWindow: true
+        });
+
+        if (activeTab && activeTab.url && activeTab.title) {
+            let harpoonedTabs = await getHarpoonedTabs();
+
+            // Check for duplicates before adding
+            const isDuplicate = harpoonedTabs.some(
+                (harpoonedTab) => harpoonedTab.url === activeTab.url
+            );
+
+            if (!isDuplicate) {
+                const newHarpoonedTab = {
+                    id: activeTab.id, // Store tab ID for potential direct interaction
+                    url: activeTab.url,
+                    title: activeTab.title,
+                    favIconUrl: activeTab.favIconUrl || chrome.runtime.getURL("img/SGN256.png") // Default icon
+                };
+                harpoonedTabs.push(newHarpoonedTab);
+                await chrome.storage.local.set({ [HARPOON_STORAGE_KEY]: harpoonedTabs });
+                console.log("Tab harpooned:", activeTab.title);
+            } else {
+                console.log("Tab already harpooned:", activeTab.title);
+            }
+        } else {
+            console.warn("Could not harpoon tab: No active tab found or missing URL/title.");
+        }
+    } catch (error) {
+        console.error("Error adding current tab to harpoon list:", error);
+    }
+}
+
+/**
+ * Retrieves the list of harpooned tabs from local storage.
+ * @returns {Promise<Array<Object>>} A promise that resolves with the array of harpooned tabs.
+ */
+async function getHarpoonedTabs() {
+    try {
+        const result = await chrome.storage.local.get({ [HARPOON_STORAGE_KEY]: [] });
+        return result[HARPOON_STORAGE_KEY];
+    } catch (error) {
+        console.error("Error getting harpooned tabs:", error);
+        return [];
+    }
+}
+
+/**
+ * Removes a harpooned tab by its URL.
+ * @param {string} urlToRemove The URL of the tab to remove from the harpoon list.
+ */
+async function removeHarpoonedTab(urlToRemove) {
+    try {
+        let harpoonedTabs = await getHarpoonedTabs();
+        const initialLength = harpoonedTabs.length;
+        harpoonedTabs = harpoonedTabs.filter(tab => tab.url !== urlToRemove);
+
+        if (harpoonedTabs.length < initialLength) {
+            await chrome.storage.local.set({ [HARPOON_STORAGE_KEY]: harpoonedTabs });
+            console.log("Harpooned tab removed:", urlToRemove);
+            return true; // Indicate success
+        }
+        console.log("Harpooned tab not found for removal:", urlToRemove);
+        return false; // Indicate not found
+    } catch (error) {
+        console.error("Error removing harpooned tab:", error);
+        return false;
+    }
+}
+
 
 // Listen for commands defined in manifest.json
 chrome.commands.onCommand.addListener(async (command) => {
@@ -359,6 +439,9 @@ chrome.commands.onCommand.addListener(async (command) => {
         case "cycle_media_tabs":
             await cycleMediaTabs();
             break;
+        case "harpoon_current_tab": // NEW COMMAND HANDLER
+            await addCurrentTabToHarpoonList();
+            break;
     }
 });
 
@@ -376,6 +459,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 });
             return true; // Indicate that sendResponse will be called asynchronously
         }
-        // Removed the "focusOrCreateTab" command from here, as popup.js will handle it directly now.
+    } else if (request.action === "harpoonCommand") { // NEW: Harpoon related messages from popup.js
+        if (request.command === "getHarpoonedTabs") {
+            getHarpoonedTabs()
+                .then(tabs => sendResponse({ success: true, tabs: tabs }))
+                .catch(error => {
+                    console.error("Error getting harpooned tabs:", error);
+                    sendResponse({ success: false, error: error.message });
+                });
+            return true; // Asynchronous response
+        } else if (request.command === "removeHarpoonedTab" && request.url) {
+            removeHarpoonedTab(request.url)
+                .then(success => sendResponse({ success: success }))
+                .catch(error => {
+                    console.error("Error removing harpooned tab:", error);
+                    sendResponse({ success: false, error: error.message });
+                });
+            return true; // Asynchronous response
+        }
     }
 });

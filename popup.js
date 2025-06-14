@@ -1003,13 +1003,17 @@ document.addEventListener("DOMContentLoaded", () => {
             if (e.key === "F1") {
                 e.preventDefault();
                 await ViewManager.toggle("settings", loadSettingsContent);
-            } else if (e.key === "F2") { // F2 for Marks
+            } else if (e.key === "F2") { // F2 for Marks (moved from F3)
                 e.preventDefault();
                 await ViewManager.toggle("marks", loadMarksContent);
-            } else if (e.key === "F3") { // F3 for Harpoon
+            } else if (e.key === "F3") { // F3 for Harpoon (NEW!)
                 e.preventDefault();
                 await ViewManager.toggle("harpoon", loadHarpoonContent);
-            } else if (e.key === "F4") { // F4 for Help
+                // When toggling to harpoon view, ask harpoon.js to refresh its list
+                if (typeof window.refreshHarpoonedTabs === "function") {
+                    window.refreshHarpoonedTabs();
+                }
+            } else if (e.key === "F4") { // F4 for Help (moved from F2)
                 e.preventDefault();
                 await ViewManager.toggle("help", loadHelpContent);
             } else if (e.key === "F5") { // F5 for Keymaps (old F4 functionality)

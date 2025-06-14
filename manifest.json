@@ -72,6 +72,12 @@
     },
     "cycle_media_tabs": {
       "description": "Cycle media tabs"
+    },
+    "harpoon_current_tab": {
+      "suggested_key": {
+        "default": "Alt+Q"
+      },
+      "description": "Add current tab to Harpoon list"
     }
   },
   "browser_specific_settings": {
