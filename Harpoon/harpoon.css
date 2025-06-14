@@ -86,12 +86,31 @@
     border-radius: 6px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     transition: transform 0.1s ease, background-color 0.2s ease;
+    cursor: pointer; /* Add pointer cursor to indicate interactivity */
 }
 
 .harpoon-item:hover {
     transform: translateY(-2px);
     background-color: #3a4049; /* Matches tabList li:hover */
 }
+
+/* New style for selected harpoon item */
+.harpoon-item.selected {
+    background-color: #fabd2f; /* Highlight color */
+    color: #21252b; /* Text color for selected item */
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px) scale(1.02);
+}
+
+.harpoon-item.selected .harpoon-title {
+    color: #21252b; /* Darker text for better contrast on selected item */
+}
+
+.harpoon-item.selected .harpoon-url {
+    color: #555; /* Muted darker text for URL on selected item */
+}
+
 
 .harpoon-item .favicon {
     width: 16px;

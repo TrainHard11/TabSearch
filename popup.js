@@ -163,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
      * @param {string} url The URL to open or switch to.
      * @param {boolean} [exactMatch=false] Whether to match the URL exactly or partially.
      */
-    const focusOrCreateTabByUrl = (url, exactMatch = false) => {
+    window.focusOrCreateTabByUrl = (url, exactMatch = false) => { // Made global for harpoon.js access
         const queryOptions = exactMatch ? { url: url } : { url: `${url}*` };
 
         chrome.tabs.query(queryOptions, (tabs) => {
@@ -296,17 +296,26 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             help: { container: helpContentContainer, content: helpContentContainer },
             marks: { container: marksSection, content: marksSection },
-            harpoon: { container: harpoonSection, content: harpoonSection }, // NEW: Harpoon view element
+            harpoon: { container: harpoonSection, content: harpoonSection },
         };
 
         const hideAllViews = () => {
             Object.values(viewElements).forEach((view) => {
+                // Hide the main container for the view
                 view.container.classList.add("hidden");
-                if (view.content) {
-                    view.content.classList.remove("scrollable-content");
+
+                // Explicitly hide the content element if it's distinct from the container
+                if (view.content && view.content !== view.container) {
+                    view.content.classList.add("hidden");
                 }
+
+                // Hide info text if it exists
                 if (view.info) {
                     view.info.classList.add("hidden");
+                }
+                // Also remove scrollable-content class when hiding
+                if (view.content) {
+                    view.content.classList.remove("scrollable-content");
                 }
             });
         };
@@ -328,13 +337,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 saveSessionSearchState();
             }
 
-            hideAllViews();
+            hideAllViews(); // This now explicitly hides all containers and relevant content elements
+
             activeView = viewName;
             sessionStorage.setItem(SS_LAST_VIEW, activeView); // Persist active view for session
 
             const { container, content, info } = viewElements[viewName];
 
+            // Show the new active view's container
             container.classList.remove("hidden");
+            // Explicitly show the content element if it's distinct from the container
+            if (content && content !== container) {
+                content.classList.remove("hidden");
+            }
+
             if (content) {
                 content.classList.add("scrollable-content");
             }
@@ -344,8 +360,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Specific actions after showing a view
             if (viewName === "tabSearch") {
-                searchInput.focus();
+                searchInput.focus(); // Focus search input for tab search
                 // The renderResults function will be called by fetchAndDisplayResults which handles restoring.
+            } else if (viewName === "harpoon") {
+                // Do not focus searchInput when in harpoon view
+                // Let harpoon.js manage its own focus after rendering
+                if (typeof window.refreshHarpoonedTabs === "function") {
+                    window.refreshHarpoonedTabs(); // Refresh list and set focus after view is shown
+                }
             } else {
                 // Clear search input and visual list when switching away from tabSearch
                 searchInput.value = "";
@@ -1009,10 +1031,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (e.key === "F3") { // F3 for Harpoon (NEW!)
                 e.preventDefault();
                 await ViewManager.toggle("harpoon", loadHarpoonContent);
-                // When toggling to harpoon view, ask harpoon.js to refresh its list
-                if (typeof window.refreshHarpoonedTabs === "function") {
-                    window.refreshHarpoonedTabs();
-                }
+                // The refreshHarpoonedTabs call is now handled by ViewManager.show("harpoon")
             } else if (e.key === "F4") { // F4 for Help (moved from F2)
                 e.preventDefault();
                 await ViewManager.toggle("help", loadHelpContent);
@@ -1030,87 +1049,105 @@ document.addEventListener("DOMContentLoaded", () => {
         // and Alt+F# is now dedicated to moving items when one is highlighted.
     });
 
-    // Keyboard navigation within the main tab search view
-    searchInput.addEventListener("keydown", (e) => {
-        // Only process navigation keys if the tabSearch view is active
-        if (ViewManager.getActive() !== "tabSearch") {
-            return;
-        }
+    // Keyboard navigation within the main tab search view and harpoon view
+    document.addEventListener("keydown", (e) => { // Changed to document.addEventListener to capture keys regardless of focused element
+        const activeView = ViewManager.getActive();
 
-        // *** NEW LOGIC FOR HANDLING FIRST KEYSTROKE AFTER PERSISTENT QUERY LOAD ***
-        if (isPersistentQueryActive) {
-            // Check for printable characters (most common scenario for new input)
-            // e.key.length === 1 covers letters, numbers, symbols but excludes 'Enter', 'ArrowUp', 'Shift', etc.
-            // Exclude modifier keys (Ctrl, Alt, Meta) from this logic.
-            if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-                e.preventDefault(); // Prevent default character input
-                searchInput.value = e.key; // Set input to JUST the new character
-                currentQuery = e.key; // Update internal state
-                isPersistentQueryActive = false; // Reset the flag, new search has started
-                clearPersistentLastQuery(); // Clear from local storage
-                performUnifiedSearch(currentQuery); // Use new unified search
-                return; // Stop further keydown processing for this event
-            }
-            // Handle Backspace/Delete explicitly to clear the whole field
-            else if (e.key === "Backspace" || e.key === "Delete") {
-                e.preventDefault(); // Prevent default action (single char deletion)
-                searchInput.value = ""; // Clear the entire input
-                currentQuery = ""; // Clear internal state
-                isPersistentQueryActive = false; // Reset the flag
-                clearPersistentLastQuery(); // Clear from local storage
-                performUnifiedSearch(currentQuery); // Use new unified search
-                return; // Stop further keydown processing
-            }
-        }
-        // *** END NEW LOGIC ***
+        if (activeView === "tabSearch") {
+            const items = tabList.querySelectorAll("li");
 
-        const items = tabList.querySelectorAll("li");
-
-        if (e.key === "ArrowDown" || (e.altKey && e.key === "j")) {
-            e.preventDefault();
-            if (items.length > 0) {
-                selectedIndex = (selectedIndex + 1) % items.length;
-                highlightSelectedItem();
-            }
-        } else if (e.key === "ArrowUp" || (e.altKey && e.key === "k")) {
-            e.preventDefault();
-            if (items.length > 0) {
-                selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-                highlightSelectedItem();
-            }
-        } else if (e.key === "Enter") {
-            e.preventDefault();
-            if (selectedIndex !== -1 && filteredResults[selectedIndex]) {
-                const selectedItem = filteredResults[selectedIndex];
-                if (selectedItem.type === "tab") {
-                    switchTab(selectedItem.id, selectedItem.windowId);
-                } else if (selectedItem.type === "mark") {
-                    // Bookmarks now use the directly implemented focusOrCreateTabByUrl in popup.js
-                    focusOrCreateTabByUrl(selectedItem.url, selectedItem.exactMatch);
+            // *** NEW LOGIC FOR HANDLING FIRST KEYSTROKE AFTER PERSISTENT QUERY LOAD ***
+            if (isPersistentQueryActive) {
+                // Check for printable characters (most common scenario for new input)
+                // e.key.length === 1 covers letters, numbers, symbols but excludes 'Enter', 'ArrowUp', 'Shift', etc.
+                // Exclude modifier keys (Ctrl, Alt, Meta) from this logic.
+                if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                    e.preventDefault(); // Prevent default character input
+                    searchInput.value = e.key; // Set input to JUST the new character
+                    currentQuery = e.key; // Update internal state
+                    isPersistentQueryActive = false; // Reset the flag, new search has started
+                    clearPersistentLastQuery(); // Clear from local storage
+                    performUnifiedSearch(currentQuery); // Use new unified search
+                    return; // Stop further keydown processing for this event
                 }
-                // Clear both session and persistent state on successful selection activation
-                clearSessionSearchState();
-                clearPersistentLastQuery();
-            } else if (currentQuery.length > 0 && filteredResults.length === 0) {
-                if (currentSettings.searchOnNoResults) {
-                    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`;
-                    chrome.tabs.create({ url: googleSearchUrl }, () => window.close());
-                    // Clear both session and persistent state after opening search
+                // Handle Backspace/Delete explicitly to clear the whole field
+                else if (e.key === "Backspace" || e.key === "Delete") {
+                    e.preventDefault(); // Prevent default action (single char deletion)
+                    searchInput.value = ""; // Clear the entire input
+                    currentQuery = ""; // Clear internal state
+                    isPersistentQueryActive = false; // Reset the flag
+                    clearPersistentLastQuery(); // Clear from local storage
+                    performUnifiedSearch(currentQuery); // Use new unified search
+                    return; // Stop further keydown processing
+                }
+            }
+            // *** END NEW LOGIC ***
+
+            if (e.key === "ArrowDown" || (e.altKey && e.key === "j")) {
+                e.preventDefault();
+                if (items.length > 0) {
+                    selectedIndex = (selectedIndex + 1) % items.length;
+                    highlightSelectedItem();
+                }
+            } else if (e.key === "ArrowUp" || (e.altKey && e.key === "k")) {
+                e.preventDefault();
+                if (items.length > 0) {
+                    selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+                    highlightSelectedItem();
+                }
+            } else if (e.key === "Enter") {
+                e.preventDefault();
+                if (selectedIndex !== -1 && filteredResults[selectedIndex]) {
+                    const selectedItem = filteredResults[selectedIndex];
+                    if (selectedItem.type === "tab") {
+                        switchTab(selectedItem.id, selectedItem.windowId);
+                    } else if (selectedItem.type === "mark") {
+                        // Bookmarks now use the directly implemented focusOrCreateTabByUrl in popup.js
+                        focusOrCreateTabByUrl(selectedItem.url, selectedItem.exactMatch);
+                    }
+                    // Clear both session and persistent state on successful selection activation
+                    clearSessionSearchState();
+                    clearPersistentLastQuery();
+                } else if (currentQuery.length > 0 && filteredResults.length === 0) {
+                    if (currentSettings.searchOnNoResults) {
+                        const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`;
+                        chrome.tabs.create({ url: googleSearchUrl }, () => window.close());
+                        // Clear both session and persistent state after opening search
+                        clearSessionSearchState();
+                        clearPersistentLastQuery();
+                    }
+                } else {
+                    window.close(); // Close if no selection and no query
+                    // Clear both session and persistent state on close
                     clearSessionSearchState();
                     clearPersistentLastQuery();
                 }
-            } else {
-                window.close(); // Close if no selection and no query
-                // Clear both session and persistent state on close
-                clearSessionSearchState();
-                clearPersistentLastQuery();
+            } else if (e.key === "Delete" || (e.ctrlKey && e.key === "d")) {
+                e.preventDefault();
+                deleteSelectedTab(); // This now only deletes selected tabs
+            } else if (e.ctrlKey && e.shiftKey && e.key === "D") {
+                e.preventDefault();
+                deleteAllFilteredTabs(); // This now only deletes all filtered tabs
             }
-        } else if (e.key === "Delete" || (e.ctrlKey && e.key === "d")) {
-            e.preventDefault();
-            deleteSelectedTab(); // This now only deletes selected tabs
-        } else if (e.ctrlKey && e.shiftKey && e.key === "D") {
-            e.preventDefault();
-            deleteAllFilteredTabs(); // This now only deletes all filtered tabs
+        } else if (activeView === "harpoon") {
+            // Handle keyboard navigation for the Harpoon view
+            if (e.key === "ArrowDown" || (e.altKey && e.key === "j")) {
+                e.preventDefault();
+                if (typeof window.navigateHarpoonList === "function") {
+                    window.navigateHarpoonList("down");
+                }
+            } else if (e.key === "ArrowUp" || (e.altKey && e.key === "k")) {
+                e.preventDefault();
+                if (typeof window.navigateHarpoonList === "function") {
+                    window.navigateHarpoonList("up");
+                }
+            } else if (e.key === "Enter") {
+                e.preventDefault();
+                if (typeof window.activateSelectedHarpoonItem === "function") {
+                    window.activateSelectedHarpoonItem();
+                    // The closing and state clearing are now handled by activateSelectedHarpoonItem's underlying logic.
+                }
+            }
         }
     });
 
@@ -1148,6 +1185,9 @@ document.addEventListener("DOMContentLoaded", () => {
         ViewManager.show(initialView, initialView === "tabSearch");
 
         // Fetch and display results (will use restored session state or persistent memory if available)
-        fetchAndDisplayResults();
+        // This is primarily for the 'tabSearch' view, as 'harpoon' will load its own data.
+        if (initialView === "tabSearch") {
+            fetchAndDisplayResults();
+        }
     });
 });
