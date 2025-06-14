@@ -55,6 +55,32 @@ async function moveCurrentTabToPosition(index) {
     }
 }
 
+/**
+ * Moves a specific tab to a designated position (0-indexed) in its window.
+ * @param {number} tabId The ID of the tab to move.
+ * @param {number} targetIndex The 0-indexed position to move the tab to.
+ */
+async function moveTabToPosition(tabId, targetIndex) {
+    try {
+        const tab = await chrome.tabs.get(tabId);
+        if (tab) {
+            // Get all tabs in the window to determine the valid range for targetIndex
+            const tabsInWindow = await chrome.tabs.query({ windowId: tab.windowId });
+            const maxIndex = tabsInWindow.length - 1;
+
+            // Ensure targetIndex is within valid bounds (0 to maxIndex)
+            const actualTargetIndex = Math.max(0, Math.min(targetIndex, maxIndex));
+
+            await chrome.tabs.move(tabId, { index: actualTargetIndex });
+            // Optionally, focus the tab after moving it
+            await chrome.windows.update(tab.windowId, { focused: true });
+            await chrome.tabs.update(tabId, { active: true });
+        }
+    } catch (error) {
+        console.error(`Error moving tab ${tabId} to position ${targetIndex}:`, error);
+    }
+}
+
 async function openNewEmptyTab() {
     await chrome.tabs.create({ url: "chrome://newtab/" });
 }
@@ -315,5 +341,24 @@ chrome.commands.onCommand.addListener(async (command) => {
         case "cycle_media_tabs":
             await cycleMediaTabs();
             break;
+    }
+});
+
+// Listener for messages from popup.js (e.g., to move a specific tab)
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // Check if the request is to execute a command from the popup
+    if (request.action === "executeMoveTabCommand") {
+        if (request.command === "moveHighlightedTab" && request.tabId && typeof request.targetIndex === 'number') {
+            moveTabToPosition(request.tabId, request.targetIndex)
+                .then(() => sendResponse({ success: true }))
+                .catch(error => {
+                    console.error("Error handling moveHighlightedTab message:", error);
+                    sendResponse({ success: false, error: error.message });
+                });
+            return true; // Indicate that sendResponse will be called asynchronously
+        }
+        // You can add more commands to be executed via messaging if needed
+        // For example:
+        // if (request.command === "someOtherTabAction" && request.tabId) { ... }
     }
 });

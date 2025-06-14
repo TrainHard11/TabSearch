@@ -903,28 +903,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// --- Event Listeners ---
 
-	// Global keyboard shortcuts for View switching
+	// Global keyboard shortcuts for View switching and tab movement
 	document.addEventListener("keydown", async (e) => {
-		// Prioritize specific Alt key combinations
-		if (e.altKey && e.key === "F1") {
-			// e.preventDefault();
-			// const extensionsUrl = "chrome://extensions/";
-			// focusOrCreateTabByUrl(extensionsUrl);
-			// clearPersistentLastQuery(); // Clear memory on specific navigation actions
+		// Check if a tab is highlighted and it's a tab type (not a bookmark)
+		const isTabHighlighted = selectedIndex !== -1 && filteredResults[selectedIndex]?.type === 'tab';
+		const selectedTabId = isTabHighlighted ? filteredResults[selectedIndex].id : null;
 
+		// --- Alt+F-key combinations for moving tabs ---
+		if (e.altKey && isTabHighlighted) {
+			let targetIndex = -1;
+			if (e.key === "F1") {
+				targetIndex = 0; // First position (0-indexed)
+			} else if (e.key === "F2") {
+				targetIndex = 1; // Second position
+			} else if (e.key === "F3") {
+				targetIndex = 2; // Third position
+			} else if (e.key === "F4") {
+				targetIndex = 3; // Fourth position
+			}
 
-			e.preventDefault();
-			chrome.runtime
-				.sendMessage({
-					action: "executeMoveTabCommand",
-					command: "moveCurrentTabToPosition",
-					index: 1,
-				})
-				.then(() => fetchAndDisplayResults(selectedIndex))
-				.catch(console.error);
+			if (targetIndex !== -1) {
+				e.preventDefault(); // Prevent default browser action for Alt+F#
 
+				try {
+					await chrome.runtime.sendMessage({
+						action: "executeMoveTabCommand",
+						command: "moveHighlightedTab", // Generic command
+						tabId: selectedTabId,
+						targetIndex: targetIndex,
+					});
+					// The popup will likely close if the tab becomes active, but this ensures state consistency.
+					// We can re-fetch results and assume the moved tab is now at targetIndex.
+					await fetchAndDisplayResults(targetIndex);
+					window.close(); // Close the popup after action
+				} catch (error) {
+					console.error(`Error moving tab to position ${targetIndex}:`, error);
+				}
+				return; // Exit after handling Alt+F#
+			}
+		}
 
-		} else if (e.altKey && e.key === "F2") {
+		// --- Other global F-key combinations ---
+		if (e.altKey && e.key === "F2") { // This condition needs to be adjusted or removed if Alt+F2 is now for moving tabs.
+		                                  // If you want Alt+F2 for shortcuts AND moving tabs, you need to prioritize.
+                                          // For now, I'm assuming Alt+F1-F4 are *only* for moving tabs when a tab is selected.
+                                          // If no tab is selected, then Alt+F2 for shortcuts *could* work.
+                                          // The logic above ensures it's only for tab movement if a tab is selected.
 			e.preventDefault();
 			const shortcutsUrl =
 				typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL
@@ -933,7 +957,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			focusOrCreateTabByUrl(shortcutsUrl);
 			clearPersistentLastQuery(); // Clear memory on specific navigation actions
 		}
-		// Then handle regular F-keys
+		// Then handle regular F-keys (these are for view switching, not tab movement)
 		else if (e.key === "F1") {
 			e.preventDefault();
 			await ViewManager.toggle("settings", loadSettingsContent);
@@ -948,7 +972,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			const shortcutsUrl =
 				typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL
 					? "chrome://extensions/shortcuts" // Chromium
-					: "about:addons"; // Firefox
+					: "chrome://extensions/shortcuts"; // Assume Chromium for now, Firefox would be "about:addons"
 			focusOrCreateTabByUrl(shortcutsUrl);
 			clearPersistentLastQuery(); // Clear memory if user goes to shortcuts
 		}

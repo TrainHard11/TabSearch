@@ -48,7 +48,8 @@
     "move_tab_to_second": {
       "description": "Move tab to 2nd place"
     },
-    "move_tab_to_third": {
+    "move_tab_to_third":
+    {
       "description": "Move tab to 3rd place"
     },
     "move_tab_to_fourth": {
