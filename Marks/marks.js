@@ -8,12 +8,13 @@ window.initMarksFeature = async (defaultUrl = '', defaultTitle = '') => {
     // and its content injected into the #marksSection by popup.js.
     const urlNameInput = document.getElementById("urlNameInput");
     const urlInput = document.getElementById("urlInput");
+    const exactMatchCheckbox = document.getElementById("exactMatchCheckbox"); // NEW: Exact Match Checkbox
     const addMarkButton = document.getElementById("addMarkButton");
     const marksListContainer = document.getElementById("marksList");
     const noMarksMessage = marksListContainer.querySelector(".no-marks-message");
 
     // Exit if essential elements are not found, indicating an issue with HTML injection.
-    if (!urlNameInput || !urlInput || !addMarkButton || !marksListContainer) {
+    if (!urlNameInput || !urlInput || !exactMatchCheckbox || !addMarkButton || !marksListContainer) {
         console.error("Marks feature: Essential DOM elements not found after initMarksFeature call.");
         return;
     }
@@ -36,8 +37,10 @@ window.initMarksFeature = async (defaultUrl = '', defaultTitle = '') => {
     const loadBookmarks = async () => {
         try {
             const result = await chrome.storage.local.get(STORAGE_KEY);
-            // Ensure bookmarks is always an array
-            bookmarks = Array.isArray(result[STORAGE_KEY]) ? result[STORAGE_KEY] : [];
+            // Ensure bookmarks is always an array, and default exactMatch to false if not present
+            bookmarks = Array.isArray(result[STORAGE_KEY])
+                ? result[STORAGE_KEY].map(mark => ({ ...mark, exactMatch: mark.exactMatch ?? false }))
+                : [];
             renderBookmarks(); // Render immediately after loading
         } catch (error) {
             console.error("Error loading bookmarks:", error);
@@ -101,12 +104,20 @@ window.initMarksFeature = async (defaultUrl = '', defaultTitle = '') => {
             markUrl.textContent = mark.url;
             markUrl.target = "_blank"; // Open in a new tab
 
+            // Display exact match status
+            const exactMatchStatus = document.createElement("span");
+            exactMatchStatus.classList.add("exact-match-status");
+            exactMatchStatus.textContent = mark.exactMatch ? " [Exact Match]" : "";
+            exactMatchStatus.style.fontWeight = "bold";
+            exactMatchStatus.style.color = mark.exactMatch ? "#98c379" : "#a0a0a0"; // Green for exact, grey for partial
+
             markInfo.appendChild(markName);
             markInfo.appendChild(markUrl);
+            markInfo.appendChild(exactMatchStatus); // Append status
 
             const removeButton = document.createElement("button");
             removeButton.classList.add("remove-mark-button");
-            removeButton.innerHTML = '&#x2715;'; // X icon
+            removeButton.innerHTML = '✕'; // X icon
             removeButton.title = "Remove Bookmark";
             removeButton.addEventListener("click", () => removeBookmark(index));
 
@@ -122,6 +133,7 @@ window.initMarksFeature = async (defaultUrl = '', defaultTitle = '') => {
     const addBookmark = async () => {
         const name = urlNameInput.value.trim();
         let url = urlInput.value.trim();
+        const exactMatch = exactMatchCheckbox.checked; // Get exact match state
 
         // Remove error classes before validation
         urlNameInput.classList.remove("input-error");
@@ -133,13 +145,15 @@ window.initMarksFeature = async (defaultUrl = '', defaultTitle = '') => {
             return;
         }
 
-        bookmarks.push({ name, url });
+        // Add new bookmark with exactMatch property
+        bookmarks.push({ name, url, exactMatch });
         await saveBookmarks();
         renderBookmarks(); // Re-render the list with the new item
 
-        // Clear input fields after adding
+        // Clear input fields and reset checkbox after adding
         urlNameInput.value = "";
         urlInput.value = "";
+        exactMatchCheckbox.checked = false; // Reset to default (unchecked)
         urlNameInput.focus(); // Keep focus on the name input
     };
 

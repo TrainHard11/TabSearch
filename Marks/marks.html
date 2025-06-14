@@ -1,34 +1,38 @@
 <div class="marks-content">
-  <h2>My Bookmarks</h2>
+    <h2>My Bookmarks</h2>
 
-  <div class="input-group">
-    <label for="urlNameInput" class="input-label">Bookmark Name:</label>
-    <input
-      type="text"
-      id="urlNameInput"
-      placeholder="e.g., Google Search"
-      class="marks-input"
-      aria-label="Bookmark Name"
-    />
-  </div>
+    <div class="input-group">
+        <label for="urlNameInput" class="input-label">Bookmark Name:</label>
+        <input
+            type="text"
+            id="urlNameInput"
+            placeholder="e.g., Google Search"
+            class="marks-input"
+            aria-label="Bookmark Name"
+        />
+    </div>
 
-  <div class="input-group">
-    <label for="urlInput" class="input-label">URL:</label>
-    <input
-      type="url"
-      id="urlInput"
-      placeholder="e.g., https://www.google.com"
-      class="marks-input"
-      aria-label="URL"
-    />
-  </div>
+    <div class="input-group">
+        <label for="urlInput" class="input-label">URL:</label>
+        <input
+            type="url"
+            id="urlInput"
+            placeholder="e.g., https://www.google.com"
+            class="marks-input"
+            aria-label="URL"
+        />
+    </div>
 
-  <button id="addMarkButton" class="marks-button">Add Bookmark</button>
+    <div class="input-group checkbox-group">
+        <input type="checkbox" id="exactMatchCheckbox" class="marks-checkbox" />
+        <label for="exactMatchCheckbox" class="checkbox-label">Exact URL match when navigating</label>
+    </div>
 
-  <h3 class="bookmarks-list-title">Saved Bookmarks</h3>
-  <div id="marksList" class="marks-list">
-    <!-- Bookmarks will be dynamically added here by JavaScript -->
-    <p class="no-marks-message">No bookmarks added yet.</p>
-  </div>
+    <button id="addMarkButton" class="marks-button">Add Bookmark</button>
+
+    <h3 class="bookmarks-list-title">Saved Bookmarks</h3>
+    <div id="marksList" class="marks-list">
+        <p class="no-marks-message">No bookmarks added yet.</p>
+    </div>
 </div>
 <p class="settings-hint">Press F3 again to hide Bookmarks.</p>
