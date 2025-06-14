@@ -7,15 +7,18 @@ window.initHarpoonFeature = async () => {
     const harpoonListContainer = document.getElementById("harpoonList");
     const noHarpoonedMessage = harpoonListContainer.querySelector(".no-harpooned-message");
 
-    // State variable for the currently selected item in the harpoon list
-    let selectedHarpoonIndex = -1;
-    let harpoonedTabs = []; // Array to hold the current harpooned tabs
-
     // Exit if essential elements are not found, indicating an issue with HTML injection.
     if (!harpoonListContainer) {
         console.error("Harpoon feature: Essential DOM elements not found after initHarpoonFeature call.");
         return;
     }
+
+    // State variable for the currently selected item in the harpoon list
+    let selectedHarpoonIndex = -1;
+    let harpoonedTabs = []; // Array to hold the current harpooned tabs
+
+    // Local storage key for harpooned tabs (consistent with popup.js prefix)
+    const LS_HARPOONED_TABS_KEY = "fuzzyTabSearch_harpoonedTabs";
 
     /**
      * Highlights the currently selected item in the harpoon list.
@@ -23,10 +26,12 @@ window.initHarpoonFeature = async () => {
      */
     const highlightHarpoonItem = () => {
         const items = harpoonListContainer.querySelectorAll(".harpoon-item");
+        console.log("highlightHarpoonItem called. Selected index:", selectedHarpoonIndex, "Visible items:", items.length);
         items.forEach((item, index) => {
             if (index === selectedHarpoonIndex) {
                 item.classList.add("selected");
                 item.scrollIntoView({ block: "nearest", behavior: "smooth" });
+                console.log("Item at index", index, "highlighted.");
             } else {
                 item.classList.remove("selected");
             }
@@ -34,7 +39,7 @@ window.initHarpoonFeature = async () => {
     };
 
     /**
-     * Navigates the harpoon list up or down.
+     * Navigates the harpoon list up or down, with cycling.
      * @param {string} direction "up" or "down".
      */
     const navigateHarpoonList = (direction) => {
@@ -61,14 +66,11 @@ window.initHarpoonFeature = async () => {
         if (selectedHarpoonIndex !== -1 && harpoonedTabs[selectedHarpoonIndex]) {
             const selectedItem = harpoonedTabs[selectedHarpoonIndex];
             try {
-                // Send a message to popup.js (or background.js) to handle the tab switch/creation
-                // Given the existing focusOrCreateTabByUrl in popup.js, it's best to call it directly.
-                // We assume popup.js's functions are available globally if harpoon.js is loaded into the same context.
-                // If not, we'd need to message the background script. For this scenario, direct call is simpler.
+                // We assume window.focusOrCreateTabByUrl is available from popup.js
                 if (typeof window.focusOrCreateTabByUrl === "function") {
                     window.focusOrCreateTabByUrl(selectedItem.url, false); // Harpooned tabs are generally not exact match
                 } else {
-                    console.error("focusOrCreateTabByUrl is not available in popup.js context.");
+                    console.error("focusOrCreateTabByUrl is not available in popup.js context. Falling back to background message.");
                     // Fallback to sending a message to background script if direct call fails
                     await chrome.runtime.sendMessage({
                         action: "openTabOrSwitch",
@@ -76,52 +78,110 @@ window.initHarpoonFeature = async () => {
                         exactMatch: false
                     });
                 }
+                // The popup will close via focusOrCreateTabByUrl's callback
             } catch (error) {
                 console.error("Error activating harpooned tab:", error);
             }
         }
     };
 
+    /**
+     * Moves the currently highlighted harpooned tab up or down in the list (non-cycling).
+     * @param {string} direction "up" or "down".
+     */
+    const moveHarpoonItem = async (direction) => {
+        console.log("moveHarpoonItem called. Current selectedIndex:", selectedHarpoonIndex, "Total tabs:", harpoonedTabs.length);
+        if (selectedHarpoonIndex === -1 || harpoonedTabs.length <= 1) {
+            console.log("Move conditions not met (no selection or 0/1 tabs).");
+            return; // Nothing to move or only one item
+        }
+
+        let newIndex = selectedHarpoonIndex;
+        if (direction === "up") {
+            if (selectedHarpoonIndex === 0) {
+                console.log("Cannot move up from first position.");
+                return; // Cannot move up from the first position
+            }
+            newIndex--;
+        } else if (direction === "down") {
+            if (selectedHarpoonIndex === harpoonedTabs.length - 1) {
+                console.log("Cannot move down from last position.");
+                return; // Cannot move down from the last position
+            }
+            newIndex++;
+        }
+
+        // Only perform move if the index actually changes
+        if (newIndex !== selectedHarpoonIndex) {
+            console.log(`Attempting to move from ${selectedHarpoonIndex} to ${newIndex}.`);
+            console.log("harpoonedTabs before splice:", JSON.stringify(harpoonedTabs.map(t => t.title)));
+
+            const [movedItem] = harpoonedTabs.splice(selectedHarpoonIndex, 1);
+            harpoonedTabs.splice(newIndex, 0, movedItem);
+
+            console.log("harpoonedTabs after splice:", JSON.stringify(harpoonedTabs.map(t => t.title)));
+
+            selectedHarpoonIndex = newIndex; // Update the selected index to the new position of the item
+            console.log("New selectedHarpoonIndex:", selectedHarpoonIndex);
+
+            await saveHarpoonedTabs(); // Persist the new order
+            renderHarpoonedTabs(); // Re-render the list
+            highlightHarpoonItem(); // Re-highlight the moved item at its new position
+            console.log("Move and UI update complete.");
+        } else {
+            console.log("No index change, not moving.");
+        }
+    };
 
     /**
-     * Loads harpooned tabs from the background script (which gets them from local storage).
-     * After loading, it renders them and sets initial focus.
+     * Saves the current list of harpooned tabs to chrome.storage.local.
+     */
+    const saveHarpoonedTabs = async () => {
+        try {
+            await chrome.storage.local.set({ [LS_HARPOONED_TABS_KEY]: harpoonedTabs });
+            console.log("Harpooned tabs saved successfully. Current state:", harpoonedTabs);
+        } catch (error) {
+            console.error("Error saving harpooned tabs to local storage:", error);
+        }
+    };
+
+    /**
+     * Loads harpooned tabs from chrome.storage.local.
+     */
+    const loadHarpoonedTabsFromStorage = async () => {
+        try {
+            const result = await chrome.storage.local.get(LS_HARPOONED_TABS_KEY);
+            const loaded = result[LS_HARPOONED_TABS_KEY] || [];
+            console.log("Harpooned tabs loaded from storage:", loaded);
+            return loaded;
+        } catch (error) {
+            console.error("Error loading harpooned tabs from local storage:", error);
+            return [];
+        }
+    };
+
+    /**
+     * Loads harpooned tabs, renders them, and sets initial focus.
      */
     const loadHarpoonedTabs = async () => {
-        try {
-            const response = await chrome.runtime.sendMessage({
-                action: "harpoonCommand",
-                command: "getHarpoonedTabs"
-            });
-            if (response && response.success) {
-                harpoonedTabs = response.tabs;
-                renderHarpoonedTabs();
-                // Set initial focus to the first item if the list is not empty
-                if (harpoonedTabs.length > 0) {
-                    selectedHarpoonIndex = 0;
-                    highlightHarpoonItem();
-                } else {
-                    selectedHarpoonIndex = -1;
-                }
-            } else {
-                console.error("Failed to load harpooned tabs:", response?.error || "Unknown error");
-                harpoonedTabs = []; // Fallback to empty array on error
-                renderHarpoonedTabs();
-                selectedHarpoonIndex = -1;
-            }
-        } catch (error) {
-            console.error("Error communicating with background script to load harpooned tabs:", error);
-            harpoonedTabs = [];
-            renderHarpoonedTabs();
+        harpoonedTabs = await loadHarpoonedTabsFromStorage(); // Direct load from local storage
+        renderHarpoonedTabs();
+        // Set initial focus to the first item if the list is not empty
+        if (harpoonedTabs.length > 0) {
+            selectedHarpoonIndex = 0;
+            highlightHarpoonItem();
+        } else {
             selectedHarpoonIndex = -1;
         }
     };
+
 
     /**
      * Renders the list of harpooned tabs in the UI.
      * It also attaches click listeners for activation and removal.
      */
     const renderHarpoonedTabs = () => {
+        console.log("renderHarpoonedTabs called. Harpooned tabs to render:", harpoonedTabs.length);
         harpoonListContainer.innerHTML = ""; // Clear existing list
 
         if (harpoonedTabs.length === 0) {
@@ -134,6 +194,7 @@ window.initHarpoonFeature = async () => {
                 msg.textContent = "No tabs harpooned yet.";
                 harpoonListContainer.appendChild(msg);
             }
+            console.log("No harpooned tabs, showing message.");
             return;
         } else {
             if (noHarpoonedMessage) {
@@ -171,9 +232,14 @@ window.initHarpoonFeature = async () => {
             removeButton.classList.add("remove-harpoon-button");
             removeButton.innerHTML = '✕'; // X icon
             removeButton.title = "Remove Harpooned Tab";
-            removeButton.addEventListener("click", (e) => {
+            removeButton.addEventListener("click", async (e) => {
                 e.stopPropagation(); // Prevent item activation when clicking remove button
-                removeHarpoonedTabFromList(harpoonedTab.url);
+                await removeHarpoonedTabFromList(harpoonedTab.url);
+                // After removal, adjust selected index if necessary
+                if (selectedHarpoonIndex >= harpoonedTabs.length) {
+                    selectedHarpoonIndex = harpoonedTabs.length > 0 ? harpoonedTabs.length - 1 : -1;
+                }
+                highlightHarpoonItem(); // Re-highlight after removal and index adjustment
             });
 
             harpoonItem.appendChild(favicon);
@@ -189,29 +255,21 @@ window.initHarpoonFeature = async () => {
 
             harpoonListContainer.appendChild(harpoonItem);
         });
+        console.log("renderHarpoonedTabs completed. UI updated.");
     };
 
     /**
-     * Removes a harpooned tab from the list via the background script.
+     * Removes a harpooned tab from the list by updating chrome.storage.local directly.
+     * This will also trigger a re-render.
      * @param {string} urlToRemove The URL of the tab to remove.
      */
     const removeHarpoonedTabFromList = async (urlToRemove) => {
-        try {
-            const response = await chrome.runtime.sendMessage({
-                action: "harpoonCommand",
-                command: "removeHarpoonedTab",
-                url: urlToRemove
-            });
-            if (response && response.success) {
-                // Re-load and re-render the list after successful removal
-                await loadHarpoonedTabs();
-            } else {
-                console.error("Failed to remove harpooned tab:", response?.error || "Unknown error");
-            }
-        } catch (error) {
-            console.error("Error communicating with background script to remove harpooned tab:", error);
-        }
+        harpoonedTabs = harpoonedTabs.filter(tab => tab.url !== urlToRemove);
+        await saveHarpoonedTabs(); // Persist the new list
+        renderHarpoonedTabs(); // Re-render the UI
+        console.log("Tab removed from harpoon list and saved.");
     };
+
 
     // Initial load of harpooned tabs when the initHarpoonFeature function is called
     await loadHarpoonedTabs();
@@ -222,6 +280,7 @@ window.initHarpoonFeature = async () => {
     window.refreshHarpoonedTabs = loadHarpoonedTabs;
     window.navigateHarpoonList = navigateHarpoonList;
     window.activateSelectedHarpoonItem = activateSelectedHarpoonItem;
+    window.moveHarpoonItem = moveHarpoonItem; // NEW: Expose move function
 };
 
 // Add a dummy `focusOrCreateTabByUrl` if it's not defined by `popup.js`

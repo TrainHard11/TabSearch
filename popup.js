@@ -305,6 +305,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 view.container.classList.add("hidden");
 
                 // Explicitly hide the content element if it's distinct from the container
+                // The tabList for 'tabSearch' is a sibling of searchInput, so it needs to be hidden too.
+                // The 'content' property in viewElements ensures we hide the right part.
                 if (view.content && view.content !== view.container) {
                     view.content.classList.add("hidden");
                 }
@@ -482,7 +484,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (customTabExactMatchCheckboxes[i]) {
                 currentSettings[`customTab${i + 1}ExactMatch`] =
-                    customTabExactMatchCheckboxes[i].checked;
+                    currentSettings[`customTab${i + 1}ExactMatch`];
             }
         }
         await chrome.storage.local.set(currentSettings);
@@ -1146,6 +1148,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (typeof window.activateSelectedHarpoonItem === "function") {
                     window.activateSelectedHarpoonItem();
                     // The closing and state clearing are now handled by activateSelectedHarpoonItem's underlying logic.
+                }
+            }
+            // NEW: Ctrl+Up and Ctrl+Down for reordering harpooned tabs
+            else if (e.altKey && e.key === "p") {
+                e.preventDefault();
+                if (typeof window.moveHarpoonItem === "function") {
+                    window.moveHarpoonItem("up");
+                }
+            } else if (e.altKey && e.key === "n") {
+                e.preventDefault();
+                if (typeof window.moveHarpoonItem === "function") {
+                    window.moveHarpoonItem("down");
                 }
             }
         }
