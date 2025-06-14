@@ -7,6 +7,8 @@
 		<link rel="stylesheet" href="popup.css" />
 		<link rel="stylesheet" href="style/help.css" />
 		<link rel="stylesheet" href="Marks/marks.css" />
+		<!-- NEW: Link Harpoon CSS -->
+		<link rel="stylesheet" href="Harpoon/harpoon.css" />
 	</head>
 	<body>
 		<div class="container">
@@ -21,21 +23,27 @@
 			</div>
 			<ul id="tabList"></ul>
 
+			<!-- UPDATED: Info text with new F-key mappings -->
 			<div class="info-text">
-				Press F1 for Settings, F2 for Help, F3 for Marks, F4 for Keymaps.
+				Press F1 for Settings, F2 for Marks, F3 for Harpoon, F4 for Help, F5 for Keymaps.
 				<br />
-				**Alt+F1**: Open Chrome Extensions page | **Alt+F2**: Open Keyboard Shortcuts page
+				**Alt+F1-F4**: Move highlighted item to position 1-4.
 			</div>
 
 			<div id="settingsContentContainer" class="options-container hidden"></div>
 
 			<div id="helpContentContainer" class="help-container hidden">
-				<p class="settings-hint">Press F2 again to hide help.</p>
+				<p class="settings-hint">Press F4 again to hide help.</p>
 			</div>
 
 			<div id="marksSection" class="marks-container hidden"></div>
+
+			<!-- NEW: Harpoon Section -->
+			<div id="harpoonSection" class="harpoon-container hidden"></div>
 		</div>
 		<script src="popup.js"></script>
 		<script src="Marks/marks.js"></script>
+		<!-- NEW: Link Harpoon JS -->
+		<script src="Harpoon/harpoon.js"></script>
 	</body>
 </html>

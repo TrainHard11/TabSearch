@@ -17,6 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabCounter = document.getElementById("tabCounter"); // This will now be a results counter
     const helpContentContainer = document.getElementById("helpContentContainer");
     const marksSection = document.getElementById("marksSection"); // Marks Section reference
+    // NEW: Harpoon Section reference
+    const harpoonSection = document.getElementById("harpoonSection");
     const infoText = document.querySelector(".info-text");
     const searchArea = document.querySelector(".search-area");
     const settingsContentContainer = document.getElementById(
@@ -39,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let helpContentLoaded = false;
     let settingsContentLoaded = false;
     let marksContentLoaded = false; // New state variable for Marks content
+    let harpoonContentLoaded = false; // NEW: State variable for Harpoon content
 
     // Flag to indicate if the current searchInput value came from a persistent query
     let isPersistentQueryActive = false;
@@ -292,7 +295,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 content: settingsContentContainer,
             },
             help: { container: helpContentContainer, content: helpContentContainer },
-            marks: { container: marksSection, content: marksSection }, // Marks view element
+            marks: { container: marksSection, content: marksSection },
+            harpoon: { container: harpoonSection, content: harpoonSection }, // NEW: Harpoon view element
         };
 
         const hideAllViews = () => {
@@ -619,6 +623,48 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    /**
+     * NEW: Loads Harpoon content dynamically from Harpoon/harpoon.html and initializes its script.
+     */
+    const loadHarpoonContent = async () => {
+        if (!harpoonContentLoaded) {
+            try {
+                const response = await fetch(
+                    chrome.runtime.getURL("Harpoon/harpoon.html"),
+                );
+                if (response.ok) {
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, "text/html");
+                    const harpoonHtmlContent =
+                        doc.querySelector(".harpoon-content").innerHTML;
+                    harpoonSection.innerHTML = harpoonHtmlContent;
+                    harpoonContentLoaded = true;
+
+                    console.log("popup.js: Calling initHarpoonFeature.");
+
+                    if (typeof window.initHarpoonFeature === "function") {
+                        await window.initHarpoonFeature();
+                    } else {
+                        console.error(
+                            "window.initHarpoonFeature is not defined. Ensure Harpoon/harpoon.js is loaded and defines window.initHarpoonFeature globally.",
+                        );
+                    }
+                } else {
+                    console.error(
+                        "Failed to load Harpoon/harpoon.html:",
+                        response.statusText,
+                    );
+                    harpoonSection.innerHTML = "<p>Error loading Harpoon content.</p>";
+                }
+            } catch (error) {
+                console.error("Error fetching Harpoon/harpoon.html:", error);
+                harpoonSection.innerHTML = "<p>Error fetching Harpoon content.</p>";
+            }
+        }
+    };
+
+
     // --- Search & UI Rendering ---
 
     /**
@@ -819,7 +865,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 urlSpan.innerHTML = highlightText(item.url || "", currentQuery);
 
                 listItem.addEventListener("click", () => {
-                    // This now directly calls focusOrCreateTabByUrl in popup.js
+                    // Pass the exactMatch property when activating the bookmark
                     focusOrCreateTabByUrl(item.url, item.exactMatch);
                 });
             }
@@ -869,7 +915,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 searchInput.focus();
             } else {
                 // If it's a mark, log that deletion is not supported from this view, or simply do nothing.
-                console.log("Cannot delete bookmark from search results view. Please manage bookmarks in 'My Bookmarks' (F3) section.");
+                console.log("Cannot delete bookmark from search results view. Please manage bookmarks in 'My Bookmarks' (F2) section.");
                 // Optionally, you could show a temporary message to the user.
             }
         }
@@ -906,76 +952,78 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedItem = selectedIndex !== -1 ? filteredResults[selectedIndex] : null;
         const isItemHighlighted = selectedItem !== null;
 
-        if (e.ctrlKey && isItemHighlighted) {
+        // --- Alt+F-key combinations for moving items (tabs or bookmarks) ---
+        if (e.altKey) { // Removed isItemHighlighted from this condition as it's checked inside
             let targetIndex = -1;
-            if (e.key === "1") {
+            if (e.key === "F1") {
                 targetIndex = 0; // First position (0-indexed)
-            } else if (e.key === "2") {
+            } else if (e.key === "F2") {
                 targetIndex = 1; // Second position
-            } else if (e.key === "3") {
+            } else if (e.key === "F3") {
                 targetIndex = 2; // Third position
-            } else if (e.key === "4") {
+            } else if (e.key === "F4") {
                 targetIndex = 3; // Fourth position
             }
 
             if (targetIndex !== -1) {
-                e.preventDefault(); // Prevent default browser action for Alt+F#
+                if (isItemHighlighted) { // Only attempt to move if an item is highlighted
+                    e.preventDefault(); // Prevent default browser action for Alt+F#
 
-                // Prepare data to send to background script
-                const messageData = {
-                    action: "executeMoveTabCommand",
-                    command: "moveHighlightedItem", // Generic command for moving items
-                    itemUrl: selectedItem.url,
-                    exactMatch: selectedItem.type === 'mark' ? (selectedItem.exactMatch || false) : false, // Only bookmarks have exactMatch property
-                    targetIndex: targetIndex,
-                };
+                    // Prepare data to send to background script
+                    const messageData = {
+                        action: "executeMoveTabCommand",
+                        command: "moveHighlightedItem", // Generic command for moving items
+                        itemUrl: selectedItem.url,
+                        exactMatch: selectedItem.type === 'mark' ? (selectedItem.exactMatch || false) : false, // Only bookmarks have exactMatch property
+                        targetIndex: targetIndex,
+                    };
 
-                try {
-                    const response = await chrome.runtime.sendMessage(messageData);
-                    if (response && response.success) {
-                        console.log(`Successfully moved item to position ${targetIndex}.`);
-                        // The popup will likely close if the tab becomes active, which is desired.
-                        window.close(); // Close the popup after action
-                    } else {
-                        console.error(`Error moving item to position ${targetIndex}:`, response?.error || "Unknown error");
+                    try {
+                        const response = await chrome.runtime.sendMessage(messageData);
+                        if (response && response.success) {
+                            console.log(`Successfully moved item to position ${targetIndex}.`);
+                            window.close(); // Close the popup after action
+                        } else {
+                            console.error(`Error moving item to position ${targetIndex}:`, response?.error || "Unknown error");
+                        }
+                    } catch (error) {
+                        console.error(`Error sending message to move item to position ${targetIndex}:`, error);
                     }
-                } catch (error) {
-                    console.error(`Error sending message to move item to position ${targetIndex}:`, error);
+                } else {
+                    // If Alt+F# is pressed without an item highlighted, maybe show a message or do nothing.
+                    console.log(`Alt+F${e.key.replace('F','')} pressed, but no item is highlighted to move.`);
                 }
-                return; 
+                return; // Exit after handling Alt+F#
             }
         }
 
         // --- Other global F-key combinations (view switching, shortcuts page) ---
-        // These now only trigger if Alt is NOT pressed, or if no item is highlighted (for Alt+F2 shortcuts case)
+        // These now only trigger if Alt is NOT pressed, or if it's the specific F5 case.
         if (!e.altKey) {
             if (e.key === "F1") {
                 e.preventDefault();
                 await ViewManager.toggle("settings", loadSettingsContent);
-            } else if (e.key === "F2") {
-                e.preventDefault();
-                await ViewManager.toggle("help", loadHelpContent);
-            } else if (e.key === "F3") {
+            } else if (e.key === "F2") { // F2 for Marks
                 e.preventDefault();
                 await ViewManager.toggle("marks", loadMarksContent);
-            } else if (e.key === "F4") {
+            } else if (e.key === "F3") { // F3 for Harpoon
+                e.preventDefault();
+                await ViewManager.toggle("harpoon", loadHarpoonContent);
+            } else if (e.key === "F4") { // F4 for Help
+                e.preventDefault();
+                await ViewManager.toggle("help", loadHelpContent);
+            } else if (e.key === "F5") { // F5 for Keymaps (old F4 functionality)
                 e.preventDefault();
                 const shortcutsUrl =
                     typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL
                         ? "chrome://extensions/shortcuts" // Chromium
                         : "chrome://extensions/shortcuts"; // Assume Chromium for now, Firefox would be "about:addons"
-                openUrl(shortcutsUrl); // Changed to openUrl to maintain popup flow consistency
-                clearPersistentLastQuery(); // Clear memory if user goes to shortcuts
+                openUrl(shortcutsUrl);
+                clearPersistentLastQuery();
             }
-        } else if (e.altKey && e.key === "F2" && !isItemHighlighted) { // Special case: Alt+F2 for shortcuts ONLY if no item is highlighted
-            e.preventDefault();
-            const shortcutsUrl =
-                typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL
-                    ? "chrome://extensions/shortcuts"
-                    : "chrome://extensions/shortcuts";
-            openUrl(shortcutsUrl);
-            clearPersistentLastQuery();
         }
+        // Removed the specific Alt+F2 for shortcuts, as F5 now handles it more generally,
+        // and Alt+F# is now dedicated to moving items when one is highlighted.
     });
 
     // Keyboard navigation within the main tab search view
