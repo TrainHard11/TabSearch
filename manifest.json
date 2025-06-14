@@ -48,8 +48,7 @@
     "move_tab_to_second": {
       "description": "Move tab to 2nd place"
     },
-    "move_tab_to_third":
-    {
+    "move_tab_to_third": {
       "description": "Move tab to 3rd place"
     },
     "move_tab_to_fourth": {
@@ -78,6 +77,18 @@
         "default": "Alt+Q"
       },
       "description": "Add current tab to Harpoon list"
+    },
+    "harpoon_command_1": {
+      "description": "Activate 1st Harpooned Tab"
+    },
+    "harpoon_command_2": {
+      "description": "Activate 2nd Harpooned Tab"
+    },
+    "harpoon_command_3": {
+      "description": "Activate 3rd Harpooned Tab"
+    },
+    "harpoon_command_4": {
+      "description": "Activate 4th Harpooned Tab"
     }
   },
   "browser_specific_settings": {

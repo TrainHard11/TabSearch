@@ -353,6 +353,22 @@ async function removeHarpoonedTab(urlToRemove) {
     }
 }
 
+/**
+ * Activates a harpooned tab by its index.
+ * Used by manifest commands.
+ * @param {number} index The 0-indexed position of the harpooned tab to activate.
+ */
+async function activateHarpoonedTabByIndex(index) {
+    const harpoonedTabs = await getHarpoonedTabs();
+    if (index >= 0 && index < harpoonedTabs.length) {
+        const tabToActivate = harpoonedTabs[index];
+        console.log(`Activating harpooned tab at index ${index}: ${tabToActivate.title}`);
+        await focusOrCreateTab(tabToActivate.url, false); // Harpooned tabs are generally not exact match
+    } else {
+        console.warn(`Attempted to activate harpooned tab at invalid index: ${index}. List has ${harpoonedTabs.length} items.`);
+    }
+}
+
 
 // Listen for commands defined in manifest.json
 chrome.commands.onCommand.addListener(async (command) => {
@@ -442,10 +458,24 @@ chrome.commands.onCommand.addListener(async (command) => {
         case "harpoon_current_tab": // NEW COMMAND HANDLER
             await addCurrentTabToHarpoonList();
             break;
+        // --- NEW: Harpoon Command Handlers ---
+        case "harpoon_command_1":
+            await activateHarpoonedTabByIndex(0);
+            break;
+        case "harpoon_command_2":
+            await activateHarpoonedTabByIndex(1);
+            break;
+        case "harpoon_command_3":
+            await activateHarpoonedTabByIndex(2);
+            break;
+        case "harpoon_command_4":
+            await activateHarpoonedTabByIndex(3);
+            break;
+        // --- END NEW ---
     }
 });
 
-// Listener for messages from popup.js (e.g., to move a specific tab or bookmark)
+// Listen for messages from popup.js (e.g., to move a specific tab or bookmark)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Check if the request is to execute a command from the popup
     if (request.action === "executeMoveTabCommand") {
