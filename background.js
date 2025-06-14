@@ -369,6 +369,8 @@ async function activateHarpoonedTabByIndex(index) {
     }
 }
 
+// NEW: Key for commanding the initial view upon popup opening
+const COMMAND_INITIAL_VIEW_KEY = "fuzzyTabSearch_commandInitialView";
 
 // Listen for commands defined in manifest.json
 chrome.commands.onCommand.addListener(async (command) => {
@@ -384,6 +386,15 @@ chrome.commands.onCommand.addListener(async (command) => {
     ]);
 
     switch (command) {
+        case "_execute_action":
+            // When the default action command is triggered, explicitly set the view to tabSearch
+            await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "tabSearch" });
+            // chrome.action.openPopup() is usually implicitly called by _execute_action
+            break;
+        case "open_harpoon_view": // NEW command
+            await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "harpoon" });
+            await chrome.action.openPopup(); // Programmatically open the popup
+            break;
         case "custom_tab_1":
             if (settings.customTab1Url) {
                 focusOrCreateTab(settings.customTab1Url, settings.customTab1ExactMatch || false);

@@ -89,6 +89,9 @@
     },
     "harpoon_command_4": {
       "description": "Activate 4th Harpooned Tab"
+    },
+    "open_harpoon_view": {
+      "description": "Open Extension in Harpoon View"
     }
   },
   "browser_specific_settings": {

@@ -1,14 +1,18 @@
+// popup.js
 document.addEventListener("DOMContentLoaded", () => {
     // --- Constants and DOM Element References ---
     const LS_PREFIX = "fuzzyTabSearch_"; // Local storage prefix for all keys
     const LS_LAST_QUERY_PERSISTENT = `${LS_PREFIX}lastQueryPersistent`; // For short-term memory
     const LS_LAST_QUERY_TIMESTAMP = `${LS_PREFIX}lastQueryTimestamp`; // For short-term memory
 
-    // Constants for view state management (using sessionStorage for current session)
-    const SS_LAST_QUERY_SESSION = `${LS_PREFIX}lastQuerySession`;
+    // Constants for view state management (using chrome.storage.session for current session)
+    const SS_LAST_QUERY_SESSION = `${LS_PREFIX}lastQuerySession`; // Now used for popup session memory
     const SS_FILTERED_RESULTS_SESSION = `${LS_PREFIX}filteredResultsSession`;
     const SS_SELECTED_INDEX_SESSION = `${LS_PREFIX}selectedIndexSession`;
     const SS_LAST_VIEW = `${LS_PREFIX}lastView`;
+
+    // NEW: Key for commanding the initial view upon popup opening (stored in chrome.storage.session)
+    const COMMAND_INITIAL_VIEW_KEY = `${LS_PREFIX}commandInitialView`;
 
     const SEARCH_MEMORY_DURATION_MS = 20 * 1000; // 20 seconds
 
@@ -397,12 +401,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const getActiveView = () => activeView;
 
-        // Initialize with the last active view if available from session storage
-        const initialView = sessionStorage.getItem(SS_LAST_VIEW) || "tabSearch";
-        if (initialView !== activeView) {
-            activeView = initialView; // Set it initially, but showView will handle actual display
-        }
-
         return {
             show: showView,
             toggle: toggleView,
@@ -484,7 +482,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (customTabExactMatchCheckboxes[i]) {
                 currentSettings[`customTab${i + 1}ExactMatch`] =
-                    currentSettings[`customTab${i + 1}ExactMatch`];
+                    customTabExactMatchCheckboxes[i].checked; // Corrected: assign checked property
             }
         }
         await chrome.storage.local.set(currentSettings);
@@ -1193,8 +1191,31 @@ document.addEventListener("DOMContentLoaded", () => {
             await loadMarksContent(); // Ensure marks are loaded and getAllBookmarks is callable
         }
 
-        // Determine the initial view based on sessionStorage, or default to tabSearch
-        const initialView = sessionStorage.getItem(SS_LAST_VIEW) || "tabSearch";
+        // Determine the initial view based on a command flag from background script,
+        // or fall back to sessionStorage, or default to tabSearch
+        let initialViewFromCommand = await chrome.storage.session.get(COMMAND_INITIAL_VIEW_KEY);
+        initialViewFromCommand = initialViewFromCommand[COMMAND_INITIAL_VIEW_KEY];
+
+        let initialView;
+        if (initialViewFromCommand) {
+            initialView = initialViewFromCommand;
+            await chrome.storage.session.remove(COMMAND_INITIAL_VIEW_KEY); // Clear the flag after use
+        } else {
+            initialView = sessionStorage.getItem(SS_LAST_VIEW) || "tabSearch";
+        }
+
+        // Ensure relevant content is loaded for the determined initial view
+        if (initialView === "marks" && !marksContentLoaded) {
+            await loadMarksContent();
+        } else if (initialView === "settings" && !settingsContentLoaded) {
+            await loadSettingsContent();
+        } else if (initialView === "help" && !helpContentLoaded) {
+            await loadHelpContent();
+        } else if (initialView === "harpoon" && !harpoonContentLoaded) {
+            await loadHarpoonContent(); // Ensure harpoon content is loaded if starting in harpoon view
+        }
+
+
         // Show the initial view (will handle session state restoration if tabSearch)
         ViewManager.show(initialView, initialView === "tabSearch");
 
