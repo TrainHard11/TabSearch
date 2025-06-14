@@ -906,16 +906,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedItem = selectedIndex !== -1 ? filteredResults[selectedIndex] : null;
         const isItemHighlighted = selectedItem !== null;
 
-        // --- Alt+F-key combinations for moving items (tabs or bookmarks) ---
-        if (e.altKey && isItemHighlighted) {
+        if (e.ctrlKey && isItemHighlighted) {
             let targetIndex = -1;
-            if (e.key === "F1") {
+            if (e.key === "1") {
                 targetIndex = 0; // First position (0-indexed)
-            } else if (e.key === "F2") {
+            } else if (e.key === "2") {
                 targetIndex = 1; // Second position
-            } else if (e.key === "F3") {
+            } else if (e.key === "3") {
                 targetIndex = 2; // Third position
-            } else if (e.key === "F4") {
+            } else if (e.key === "4") {
                 targetIndex = 3; // Fourth position
             }
 
@@ -943,7 +942,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 } catch (error) {
                     console.error(`Error sending message to move item to position ${targetIndex}:`, error);
                 }
-                return; // Exit after handling Alt+F#
+                return; 
             }
         }
 
