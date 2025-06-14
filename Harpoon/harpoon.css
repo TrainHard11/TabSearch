@@ -1,78 +1,45 @@
-/* Harpoon/harpoon.css */
-
 .harpoon-container {
     display: flex;
     flex-direction: column;
     padding: 15px;
-    gap: 15px;
-    background-color: #21252b; /* Matches tabList background */
+    gap: 15px; 
+    background-color: #21252b; 
     border-radius: 8px;
-    color: #e0e0e0; /* Matches main text color */
-    border: 1px solid #333; /* Matches tabList border */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Matches tabList shadow */
-    flex-grow: 1; /* Allow it to take available space */
-    overflow-y: hidden; /* Default: no scrollbar */
+    color: #e0e0e0; 
+    border: 1px solid #333; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); 
+    flex-grow: 1; 
 }
 
 .harpoon-content {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 15px; 
+    flex-grow: 1; 
 }
 
-.harpoon-container h2 {
-    color: #fabd2f; /* A distinct, warm color for the Harpoon title */
+.harpoon-container h3 {
+    color: #fabd2f;
     margin-top: 0;
     margin-bottom: 10px;
     font-size: 1.8em;
-    text-align: center;
-    border-bottom: 1px solid #444; /* Matches settings header border */
+    border-bottom: 1px solid #444;
     padding-bottom: 10px;
-}
-
-.harpoon-list-title {
-    color: #fabd2f; /* Matches Harpoon title color */
-    margin-top: 20px;
-    margin-bottom: 10px;
-    font-size: 1.4em;
-    text-align: center;
-    border-top: 1px dashed #555; /* Consistent separator */
-    padding-top: 15px;
 }
 
 .harpoon-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 10px; 
     padding: 0;
-    margin: 0;
-    max-height: 300px; /* Limit height for scrollability, similar to marks */
-    overflow-y: auto; /* Enable scroll for harpoon list */
-    padding-right: 5px; /* Space for scrollbar */
-}
-
-/* Scrollbar styling for .harpoon-list */
-.harpoon-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-.harpoon-list::-webkit-scrollbar-track {
-    background: #2c313a;
-    border-radius: 4px;
-}
-
-.harpoon-list::-webkit-scrollbar-thumb {
-    background: #555;
-    border-radius: 4px;
-}
-
-.harpoon-list::-webkit-scrollbar-thumb:hover {
-    background: #fabd2f; /* Harpoon accent color on hover */
+    margin: 0 auto; 
+    width: 90%; 
+    list-style: none; 
 }
 
 .no-harpooned-message {
     text-align: center;
-    color: #8a8a8a; /* Consistent muted text color */
+    color: #8a8a8a; 
     font-style: italic;
     padding: 20px 0;
 }
@@ -81,36 +48,38 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: #2c313a; /* Slightly lighter than main background */
+    background-color: #2c313a;
     padding: 10px 15px;
     border-radius: 6px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    transition: transform 0.1s ease, background-color 0.2s ease;
-    cursor: pointer; /* Add pointer cursor to indicate interactivity */
+    cursor: pointer;
+    border-bottom: 1px solid #21252b;
+}
+
+.harpoon-list .harpoon-item:last-child {
+    border-bottom: none;
 }
 
 .harpoon-item:hover {
-    transform: translateY(-2px);
-    background-color: #3a4049; /* Matches tabList li:hover */
+    background-color: #3a4049;
 }
 
-/* New style for selected harpoon item */
 .harpoon-item.selected {
-    background-color: #fabd2f; /* Highlight color */
-    color: #21252b; /* Text color for selected item */
+    /* background-color: #fabd2f; */
+    background-color: #bbc2cf;
+    color: #21252b; 
     font-weight: bold;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-    transform: translateY(-2px) scale(1.02);
+    transform: translateY(-2px); 
 }
 
 .harpoon-item.selected .harpoon-title {
-    color: #21252b; /* Darker text for better contrast on selected item */
+    color: #21252b;
 }
 
 .harpoon-item.selected .harpoon-url {
-    color: #555; /* Muted darker text for URL on selected item */
+    color: #555;
 }
-
 
 .harpoon-item .favicon {
     width: 16px;
@@ -142,15 +111,16 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .harpoon-url:hover {
     text-decoration: underline;
-    color: #fabd2f; /* Harpoon accent color on hover */
+    color: #61afef;
 }
 
 .remove-harpoon-button {
-    background-color: #e06c75; /* A subtle red */
+    background-color: #e06c75;
     color: #282c34;
     border: none;
     border-radius: 50%;
@@ -166,7 +136,7 @@
 }
 
 .remove-harpoon-button:hover {
-    background-color: #be504c; /* Darker red on hover */
+    background-color: #be504c;
     transform: scale(1.1);
 }
 
@@ -174,7 +144,6 @@
     transform: scale(1);
 }
 
-/* Consistent hint style */
 .harpoon-container .settings-hint {
     text-align: center;
     color: #888;
@@ -184,17 +153,3 @@
     border-top: 1px solid #333;
 }
 
-/* Responsive adjustments */
-@media (max-width: 350px) {
-    .harpoon-container {
-        padding: 10px;
-        gap: 10px;
-    }
-
-    .harpoon-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 5px;
-        padding: 8px 10px;
-    }
-}

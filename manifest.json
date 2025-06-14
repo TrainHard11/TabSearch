@@ -1,97 +1,94 @@
 {
   "manifest_version": 3,
   "name": "Fuzzy Tab & Search Navigator",
-  "version": "2.0",
+  "version": "3.0",
   "description": "Fuzy switch between Chrome tabs and navigate search results.",
   "permissions": ["tabs", "scripting", "storage"],
   "host_permissions": ["*://www.google.com/search?*"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "img/SGN256.png"
+      "16": "img/icon.png"
     }
-  },
-  "icons": {
-    "16": "img/SGN256.png"
   },
   "commands": {
     "_execute_action": {
       "suggested_key": {
         "default": "Alt+A"
       },
-      "description": "Open Fuzzy Tab Switcher"
+      "description": "Open_Main_View"
     },
-    "custom_tab_1": {
-      "description": "Custom Tab 1"
-    },
-    "custom_tab_2": {
-      "description": "Custom Tab 2"
-    },
-    "custom_tab_3": {
-      "description": "Custom Tab 3"
-    },
-    "custom_tab_4": {
-      "description": "Custom Tab 4"
-    },
-    "custom_tab_5": {
-      "description": "Custom Tab 5"
-    },
-    "custom_tab_6": {
-      "description": "Custom Tab 6"
-    },
-    "custom_tab_7": {
-      "description": "Custom Tab 7"
-    },
-    "move_tab_to_first": {
-      "description": "Move tab to 1st place"
-    },
-    "move_tab_to_second": {
-      "description": "Move tab to 2nd place"
-    },
-    "move_tab_to_third": {
-      "description": "Move tab to 3rd place"
-    },
-    "move_tab_to_fourth": {
-      "description": "Move tab to 4th place"
-    },
-    "open_new_empty_tab": {
-      "description": "New empty tab"
-    },
-    "cycle_audible_tabs": {
-      "description": "Cycle tabs playing audio"
-    },
-    "cycle_youtube_tabs": {
-      "description": "Cycle YouTube tabs"
-    },
-    "move_tab_left": {
-      "description": "Move current tab to the left"
-    },
-    "move_tab_right": {
-      "description": "Move current tab to the right"
-    },
-    "cycle_media_tabs": {
-      "description": "Cycle media tabs"
+	    "open_harpoon_view": {
+      "description": "Open_Harpoon"
     },
     "harpoon_current_tab": {
       "suggested_key": {
-        "default": "Alt+Q"
+        "default": "Alt+M"
       },
-      "description": "Add current tab to Harpoon list"
+      "description": "Add_tab_to_Harpoon"
     },
     "harpoon_command_1": {
-      "description": "Activate 1st Harpooned Tab"
+      "description": "Harpoon_1"
     },
     "harpoon_command_2": {
-      "description": "Activate 2nd Harpooned Tab"
+      "description": "Harpoon_2"
     },
     "harpoon_command_3": {
-      "description": "Activate 3rd Harpooned Tab"
+      "description": "Harpoon_3"
     },
     "harpoon_command_4": {
-      "description": "Activate 4th Harpooned Tab"
+      "description": "Harpoon_4"
     },
-    "open_harpoon_view": {
-      "description": "Open Extension in Harpoon View"
+    "custom_tab_1": {
+      "description": "Custom_Tab_1"
+    },
+    "custom_tab_2": {
+      "description": "Custom_Tab_2"
+    },
+    "custom_tab_3": {
+      "description": "Custom_Tab_3"
+    },
+    "custom_tab_4": {
+      "description": "Custom_Tab_4"
+    },
+    "custom_tab_5": {
+      "description": "Custom_Tab_5"
+    },
+    "custom_tab_6": {
+      "description": "Custom_Tab_6"
+    },
+    "custom_tab_7": {
+      "description": "Custom_Tab_7"
+    },
+    "move_tab_to_first": {
+      "description": "Move_tab_to_1st"
+    },
+    "move_tab_to_second": {
+      "description": "Move_tab_to_2nd"
+    },
+    "move_tab_to_third": {
+      "description": "Move_tab_to_3rd"
+    },
+    "move_tab_to_fourth": {
+      "description": "Move_tab_to_4th"
+    },
+    "open_new_empty_tab": {
+      "description": "New_empty_tab"
+    },
+    "cycle_audible_tabs": {
+      "description": "Cycle_tabs_playing_audio"
+    },
+    "cycle_youtube_tabs": {
+      "description": "Cycle_YouTube_tabs"
+    },
+    "move_tab_left": {
+      "description": "Move_tab_left"
+    },
+    "move_tab_right": {
+      "description": "Move_tab_right"
+    },
+    "cycle_media_tabs": {
+      "description": "Cycle_media_tabs"
     }
   },
   "browser_specific_settings": {
