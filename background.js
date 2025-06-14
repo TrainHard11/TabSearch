@@ -15,6 +15,7 @@ async function focusOrCreateTab(tabUrl, exactMatch = false) {
         // Focus its window and then activate the tab.
         await chrome.windows.update(targetTab.windowId, { focused: true });
         await chrome.tabs.update(targetTab.id, { active: true });
+        return targetTab; // Return the tab object
     } else {
         // 2. If no existing tab matching the criteria is found,
         //    check the current active tab to see if it's empty.
@@ -31,53 +32,64 @@ async function focusOrCreateTab(tabUrl, exactMatch = false) {
 
         if (isEmptyTab) {
             // If the current tab is empty, update its URL to the new tab URL.
-            await chrome.tabs.update(currentTab.id, { url: tabUrl });
+            const updatedTab = await chrome.tabs.update(currentTab.id, { url: tabUrl });
+            return updatedTab; // Return the updated tab object
         } else {
             // If the current tab is not empty, create a brand new tab with the new tab URL.
-            await chrome.tabs.create({ url: tabUrl });
+            const newTab = await chrome.tabs.create({ url: tabUrl });
+            return newTab; // Return the new tab object
         }
-    }
-}
-
-// Function to move the current tab to a specific position (0-indexed)
-async function moveCurrentTabToPosition(index) {
-    const [currentTab] = await chrome.tabs.query({
-        active: true,
-        currentWindow: true,
-    });
-    if (currentTab) {
-        const tabsInWindow = await chrome.tabs.query({ windowId: currentTab.windowId });
-        const maxIndex = tabsInWindow.length - 1;
-
-        const effectiveIndex = Math.max(0, Math.min(index, maxIndex + 1));
-
-        chrome.tabs.move(currentTab.id, { index: effectiveIndex });
     }
 }
 
 /**
- * Moves a specific tab to a designated position (0-indexed) in its window.
- * @param {number} tabId The ID of the tab to move.
+ * Moves a given tab to a specific position (0-indexed) in its window.
+ * @param {chrome.tabs.Tab} tab The tab object to move.
  * @param {number} targetIndex The 0-indexed position to move the tab to.
  */
-async function moveTabToPosition(tabId, targetIndex) {
+async function moveTabToPosition(tab, targetIndex) {
     try {
-        const tab = await chrome.tabs.get(tabId);
-        if (tab) {
-            // Get all tabs in the window to determine the valid range for targetIndex
-            const tabsInWindow = await chrome.tabs.query({ windowId: tab.windowId });
-            const maxIndex = tabsInWindow.length - 1;
+        if (!tab || typeof tab.id === 'undefined') {
+            console.warn("Attempted to move an invalid tab:", tab);
+            return;
+        }
 
-            // Ensure targetIndex is within valid bounds (0 to maxIndex)
-            const actualTargetIndex = Math.max(0, Math.min(targetIndex, maxIndex));
+        const tabsInWindow = await chrome.tabs.query({ windowId: tab.windowId });
+        const maxIndex = tabsInWindow.length - 1;
 
-            await chrome.tabs.move(tabId, { index: actualTargetIndex });
-            // Optionally, focus the tab after moving it
-            await chrome.windows.update(tab.windowId, { focused: true });
-            await chrome.tabs.update(tabId, { active: true });
+        // Ensure targetIndex is within valid bounds (0 to maxIndex + 1 for appending)
+        const actualTargetIndex = Math.max(0, Math.min(targetIndex, maxIndex + 1));
+
+        await chrome.tabs.move(tab.id, { index: actualTargetIndex });
+        // Optionally, focus the tab after moving it
+        await chrome.windows.update(tab.windowId, { focused: true });
+        await chrome.tabs.update(tab.id, { active: true });
+    } catch (error) {
+        console.error(`Error moving tab ${tab?.id} to position ${targetIndex}:`, error);
+    }
+}
+
+/**
+ * Handles moving either an existing tab or a new tab (created from a URL)
+ * to a specified position.
+ * @param {string} itemUrl The URL of the tab/bookmark.
+ * @param {boolean} exactMatch Whether to perform an exact URL match when looking for an existing tab.
+ * @param {number} targetIndex The 0-indexed position to move the tab to.
+ */
+async function handleMoveItemToPosition(itemUrl, exactMatch, targetIndex) {
+    try {
+        // First, try to find and focus/create the tab
+        const tabToMove = await focusOrCreateTab(itemUrl, exactMatch);
+        if (tabToMove) {
+            // Then, move that tab to the desired position
+            await moveTabToPosition(tabToMove, targetIndex);
+            return { success: true, tab: tabToMove };
+        } else {
+            return { success: false, error: "Failed to find or create tab for move operation." };
         }
     } catch (error) {
-        console.error(`Error moving tab ${tabId} to position ${targetIndex}:`, error);
+        console.error(`Error in handleMoveItemToPosition for URL ${itemUrl} to index ${targetIndex}:`, error);
+        return { success: false, error: error.message };
     }
 }
 
@@ -312,16 +324,22 @@ chrome.commands.onCommand.addListener(async (command) => {
             }
             break;
         case "move_tab_to_first":
-            await moveCurrentTabToPosition(0);
+            // Note: These still use moveCurrentTabToPosition, which relies on the active tab.
+            // The Alt+F# shortcut from popup.js will use the new handleMoveItemToPosition.
+            const [currentTab1] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (currentTab1) await moveTabToPosition(currentTab1, 0);
             break;
         case "move_tab_to_second":
-            await moveCurrentTabToPosition(1);
+            const [currentTab2] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (currentTab2) await moveTabToPosition(currentTab2, 1);
             break;
         case "move_tab_to_third":
-            await moveCurrentTabToPosition(2);
+            const [currentTab3] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (currentTab3) await moveTabToPosition(currentTab3, 2);
             break;
         case "move_tab_to_fourth":
-            await moveCurrentTabToPosition(3);
+            const [currentTab4] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (currentTab4) await moveTabToPosition(currentTab4, 3);
             break;
         case "open_new_empty_tab":
             await openNewEmptyTab();
@@ -344,21 +362,20 @@ chrome.commands.onCommand.addListener(async (command) => {
     }
 });
 
-// Listener for messages from popup.js (e.g., to move a specific tab)
+// Listener for messages from popup.js (e.g., to move a specific tab or bookmark)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Check if the request is to execute a command from the popup
     if (request.action === "executeMoveTabCommand") {
-        if (request.command === "moveHighlightedTab" && request.tabId && typeof request.targetIndex === 'number') {
-            moveTabToPosition(request.tabId, request.targetIndex)
-                .then(() => sendResponse({ success: true }))
+        if (request.command === "moveHighlightedItem" && request.itemUrl && typeof request.targetIndex === 'number') {
+            // Call the new unified handler
+            handleMoveItemToPosition(request.itemUrl, request.exactMatch || false, request.targetIndex)
+                .then(result => sendResponse(result))
                 .catch(error => {
-                    console.error("Error handling moveHighlightedTab message:", error);
+                    console.error("Error handling moveHighlightedItem message:", error);
                     sendResponse({ success: false, error: error.message });
                 });
             return true; // Indicate that sendResponse will be called asynchronously
         }
-        // You can add more commands to be executed via messaging if needed
-        // For example:
-        // if (request.command === "someOtherTabAction" && request.tabId) { ... }
+        // Removed the "focusOrCreateTab" command from here, as popup.js will handle it directly now.
     }
 });
