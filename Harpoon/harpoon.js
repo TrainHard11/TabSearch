@@ -270,6 +270,38 @@ window.initHarpoonFeature = async () => {
         console.log("Tab removed from harpoon list and saved.");
     };
 
+    /**
+     * Removes the currently selected harpooned item from the list permanently.
+     */
+    const removeSelectedHarpoonItem = async () => {
+        if (selectedHarpoonIndex !== -1 && harpoonedTabs[selectedHarpoonIndex]) {
+            const urlToRemove = harpoonedTabs[selectedHarpoonIndex].url;
+            console.log("Attempting to remove selected harpoon item:", urlToRemove);
+
+            const oldSelectedIndex = selectedHarpoonIndex;
+
+            await removeHarpoonedTabFromList(urlToRemove);
+
+            // After removal, adjust selected index:
+            // If the list is now empty, set to -1.
+            // If the old index is still valid (meaning an item moved into its place), keep it.
+            // Otherwise, select the last item.
+            if (harpoonedTabs.length === 0) {
+                selectedHarpoonIndex = -1;
+            } else if (oldSelectedIndex < harpoonedTabs.length) {
+                selectedHarpoonIndex = oldSelectedIndex;
+            } else {
+                selectedHarpoonIndex = harpoonedTabs.length - 1;
+            }
+            selectedHarpoonIndex = Math.max(-1, selectedHarpoonIndex); // Ensure it's not less than -1
+
+            highlightHarpoonItem(); // Re-highlight after removal and index adjustment
+            console.log("Removed selected harpoon item. New selected index:", selectedHarpoonIndex);
+        } else {
+            console.log("No harpoon item selected to remove.");
+        }
+    };
+
 
     // Initial load of harpooned tabs when the initHarpoonFeature function is called
     await loadHarpoonedTabs();
@@ -281,6 +313,7 @@ window.initHarpoonFeature = async () => {
     window.navigateHarpoonList = navigateHarpoonList;
     window.activateSelectedHarpoonItem = activateSelectedHarpoonItem;
     window.moveHarpoonItem = moveHarpoonItem; // NEW: Expose move function
+    window.removeSelectedHarpoonItem = removeSelectedHarpoonItem; // NEW: Expose remove selected function
 };
 
 // Add a dummy `focusOrCreateTabByUrl` if it's not defined by `popup.js`

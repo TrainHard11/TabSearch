@@ -1,4 +1,3 @@
-// popup.js
 document.addEventListener("DOMContentLoaded", () => {
     // --- Constants and DOM Element References ---
     const LS_PREFIX = "fuzzyTabSearch_"; // Local storage prefix for all keys
@@ -1148,7 +1147,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     // The closing and state clearing are now handled by activateSelectedHarpoonItem's underlying logic.
                 }
             }
-            // NEW: Ctrl+Up and Ctrl+Down for reordering harpooned tabs
+            // NEW: Alt+P and Alt+N for reordering harpooned tabs
             else if (e.altKey && e.key === "p") {
                 e.preventDefault();
                 if (typeof window.moveHarpoonItem === "function") {
@@ -1158,6 +1157,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.preventDefault();
                 if (typeof window.moveHarpoonItem === "function") {
                     window.moveHarpoonItem("down");
+                }
+            }
+            // NEW: Ctrl+D to remove focused item in Harpoon
+            else if (e.ctrlKey && e.key === "d") {
+                e.preventDefault();
+                if (typeof window.removeSelectedHarpoonItem === "function") {
+                    window.removeSelectedHarpoonItem();
                 }
             }
         }
