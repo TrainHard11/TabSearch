@@ -973,16 +973,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedItem = selectedIndex !== -1 ? filteredResults[selectedIndex] : null;
         const isItemHighlighted = selectedItem !== null;
 
-        // --- Alt+F-key combinations for moving items (tabs or bookmarks) ---
-        if (e.altKey) { // Removed isItemHighlighted from this condition as it's checked inside
+        if (e.ctrlKey) { 
             let targetIndex = -1;
-            if (e.key === "F1") {
+            if (e.key === "1") {
                 targetIndex = 0; // First position (0-indexed)
-            } else if (e.key === "F2") {
+            } else if (e.key === "2") {
                 targetIndex = 1; // Second position
-            } else if (e.key === "F3") {
+            } else if (e.key === "3") {
                 targetIndex = 2; // Third position
-            } else if (e.key === "F4") {
+            } else if (e.key === "4") {
                 targetIndex = 3; // Fourth position
             }
 
@@ -1055,32 +1054,30 @@ document.addEventListener("DOMContentLoaded", () => {
         if (activeView === "tabSearch") {
             const items = tabList.querySelectorAll("li");
 
-            // *** NEW LOGIC FOR HANDLING FIRST KEYSTROKE AFTER PERSISTENT QUERY LOAD ***
             if (isPersistentQueryActive) {
                 // Check for printable characters (most common scenario for new input)
                 // e.key.length === 1 covers letters, numbers, symbols but excludes 'Enter', 'ArrowUp', 'Shift', etc.
                 // Exclude modifier keys (Ctrl, Alt, Meta) from this logic.
                 if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-                    e.preventDefault(); // Prevent default character input
-                    searchInput.value = e.key; // Set input to JUST the new character
-                    currentQuery = e.key; // Update internal state
-                    isPersistentQueryActive = false; // Reset the flag, new search has started
-                    clearPersistentLastQuery(); // Clear from local storage
-                    performUnifiedSearch(currentQuery); // Use new unified search
-                    return; // Stop further keydown processing for this event
+                    e.preventDefault(); 
+                    searchInput.value = e.key; 
+                    currentQuery = e.key; 
+                    isPersistentQueryActive = false; 
+                    clearPersistentLastQuery(); 
+                    performUnifiedSearch(currentQuery); 
+                    return; 
                 }
                 // Handle Backspace/Delete explicitly to clear the whole field
                 else if (e.key === "Backspace" || e.key === "Delete") {
-                    e.preventDefault(); // Prevent default action (single char deletion)
-                    searchInput.value = ""; // Clear the entire input
-                    currentQuery = ""; // Clear internal state
-                    isPersistentQueryActive = false; // Reset the flag
-                    clearPersistentLastQuery(); // Clear from local storage
-                    performUnifiedSearch(currentQuery); // Use new unified search
-                    return; // Stop further keydown processing
+                    e.preventDefault(); 
+                    searchInput.value = ""; 
+                    currentQuery = ""; 
+                    isPersistentQueryActive = false; 
+                    clearPersistentLastQuery();
+                    performUnifiedSearch(currentQuery); 
+                    return; 
                 }
             }
-            // *** END NEW LOGIC ***
 
             if (e.key === "ArrowDown" || (e.altKey && e.key === "j")) {
                 e.preventDefault();
@@ -1130,12 +1127,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } else if (activeView === "harpoon") {
             // Handle keyboard navigation for the Harpoon view
-            if (e.key === "ArrowDown" || (e.altKey && e.key === "j")) {
+            if (e.key === "ArrowDown"|| e.key==="j" || (e.altKey && e.key === "j") ) {
                 e.preventDefault();
                 if (typeof window.navigateHarpoonList === "function") {
                     window.navigateHarpoonList("down");
                 }
-            } else if (e.key === "ArrowUp" || (e.altKey && e.key === "k")) {
+            } else if (e.key === "ArrowUp" || e.key==="k" || (e.altKey && e.key === "k")) {
                 e.preventDefault();
                 if (typeof window.navigateHarpoonList === "function") {
                     window.navigateHarpoonList("up");
@@ -1144,22 +1141,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.preventDefault();
                 if (typeof window.activateSelectedHarpoonItem === "function") {
                     window.activateSelectedHarpoonItem();
-                    // The closing and state clearing are now handled by activateSelectedHarpoonItem's underlying logic.
                 }
             }
-            // NEW: Alt+P and Alt+N for reordering harpooned tabs
-            else if (e.altKey && e.key === "p") {
+            else if ((e.altKey && e.key === "p") ||  e.key==="N" || e.key === "K") {
                 e.preventDefault();
                 if (typeof window.moveHarpoonItem === "function") {
                     window.moveHarpoonItem("up");
                 }
-            } else if (e.altKey && e.key === "n") {
+            } else if (( e.altKey && e.key === "n") || e.key === "n"|| e.key === "J") {
                 e.preventDefault();
                 if (typeof window.moveHarpoonItem === "function") {
                     window.moveHarpoonItem("down");
                 }
             }
-            // NEW: Ctrl+D to remove focused item in Harpoon
             else if (e.ctrlKey && e.key === "d") {
                 e.preventDefault();
                 if (typeof window.removeSelectedHarpoonItem === "function") {
