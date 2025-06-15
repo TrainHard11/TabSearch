@@ -296,7 +296,6 @@ window.initHarpoonFeature = async () => {
 		} 
 	};
 
-
 	// Initial load of harpooned tabs when the initHarpoonFeature function is called
 	await loadHarpoonedTabs();
 

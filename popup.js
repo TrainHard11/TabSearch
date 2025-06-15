@@ -855,7 +855,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     item.url &&
                     (item.url.startsWith("chrome://") || item.url.startsWith("about:"))
                 ) {
-                    favicon.src = chrome.runtime.getURL("img/SGN256.png");
+                    favicon.src = chrome.runtime.getURL("img/icon.png");
                 } else {
                     favicon.src = `chrome://favicon/${item.url}`;
                 }
