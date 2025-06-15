@@ -1,7 +1,6 @@
 // background.js
 
 // Function to handle focusing an existing tab or creating/updating a new one
-// It now takes a single URL parameter and an optional exactMatch boolean.
 async function focusOrCreateTab(tabUrl, exactMatch = false) {
     // 1. Try to find an existing tab based on the matching criteria.
     const queryOptions = exactMatch
@@ -33,11 +32,11 @@ async function focusOrCreateTab(tabUrl, exactMatch = false) {
         if (isEmptyTab) {
             // If the current tab is empty, update its URL to the new tab URL.
             const updatedTab = await chrome.tabs.update(currentTab.id, { url: tabUrl });
-            return updatedTab; // Return the updated tab object
+            return updatedTab; 
         } else {
             // If the current tab is not empty, create a brand new tab with the new tab URL.
             const newTab = await chrome.tabs.create({ url: tabUrl });
-            return newTab; // Return the new tab object
+            return newTab; 
         }
     }
 }
@@ -297,10 +296,10 @@ async function addCurrentTabToHarpoonList() {
 
             if (!isDuplicate) {
                 const newHarpoonedTab = {
-                    id: activeTab.id, // Store tab ID for potential direct interaction
+                    id: activeTab.id,
                     url: activeTab.url,
                     title: activeTab.title,
-                    favIconUrl: activeTab.favIconUrl || chrome.runtime.getURL("img/SGN256.png") // Default icon
+                    favIconUrl: activeTab.favIconUrl || chrome.runtime.getURL("img/icon.png") 
                 };
                 harpoonedTabs.push(newHarpoonedTab);
                 await chrome.storage.local.set({ [HARPOON_STORAGE_KEY]: harpoonedTabs });
@@ -323,6 +322,7 @@ async function addCurrentTabToHarpoonList() {
 async function getHarpoonedTabs() {
     try {
         const result = await chrome.storage.local.get({ [HARPOON_STORAGE_KEY]: [] });
+		console.log('result : ' , result)
         return result[HARPOON_STORAGE_KEY];
     } catch (error) {
         console.error("Error getting harpooned tabs:", error);
@@ -432,7 +432,7 @@ chrome.commands.onCommand.addListener(async (command) => {
             break;
         case "move_tab_to_first":
             // Note: These still use moveCurrentTabToPosition, which relies on the active tab.
-            // The Alt+F# shortcut from popup.js will use the new handleMoveItemToPosition.
+            // The Ctrl+# shortcut from popup.js will use the new handleMoveItemToPosition.
             const [currentTab1] = await chrome.tabs.query({ active: true, currentWindow: true });
             if (currentTab1) await moveTabToPosition(currentTab1, 0);
             break;
@@ -466,7 +466,7 @@ chrome.commands.onCommand.addListener(async (command) => {
         case "cycle_media_tabs":
             await cycleMediaTabs();
             break;
-        case "harpoon_current_tab": // NEW COMMAND HANDLER
+        case "harpoon_current_tab": 
             await addCurrentTabToHarpoonList();
             break;
         // --- NEW: Harpoon Command Handlers ---

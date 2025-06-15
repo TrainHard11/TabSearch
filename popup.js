@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Default settings
     const defaultSettings = {
-        webNavigatorEnabled: true,
+        webNavigatorEnabled: false,
         searchOnNoResults: true,
         searchMarksEnabled: true,
         customTab1Url: "https://web.whatsapp.com/",
