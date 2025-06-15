@@ -17,6 +17,7 @@ window.initHarpoonFeature = async () => {
 
 	/**
 	 * Highlights the currently selected item in the harpoon list.
+	 * Applies the 'selected' class and scrolls into view.
 	 */
 	const highlightHarpoonItem = () => {
 		const items = harpoonListContainer.querySelectorAll(".harpoon-item");
@@ -41,7 +42,10 @@ window.initHarpoonFeature = async () => {
 			return;
 		}
 
-		if (direction === "down") {
+		// Ensure selection is within bounds before navigating
+		if (selectedHarpoonIndex === -1 && items.length > 0) {
+			selectedHarpoonIndex = 0; // If nothing is selected, select the first item
+		} else if (direction === "down") {
 			selectedHarpoonIndex = (selectedHarpoonIndex + 1) % items.length;
 		} else if (direction === "up") {
 			selectedHarpoonIndex = (selectedHarpoonIndex - 1 + items.length) % items.length;
@@ -51,7 +55,7 @@ window.initHarpoonFeature = async () => {
 
 	/**
 	 * Activates the currently selected harpooned tab.
-	 * It sends a message to the background script (or popup.js) to handle
+	 * It sends a message to the background script (or uses window.focusOrCreateTabByUrl) to handle
 	 * focusing an existing tab or creating a new one.
 	 */
 	const activateSelectedHarpoonItem = async () => {
@@ -78,8 +82,9 @@ window.initHarpoonFeature = async () => {
 
 	/**
 	 * Moves the currently highlighted harpooned tab up or down in the list (non-cycling).
-	 * This function is called by keymaps and from the UI up/down buttons
+	 * This function is called by keymaps and from the UI up/down buttons.
 	 * It relies on `selectedHarpoonIndex` being set correctly before calling.
+	 * Introduces a visual animation for the moved item.
 	 * @param {string} direction "up" or "down".
 	 */
 	const moveHarpoonItem = async (direction) => {
@@ -102,15 +107,29 @@ window.initHarpoonFeature = async () => {
 
 		// Only perform move if the index actually changes
 		if (newIndex !== selectedHarpoonIndex) {
+			// Store the URL of the item being moved to identify it after re-render
+			const movedItemUrl = harpoonedTabs[selectedHarpoonIndex].url;
 
-			const [movedItem] = harpoonedTabs.splice(selectedHarpoonIndex, 1);
-			harpoonedTabs.splice(newIndex, 0, movedItem);
+			// Perform the swap using array destructuring for cleaner code
+			[harpoonedTabs[selectedHarpoonIndex], harpoonedTabs[newIndex]] =
+				[harpoonedTabs[newIndex], harpoonedTabs[selectedHarpoonIndex]];
 
-			selectedHarpoonIndex = newIndex;
+			selectedHarpoonIndex = newIndex; // Update the selected index to the new position
 
 			await saveHarpoonedTabs();
-			renderHarpoonedTabs();
-			highlightHarpoonItem();
+			renderHarpoonedTabs(); // Re-render the entire list
+
+			// Find the moved item's new DOM element and apply the highlight class
+			const movedElement = harpoonListContainer.querySelector(`.harpoon-item[data-url="${movedItemUrl}"]`);
+			if (movedElement) {
+				movedElement.classList.add("moved-highlight");
+				// Remove the 'moved-highlight' class after a short delay
+				setTimeout(() => {
+					movedElement.classList.remove("moved-highlight");
+				}, 400); // Duration matches CSS transition for smooth fade-out
+			}
+
+			highlightHarpoonItem(); // Re-highlight the item in its new position
 		}
 	};
 
@@ -146,7 +165,10 @@ window.initHarpoonFeature = async () => {
 		harpoonedTabs = await loadHarpoonedTabsFromStorage();
 		renderHarpoonedTabs();
 		if (harpoonedTabs.length > 0) {
-			selectedHarpoonIndex = 0;
+			// Only set selectedIndex to 0 if no item is currently selected
+			if (selectedHarpoonIndex === -1 || selectedHarpoonIndex >= harpoonedTabs.length) {
+				selectedHarpoonIndex = 0;
+			}
 			highlightHarpoonItem();
 		} else {
 			selectedHarpoonIndex = -1;
@@ -181,6 +203,7 @@ window.initHarpoonFeature = async () => {
 			const harpoonItem = document.createElement("div");
 			harpoonItem.classList.add("harpoon-item");
 			harpoonItem.dataset.index = index; // Store index for direct access
+			harpoonItem.dataset.url = harpoonedTab.url; // Store URL for identifying after re-render
 
 			const favicon = document.createElement("img");
 			favicon.classList.add("favicon");
@@ -211,10 +234,11 @@ window.initHarpoonFeature = async () => {
 			upButton.classList.add("harpoon-move-button", "harpoon-move-up");
 			upButton.innerHTML = '&#9650;'; // Up arrow character
 			upButton.title = "Move Up";
+			upButton.setAttribute('aria-label', 'Move Harpooned Tab Up'); // Accessibility
 			upButton.addEventListener("click", async (e) => {
 				e.stopPropagation();
-				selectedHarpoonIndex = index;
-				highlightHarpoonItem();
+				selectedHarpoonIndex = index; // Set index before moving
+				highlightHarpoonItem(); // Highlight immediately
 				await moveHarpoonItem("up");
 			});
 			actionButtonsContainer.appendChild(upButton);
@@ -224,10 +248,11 @@ window.initHarpoonFeature = async () => {
 			downButton.classList.add("harpoon-move-button", "harpoon-move-down");
 			downButton.innerHTML = '&#9660;'; // Down arrow character
 			downButton.title = "Move Down";
+			downButton.setAttribute('aria-label', 'Move Harpooned Tab Down'); // Accessibility
 			downButton.addEventListener("click", async (e) => {
 				e.stopPropagation();
-				selectedHarpoonIndex = index;
-				highlightHarpoonItem();
+				selectedHarpoonIndex = index; // Set index before moving
+				highlightHarpoonItem(); // Highlight immediately
 				await moveHarpoonItem("down");
 			});
 			actionButtonsContainer.appendChild(downButton);
@@ -237,6 +262,7 @@ window.initHarpoonFeature = async () => {
 			removeButton.classList.add("remove-harpoon-button");
 			removeButton.innerHTML = '✕'; // X icon
 			removeButton.title = "Remove Harpooned Tab";
+			removeButton.setAttribute('aria-label', 'Remove Harpooned Tab'); // Accessibility
 			removeButton.addEventListener("click", async (e) => {
 				e.stopPropagation();
 				await removeHarpoonedTabFromList(harpoonedTab.url);
@@ -293,16 +319,62 @@ window.initHarpoonFeature = async () => {
 			selectedHarpoonIndex = Math.max(-1, selectedHarpoonIndex); // Ensure it's not less than -1
 
 			highlightHarpoonItem();
-		} 
+		}
+	};
+
+	/**
+	 * Handles keyboard events specific to the Harpoon view.
+	 * This function is attached/detached by popup.js when switching views.
+	 * @param {KeyboardEvent} e The keyboard event.
+	 */
+	const harpoonKeydownHandler = (e) => {
+		if (e.key === "ArrowDown" || e.key === "j" || (e.altKey && e.key === "j")) {
+			e.preventDefault();
+			navigateHarpoonList("down");
+		} else if (e.key === "ArrowUp" || e.key === "k" || (e.altKey && e.key === "k")) {
+			e.preventDefault();
+			navigateHarpoonList("up");
+		} else if (e.key === "Enter") {
+			e.preventDefault();
+			activateSelectedHarpoonItem();
+		} else if ((e.altKey && e.key === "p") || e.key === "N" || e.key === "K") {
+			e.preventDefault();
+			moveHarpoonItem("up");
+		} else if ((e.altKey && e.key === "n") || e.key === "n" || e.key === "J") {
+			e.preventDefault();
+			moveHarpoonItem("down");
+		} else if (e.ctrlKey && e.key === "d") {
+			e.preventDefault();
+			removeSelectedHarpoonItem();
+		}
+	};
+
+	/**
+	 * Attaches keyboard event listeners for the Harpoon view.
+	 * Called when the Harpoon view becomes active.
+	 */
+	const attachHarpoonListeners = () => {
+		document.addEventListener("keydown", harpoonKeydownHandler);
+	};
+
+	/**
+	 * Detaches keyboard event listeners for the Harpoon view.
+	 * Called when the Harpoon view becomes inactive.
+	 */
+	const detachHarpoonListeners = () => {
+		document.removeEventListener("keydown", harpoonKeydownHandler);
 	};
 
 	// Initial load of harpooned tabs when the initHarpoonFeature function is called
 	await loadHarpoonedTabs();
 
-	// Expose functions to the global window object for popup.js 
+	// Expose functions to the global window object for popup.js
 	window.refreshHarpoonedTabs = loadHarpoonedTabs;
 	window.navigateHarpoonList = navigateHarpoonList;
 	window.activateSelectedHarpoonItem = activateSelectedHarpoonItem;
 	window.moveHarpoonItem = moveHarpoonItem;
 	window.removeSelectedHarpoonItem = removeSelectedHarpoonItem;
+	// Expose listener control functions
+	window.attachHarpoonListeners = attachHarpoonListeners;
+	window.detachHarpoonListeners = detachHarpoonListeners;
 };

@@ -42,8 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentQuery = "";
     let helpContentLoaded = false;
     let settingsContentLoaded = false;
-    let marksContentLoaded = false; 
-    let harpoonContentLoaded = false; 
+    let marksContentLoaded = false;
+    let harpoonContentLoaded = false;
 
     // Flag to indicate if the current searchInput value came from a persistent query
     let isPersistentQueryActive = false;
@@ -322,6 +322,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     view.content.classList.remove("scrollable-content");
                 }
             });
+            // When hiding views, detach Harpoon listeners if they were active
+            if (typeof window.detachHarpoonListeners === "function") {
+                window.detachHarpoonListeners();
+            }
         };
 
         /**
@@ -371,6 +375,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Let harpoon.js manage its own focus after rendering
                 if (typeof window.refreshHarpoonedTabs === "function") {
                     window.refreshHarpoonedTabs(); // Refresh list and set focus after view is shown
+                }
+                // Attach Harpoon-specific listeners
+                if (typeof window.attachHarpoonListeners === "function") {
+                    window.attachHarpoonListeners();
                 }
             } else {
                 // Clear search input and visual list when switching away from tabSearch
@@ -682,7 +690,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-
     // --- Search & UI Rendering ---
 
     /**
@@ -968,49 +975,54 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedItem = selectedIndex !== -1 ? filteredResults[selectedIndex] : null;
         const isItemHighlighted = selectedItem !== null;
 
-        if (e.ctrlKey) { 
-            let targetIndex = -1;
-            if (e.key === "1") {
-                targetIndex = 0; // First position (0-indexed)
-            } else if (e.key === "2") {
-                targetIndex = 1; // Second position
-            } else if (e.key === "3") {
-                targetIndex = 2; // Third position
-            } else if (e.key === "4") {
-                targetIndex = 3; // Fourth position
-            }
-
-            if (targetIndex !== -1) {
-                if (isItemHighlighted) { // Only attempt to move if an item is highlighted
-                    e.preventDefault(); // Prevent default browser action for Alt+F#
-
-                    // Prepare data to send to background script
-                    const messageData = {
-                        action: "executeMoveTabCommand",
-                        command: "moveHighlightedItem", // Generic command for moving items
-                        itemUrl: selectedItem.url,
-                        exactMatch: selectedItem.type === 'mark' ? (selectedItem.exactMatch || false) : false, // Only bookmarks have exactMatch property
-                        targetIndex: targetIndex,
-                    };
-
-                    try {
-                        const response = await chrome.runtime.sendMessage(messageData);
-                        if (response && response.success) {
-                            console.log(`Successfully moved item to position ${targetIndex}.`);
-                            window.close(); // Close the popup after action
-                        } else {
-                            console.error(`Error moving item to position ${targetIndex}:`, response?.error || "Unknown error");
-                        }
-                    } catch (error) {
-                        console.error(`Error sending message to move item to position ${targetIndex}:`, error);
-                    }
-                } else {
-                    // If Alt+F# is pressed without an item highlighted, maybe show a message or do nothing.
-                    console.log(`Alt+F${e.key.replace('F','')} pressed, but no item is highlighted to move.`);
+        // Only process these shortcuts if NOT in the harpoon view,
+        // as harpoon.js will handle its own specific keydowns.
+        if (ViewManager.getActive() !== "harpoon") {
+            if (e.ctrlKey) {
+                let targetIndex = -1;
+                if (e.key === "1") {
+                    targetIndex = 0; // First position (0-indexed)
+                } else if (e.key === "2") {
+                    targetIndex = 1; // Second position
+                } else if (e.key === "3") {
+                    targetIndex = 2; // Third position
+                } else if (e.key === "4") {
+                    targetIndex = 3; // Fourth position
                 }
-                return; // Exit after handling Alt+F#
+
+                if (targetIndex !== -1) {
+                    if (isItemHighlighted) { // Only attempt to move if an item is highlighted
+                        e.preventDefault(); // Prevent default browser action for Alt+F#
+
+                        // Prepare data to send to background script
+                        const messageData = {
+                            action: "executeMoveTabCommand",
+                            command: "moveHighlightedItem", // Generic command for moving items
+                            itemUrl: selectedItem.url,
+                            exactMatch: selectedItem.type === 'mark' ? (selectedItem.exactMatch || false) : false, // Only bookmarks have exactMatch property
+                            targetIndex: targetIndex,
+                        };
+
+                        try {
+                            const response = await chrome.runtime.sendMessage(messageData);
+                            if (response && response.success) {
+                                console.log(`Successfully moved item to position ${targetIndex}.`);
+                                window.close(); // Close the popup after action
+                            } else {
+                                console.error(`Error moving item to position ${targetIndex}:`, response?.error || "Unknown error");
+                            }
+                        } catch (error) {
+                            console.error(`Error sending message to move item to position ${targetIndex}:`, error);
+                        }
+                    } else {
+                        // If Alt+F# is pressed without an item highlighted, maybe show a message or do nothing.
+                        console.log(`Alt+F${e.key.replace('F','')} pressed, but no item is highlighted to move.`);
+                    }
+                    return; // Exit after handling Alt+F#
+                }
             }
         }
+
 
         // --- Other global F-key combinations (view switching, shortcuts page) ---
         // These now only trigger if Alt is NOT pressed, or if it's the specific F5 case.
@@ -1042,8 +1054,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // and Alt+F# is now dedicated to moving items when one is highlighted.
     });
 
-    // Keyboard navigation within the main tab search view and harpoon view
-    document.addEventListener("keydown", (e) => { // Changed to document.addEventListener to capture keys regardless of focused element
+    // Keyboard navigation within the main tab search view
+    // Note: Harpoon view keybindings are now handled directly in harpoon.js via attached listeners
+    document.addEventListener("keydown", (e) => {
         const activeView = ViewManager.getActive();
 
         if (activeView === "tabSearch") {
@@ -1054,23 +1067,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 // e.key.length === 1 covers letters, numbers, symbols but excludes 'Enter', 'ArrowUp', 'Shift', etc.
                 // Exclude modifier keys (Ctrl, Alt, Meta) from this logic.
                 if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-                    e.preventDefault(); 
-                    searchInput.value = e.key; 
-                    currentQuery = e.key; 
-                    isPersistentQueryActive = false; 
-                    clearPersistentLastQuery(); 
-                    performUnifiedSearch(currentQuery); 
-                    return; 
+                    e.preventDefault();
+                    searchInput.value = e.key;
+                    currentQuery = e.key;
+                    isPersistentQueryActive = false;
+                    clearPersistentLastQuery();
+                    performUnifiedSearch(currentQuery);
+                    return;
                 }
                 // Handle Backspace/Delete explicitly to clear the whole field
                 else if (e.key === "Backspace" || e.key === "Delete") {
-                    e.preventDefault(); 
-                    searchInput.value = ""; 
-                    currentQuery = ""; 
-                    isPersistentQueryActive = false; 
+                    e.preventDefault();
+                    searchInput.value = "";
+                    currentQuery = "";
+                    isPersistentQueryActive = false;
                     clearPersistentLastQuery();
-                    performUnifiedSearch(currentQuery); 
-                    return; 
+                    performUnifiedSearch(currentQuery);
+                    return;
                 }
             }
 
@@ -1120,42 +1133,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.preventDefault();
                 deleteAllFilteredTabs(); // This now only deletes all filtered tabs
             }
-        } else if (activeView === "harpoon") {
-            // Handle keyboard navigation for the Harpoon view
-            if (e.key === "ArrowDown"|| e.key==="j" || (e.altKey && e.key === "j") ) {
-                e.preventDefault();
-                if (typeof window.navigateHarpoonList === "function") {
-                    window.navigateHarpoonList("down");
-                }
-            } else if (e.key === "ArrowUp" || e.key==="k" || (e.altKey && e.key === "k")) {
-                e.preventDefault();
-                if (typeof window.navigateHarpoonList === "function") {
-                    window.navigateHarpoonList("up");
-                }
-            } else if (e.key === "Enter") {
-                e.preventDefault();
-                if (typeof window.activateSelectedHarpoonItem === "function") {
-                    window.activateSelectedHarpoonItem();
-                }
-            }
-            else if ((e.altKey && e.key === "p") ||  e.key==="N" || e.key === "K") {
-                e.preventDefault();
-                if (typeof window.moveHarpoonItem === "function") {
-                    window.moveHarpoonItem("up");
-                }
-            } else if (( e.altKey && e.key === "n") || e.key === "n"|| e.key === "J") {
-                e.preventDefault();
-                if (typeof window.moveHarpoonItem === "function") {
-                    window.moveHarpoonItem("down");
-                }
-            }
-            else if (e.ctrlKey && e.key === "d") {
-                e.preventDefault();
-                if (typeof window.removeSelectedHarpoonItem === "function") {
-                    window.removeSelectedHarpoonItem();
-                }
-            }
         }
+        // Harpoon view keyboard handling is now in harpoon.js
     });
 
     // Handle search input for the main tabSearch view
