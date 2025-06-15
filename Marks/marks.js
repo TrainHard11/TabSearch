@@ -201,5 +201,4 @@ window.initMarksFeature = async (defaultUrl = '', defaultTitle = '') => {
     // Expose the bookmarks array for other scripts (e.g., popup.js)
     window.getAllBookmarks = () => bookmarks;
 
-    console.log("Marks.js initialization complete!");
 };

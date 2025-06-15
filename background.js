@@ -303,11 +303,8 @@ async function addCurrentTabToHarpoonList() {
                 };
                 harpoonedTabs.push(newHarpoonedTab);
                 await chrome.storage.local.set({ [HARPOON_STORAGE_KEY]: harpoonedTabs });
-                console.log("Tab harpooned:", activeTab.title);
-            } else {
-                console.log("Tab already harpooned:", activeTab.title);
-            }
-        } else {
+            } 
+		} else {
             console.warn("Could not harpoon tab: No active tab found or missing URL/title.");
         }
     } catch (error) {
@@ -322,7 +319,6 @@ async function addCurrentTabToHarpoonList() {
 async function getHarpoonedTabs() {
     try {
         const result = await chrome.storage.local.get({ [HARPOON_STORAGE_KEY]: [] });
-		console.log('result : ' , result)
         return result[HARPOON_STORAGE_KEY];
     } catch (error) {
         console.error("Error getting harpooned tabs:", error);
@@ -342,10 +338,8 @@ async function removeHarpoonedTab(urlToRemove) {
 
         if (harpoonedTabs.length < initialLength) {
             await chrome.storage.local.set({ [HARPOON_STORAGE_KEY]: harpoonedTabs });
-            console.log("Harpooned tab removed:", urlToRemove);
             return true; // Indicate success
         }
-        console.log("Harpooned tab not found for removal:", urlToRemove);
         return false; // Indicate not found
     } catch (error) {
         console.error("Error removing harpooned tab:", error);
@@ -362,7 +356,6 @@ async function activateHarpoonedTabByIndex(index) {
     const harpoonedTabs = await getHarpoonedTabs();
     if (index >= 0 && index < harpoonedTabs.length) {
         const tabToActivate = harpoonedTabs[index];
-        console.log(`Activating harpooned tab at index ${index}: ${tabToActivate.title}`);
         await focusOrCreateTab(tabToActivate.url, false); // Harpooned tabs are generally not exact match
     } else {
         console.warn(`Attempted to activate harpooned tab at invalid index: ${index}. List has ${harpoonedTabs.length} items.`);
