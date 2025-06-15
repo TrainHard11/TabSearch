@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const SS_SELECTED_INDEX_SESSION = `${LS_PREFIX}selectedIndexSession`;
     const SS_LAST_VIEW = `${LS_PREFIX}lastView`;
 
-    // NEW: Key for commanding the initial view upon popup opening (stored in chrome.storage.session)
+    // Key for commanding the initial view upon popup opening (stored in chrome.storage.session)
     const COMMAND_INITIAL_VIEW_KEY = `${LS_PREFIX}commandInitialView`;
 
     const SEARCH_MEMORY_DURATION_MS = 20 * 1000; // 20 seconds
@@ -20,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabCounter = document.getElementById("tabCounter"); // This will now be a results counter
     const helpContentContainer = document.getElementById("helpContentContainer");
     const marksSection = document.getElementById("marksSection"); // Marks Section reference
-    // NEW: Harpoon Section reference
     const harpoonSection = document.getElementById("harpoonSection");
     const infoText = document.querySelector(".info-text");
     const searchArea = document.querySelector(".search-area");
@@ -43,8 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentQuery = "";
     let helpContentLoaded = false;
     let settingsContentLoaded = false;
-    let marksContentLoaded = false; // New state variable for Marks content
-    let harpoonContentLoaded = false; // NEW: State variable for Harpoon content
+    let marksContentLoaded = false; 
+    let harpoonContentLoaded = false; 
 
     // Flag to indicate if the current searchInput value came from a persistent query
     let isPersistentQueryActive = false;
@@ -645,7 +644,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     /**
-     * NEW: Loads Harpoon content dynamically from Harpoon/harpoon.html and initializes its script.
+     * Loads Harpoon content dynamically from Harpoon/harpoon.html and initializes its script.
      */
     const loadHarpoonContent = async () => {
         if (!harpoonContentLoaded) {
@@ -661,8 +660,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         doc.querySelector(".harpoon-content").innerHTML;
                     harpoonSection.innerHTML = harpoonHtmlContent;
                     harpoonContentLoaded = true;
-
-                    console.log("popup.js: Calling initHarpoonFeature.");
 
                     if (typeof window.initHarpoonFeature === "function") {
                         await window.initHarpoonFeature();
@@ -718,7 +715,6 @@ document.addEventListener("DOMContentLoaded", () => {
             (mark) => ({ ...mark, type: "mark" }),
         );
 
-        // --- NEW: De-duplication Logic ---
         const combinedResultsMap = new Map(); // Map to store items by URL, prioritizing marks
 
         // Add filtered marks first.

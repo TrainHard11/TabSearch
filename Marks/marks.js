@@ -8,7 +8,7 @@ window.initMarksFeature = async (defaultUrl = '', defaultTitle = '') => {
     // and its content injected into the #marksSection by popup.js.
     const urlNameInput = document.getElementById("urlNameInput");
     const urlInput = document.getElementById("urlInput");
-    const exactMatchCheckbox = document.getElementById("exactMatchCheckbox"); // NEW: Exact Match Checkbox
+    const exactMatchCheckbox = document.getElementById("exactMatchCheckbox"); 
     const addMarkButton = document.getElementById("addMarkButton");
     const marksListContainer = document.getElementById("marksList");
     const noMarksMessage = marksListContainer.querySelector(".no-marks-message");

@@ -1,5 +1,3 @@
-// Harpoon/harpoon.js
-
 // Define a global initialization function that popup.js can call
 // AFTER the harpoon.html content is loaded into the DOM.
 window.initHarpoonFeature = async () => {
@@ -7,31 +5,25 @@ window.initHarpoonFeature = async () => {
     const harpoonListContainer = document.getElementById("harpoonList");
     const noHarpoonedMessage = harpoonListContainer.querySelector(".no-harpooned-message");
 
-    // Exit if essential elements are not found, indicating an issue with HTML injection.
     if (!harpoonListContainer) {
         console.error("Harpoon feature: Essential DOM elements not found after initHarpoonFeature call.");
         return;
     }
 
-    // State variable for the currently selected item in the harpoon list
     let selectedHarpoonIndex = -1;
-    let harpoonedTabs = []; // Array to hold the current harpooned tabs
+    let harpoonedTabs = [];
 
-    // Local storage key for harpooned tabs (consistent with popup.js prefix)
     const LS_HARPOONED_TABS_KEY = "fuzzyTabSearch_harpoonedTabs";
 
     /**
      * Highlights the currently selected item in the harpoon list.
-     * Scrolls the selected item into view if it's not already visible.
      */
     const highlightHarpoonItem = () => {
         const items = harpoonListContainer.querySelectorAll(".harpoon-item");
-        console.log("highlightHarpoonItem called. Selected index:", selectedHarpoonIndex, "Visible items:", items.length);
         items.forEach((item, index) => {
             if (index === selectedHarpoonIndex) {
                 item.classList.add("selected");
                 item.scrollIntoView({ block: "nearest", behavior: "smooth" });
-                console.log("Item at index", index, "highlighted.");
             } else {
                 item.classList.remove("selected");
             }
@@ -78,7 +70,6 @@ window.initHarpoonFeature = async () => {
                         exactMatch: false
                     });
                 }
-                // The popup will close via focusOrCreateTabByUrl's callback
             } catch (error) {
                 console.error("Error activating harpooned tab:", error);
             }
@@ -87,27 +78,23 @@ window.initHarpoonFeature = async () => {
 
     /**
      * Moves the currently highlighted harpooned tab up or down in the list (non-cycling).
-     * This function is called by keymaps and now by the new UI buttons.
+     * This function is called by keymaps and from the UI up/down buttons
      * It relies on `selectedHarpoonIndex` being set correctly before calling.
      * @param {string} direction "up" or "down".
      */
     const moveHarpoonItem = async (direction) => {
-        console.log("moveHarpoonItem called. Current selectedIndex:", selectedHarpoonIndex, "Total tabs:", harpoonedTabs.length);
         if (selectedHarpoonIndex === -1 || harpoonedTabs.length <= 1) {
-            console.log("Move conditions not met (no selection or 0/1 tabs).");
             return; // Nothing to move or only one item
         }
 
         let newIndex = selectedHarpoonIndex;
         if (direction === "up") {
             if (selectedHarpoonIndex === 0) {
-                console.log("Cannot move up from first position.");
                 return; // Cannot move up from the first position
             }
             newIndex--;
         } else if (direction === "down") {
             if (selectedHarpoonIndex === harpoonedTabs.length - 1) {
-                console.log("Cannot move down from last position.");
                 return; // Cannot move down from the last position
             }
             newIndex++;
@@ -115,25 +102,17 @@ window.initHarpoonFeature = async () => {
 
         // Only perform move if the index actually changes
         if (newIndex !== selectedHarpoonIndex) {
-            console.log(`Attempting to move from ${selectedHarpoonIndex} to ${newIndex}.`);
-            console.log("harpoonedTabs before splice:", JSON.stringify(harpoonedTabs.map(t => t.title)));
 
             const [movedItem] = harpoonedTabs.splice(selectedHarpoonIndex, 1);
             harpoonedTabs.splice(newIndex, 0, movedItem);
 
-            console.log("harpoonedTabs after splice:", JSON.stringify(harpoonedTabs.map(t => t.title)));
+            selectedHarpoonIndex = newIndex; 
 
-            selectedHarpoonIndex = newIndex; // Update the selected index to the new position of the item
-            console.log("New selectedHarpoonIndex:", selectedHarpoonIndex);
-
-            await saveHarpoonedTabs(); // Persist the new order
-            renderHarpoonedTabs(); // Re-render the list
-            highlightHarpoonItem(); // Re-highlight the moved item at its new position
-            console.log("Move and UI update complete.");
-        } else {
-            console.log("No index change, not moving.");
-        }
-    };
+            await saveHarpoonedTabs(); 
+            renderHarpoonedTabs(); 
+            highlightHarpoonItem(); 
+        } 
+	};
 
     /**
      * Saves the current list of harpooned tabs to chrome.storage.local.

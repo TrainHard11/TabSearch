@@ -469,7 +469,6 @@ chrome.commands.onCommand.addListener(async (command) => {
         case "harpoon_current_tab": 
             await addCurrentTabToHarpoonList();
             break;
-        // --- NEW: Harpoon Command Handlers ---
         case "harpoon_command_1":
             await activateHarpoonedTabByIndex(0);
             break;
@@ -482,7 +481,6 @@ chrome.commands.onCommand.addListener(async (command) => {
         case "harpoon_command_4":
             await activateHarpoonedTabByIndex(3);
             break;
-        // --- END NEW ---
     }
 });
 
@@ -500,7 +498,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 });
             return true; // Indicate that sendResponse will be called asynchronously
         }
-    } else if (request.action === "harpoonCommand") { // NEW: Harpoon related messages from popup.js
+    } else if (request.action === "harpoonCommand") { 
         if (request.command === "getHarpoonedTabs") {
             getHarpoonedTabs()
                 .then(tabs => sendResponse({ success: true, tabs: tabs }))
