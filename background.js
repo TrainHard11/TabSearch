@@ -368,7 +368,7 @@ async function activateHarpoonedTabByIndex(index) {
 	}
 }
 
-// NEW: Key for commanding the initial view upon popup opening
+// Key for commanding the initial view upon popup opening
 const COMMAND_INITIAL_VIEW_KEY = "fuzzyTabSearch_commandInitialView";
 
 // Listen for commands defined in manifest.json

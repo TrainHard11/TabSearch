@@ -733,7 +733,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         filteredResults = Array.from(combinedResultsMap.values());
-        // --- END NEW: De-duplication Logic ---
 
         // Re-render the list with the updated filtered results
         renderResults(filteredResults);
