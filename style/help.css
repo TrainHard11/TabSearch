@@ -1,92 +1,129 @@
 .help-container {
-  padding: 15px;
-  background-color: #21252b;
-  border-radius: 8px;
-  color: #e0e0e0;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  /* margin-top: 15px; */
-  /* overflow-y: auto; */
-  overflow-y: hidden;
-  flex-grow: 1;
-}
-
-/* Rest of help.css content remains the same */
-.help-container h1 {
-  color: #61afef;
-  font-size: 1.5em;
-  margin-top: 0;
-  margin-bottom: 20px;
-  text-align: center;
-  border-bottom: 1px solid #444;
-  padding-bottom: 10px;
+    font-family: 'Inter', sans-serif;
+    color: var(--color-text-primary);
+    background-color: var(--color-background-tertiary);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    /* max-width: 550px; */
+    margin: 0 auto;
+    line-height: 1.6;
+    font-size: 14px;
+    overflow-y: hidden;
+    flex-grow: 1;
 }
 
 .help-container h2 {
-  color: #98c379;
-  font-size: 1.2em;
-  margin-top: 25px;
-  margin-bottom: 10px;
-  border-bottom: 1px dashed #555;
-  padding-bottom: 5px;
+    color: var(--color-accent-blue);
+    font-size: 26px;
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 2px solid var(--color-border-medium);
+    padding-bottom: 10px;
+}
+
+.help-container h3 {
+    color: var(--color-text-primary);
+    font-size: 20px;
+    margin-top: 25px;
+    margin-bottom: 15px;
+    background-color: var(--color-background-secondary);
+    padding: 8px 15px;
+    border-radius: 5px;
+    border-left: 5px solid var(--color-accent-green);
+}
+
+.help-container h4 {
+    color: var(--color-text-primary);
+    font-size: 16px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .help-container p {
-  line-height: 1.6;
-  margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 .help-container ul {
-  list-style: disc;
-  margin-left: 20px;
-  margin-bottom: 15px;
-  padding: 0;
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 20px;
+}
+
+.help-container ul li {
+    margin-bottom: 10px;
+    padding-left: 25px;
+    position: relative;
+}
+
+.help-container ul li:before {
+    content: '\2022';
+    color: var(--color-accent-green);
+    position: absolute;
+    left: 8px;
+    font-size: 1.2em;
+    line-height: inherit;
 }
 
 .help-container ul ul {
-  list-style: circle;
-  margin-left: 15px;
-  margin-top: 5px;
-  margin-bottom: 5px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    padding-left: 15px;
+    border-left: 2px solid var(--color-border-medium);
 }
 
-.help-container li {
-  margin-bottom: 5px;
-  line-height: 1.4;
+.help-container ul ul li:before {
+    content: '\2013';
+    color: var(--color-text-secondary);
+    font-size: 1em;
 }
 
-.help-container code {
-  background-color: #3b4048;
-  color: #f8f8f8;
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-family: monospace;
-  font-size: 0.9em;
+.help-container kbd {
+    display: inline-block;
+    padding: 3px 8px;
+    font-family: 'Consolas', 'Menlo', monospace;
+    background-color: var(--color-background-secondary);
+    border: 1px solid var(--color-border-medium);
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    font-size: 0.9em;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    vertical-align: middle;
+    margin: 0 2px;
 }
 
-.help-footer {
-  text-align: center;
-  margin-top: 30px;
-  padding-top: 15px;
-  border-top: 1px solid #333;
-  color: #888;
-  font-size: 0.8em;
+.help-container hr {
+    border: none;
+    border-top: 1px solid var(--color-border-medium);
+    margin: 25px 0;
 }
 
-/* Scrollbar styling for help-container, similar to tabList */
+.settings-hint {
+    text-align: center;
+    font-size: 0.85em;
+    color: var(--color-text-secondary);
+    margin-top: 25px;
+    font-style: italic;
+    padding: 5px;
+}
+
 .help-container::-webkit-scrollbar {
-  width: 8px;
+    width: 8px;
 }
 
 .help-container::-webkit-scrollbar-track {
-  background: #2c313a;
-  border-radius: 4px;
+    background: var(--color-scrollbar-track);
+    border-radius: 4px;
 }
 
 .help-container::-webkit-scrollbar-thumb {
-  background: #555;
-  border-radius: 4px;
+    background: var(--color-scrollbar-thumb);
+    border-radius: 4px;
 }
 
 .help-container::-webkit-scrollbar-thumb:hover {
-  background: #61afef;
+    background: var(--color-scrollbar-thumb-hover);
 }

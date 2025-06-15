@@ -1,278 +1,309 @@
+:root {
+    --color-background-primary: #282c34;
+    --color-background-secondary: #3b4048;
+    --color-background-tertiary: #21252b;
+    --color-background-quaternary: #363a42;
+
+    --color-text-primary: #e0e0e0;
+    --color-text-secondary: #a0a0a0;
+    --color-text-muted: #8a8a8a;
+    --color-text-dark: #1a1a1a;
+
+    --color-accent-blue: #61afef;
+    --color-accent-green: #98c379;
+    --color-accent-orange: #ffa500;
+
+    --color-highlight-bg: #ffd580;
+    --color-highlight-text: #1a1a1a;
+
+    --color-border-dark: #333;
+    --color-border-medium: #444;
+    --color-border-light: #2c313a;
+    --color-border-dashed: #555;
+
+    --color-selected-item-bg: #3a4049;
+
+    --color-scrollbar-track: #2c313a;
+    --color-scrollbar-thumb: #555;
+    --color-scrollbar-thumb-hover: #61afef;
+}
+
+
 body {
-  font-family: "Inter", sans-serif;
-  width: 750px;
-  margin: 0;
-  padding: 0;
-  background-color: #282c34;
-  border-radius: 8px;
-  color: #e0e0e0;
-  max-height: 1600px;
-  /* overflow-y: hidden; */
-  display: flex;
-  flex-direction: column;
+    font-family: "Inter", sans-serif;
+    width: 750px;
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-background-primary);
+    border-radius: 8px;
+    color: var(--color-text-primary);
+    /* max-height: 1600px; */
+    /* overflow-y: hidden; */
+    display: flex;
+    flex-direction: column;
 }
 
 .container {
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1; /* Allow container to fill remaining height of body */
-  overflow-y: hidden; /* Prevent container scrollbar directly */
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Allow container to fill remaining height of body */
+    overflow-y: hidden; /* Prevent container scrollbar directly */
 }
 
 .search-area {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-  gap: 10px;
-  flex-shrink: 0; /* Prevent it from shrinking */
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+    flex-shrink: 0; /* Prevent it from shrinking */
 }
 
 #searchInput {
-  flex-grow: 1;
-  padding: 10px;
-  border: 1px solid #444;
-  border-radius: 6px;
-  font-size: 16px;
-  box-sizing: border-box;
-  outline: none;
-  background-color: #3b4048;
-  color: #e0e0e0;
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid var(--color-border-medium);
+    border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+    outline: none;
+    background-color: var(--color-background-secondary);
+    color: var(--color-text-primary);
 }
 
 #searchInput::placeholder {
-  color: #a0a0a0;
+    color: var(--color-text-secondary);
 }
 
 #searchInput:focus {
-  border-color: #61afef;
+    border-color: var(--color-accent-blue);
 }
 
 .tab-counter {
-  padding: 5px 10px;
-  background-color: #61afef;
-  color: #282c34;
-  border-radius: 5px;
-  font-weight: bold;
-  font-size: 0.9em;
-  flex-shrink: 0;
+    padding: 5px 10px;
+    background-color: var(--color-accent-blue);
+    color: var(--color-background-primary);
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+    flex-shrink: 0;
 }
 
 #tabList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  flex-grow: 1; /* Allow tabList to take available space */
-  background-color: #21252b;
-  border-radius: 6px;
-  border: 1px solid #333;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  /* Initially hidden or controlled by JS for overflow */
-  overflow-y: hidden; /* Default: no scrollbar */
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1; /* Allow tabList to take available space */
+    background-color: var(--color-background-tertiary);
+    border-radius: 6px;
+    border: 1px solid var(--color-border-dark);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    /* Initially hidden or controlled by JS for overflow */
+    overflow-y: hidden; /* Default: no scrollbar */
 }
 
 /* New class for active scrollable content */
 .scrollable-content {
-  overflow-y: auto; /* This class will be added by JS to the active section */
+    overflow-y: auto; /* This class will be added by JS to the active section */
 }
 
 /* Scrollbar styling for .scrollable-content */
 .scrollable-content::-webkit-scrollbar {
-  width: 8px;
+    width: 8px;
 }
 
 .scrollable-content::-webkit-scrollbar-track {
-  background: #2c313a;
-  border-radius: 4px;
+    background: var(--color-scrollbar-track);
+    border-radius: 4px;
 }
 
 .scrollable-content::-webkit-scrollbar-thumb {
-  background: #555;
-  border-radius: 4px;
+    background: var(--color-scrollbar-thumb);
+    border-radius: 4px;
 }
 
 .scrollable-content::-webkit-scrollbar-thumb:hover {
-  background: #61afef;
+    background: var(--color-scrollbar-thumb-hover);
 }
 
 #tabList li {
-  padding: 10px 15px;
-  cursor: pointer;
-  border-bottom: 1px solid #2c313a;
-  display: flex;
-  align-items: center;
-  border-radius: 4px;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border-light);
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
 }
 
 #tabList li:last-child {
-  border-bottom: none;
+    border-bottom: none;
 }
 
 #tabList li:hover,
 #tabList li.selected {
-  background-color: #3a4049;
-  color: #f8f8f8;
+    background-color: var(--color-selected-item-bg);
+    color: var(--color-text-primary);
 }
 
 #tabList li .favicon {
-  width: 16px;
-  height: 16px;
-  margin-right: 10px;
-  flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+    flex-shrink: 0;
 }
 
 #tabList li .tab-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-grow: 1;
-  color: #e0e0e0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    color: var(--color-text-primary);
 }
 
 #tabList li .tab-url {
-  font-size: 0.8em;
-  color: #8a8a8a;
-  margin-left: 10px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 150px;
+    font-size: 0.8em;
+    color: var(--color-text-muted);
+    margin-left: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
 }
 
 .highlight {
-  background-color: #ffd580;
-  color: #1a1a1a;
-  padding: 1px 2px;
-  border-radius: 2px;
+    background-color: var(--color-highlight-bg);
+    color: var(--color-highlight-text);
+    padding: 1px 2px;
+    border-radius: 2px;
 }
 
 /* ========= CURSOR ARROW THEME =========== */
 
 .extension-arrow-container {
-  position: relative; 
-  display: inline-block; 
-  vertical-align: middle; 
-  width: 0; 
-  height: 1em; 
-  overflow: visible; 
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    width: 0;
+    height: 1em;
+    overflow: visible;
 }
 
 .extension-arrow {
-  position: absolute; 
-  left: -35px; 
-  top: 150%; 
-  transform: translateY(-80%); 
-  font-size: 1.2em;
-  font-weight: bold;
-  color: #ffa500;
-  pointer-events: none; 
-  transition: none !important; 
-  animation: none !important; 
+    position: absolute;
+    left: -35px;
+    top: 150%;
+    transform: translateY(-80%);
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--color-accent-orange);
+    pointer-events: none;
+    transition: none !important;
+    animation: none !important;
 }
 
 
 /* Styles for the options section */
 .options-container {
-  margin-top: 15px;
-  padding: 15px;
-  background-color: #363a42;
-  border-radius: 8px;
-  border: 1px solid #444;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-  flex-grow: 1; /* Allow it to take available space */
-  overflow-y: hidden; /* Default: no scrollbar */
+    margin-top: 15px;
+    padding: 15px;
+    background-color: var(--color-background-quaternary);
+    border-radius: 8px;
+    border: 1px solid var(--color-border-medium);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    flex-grow: 1; /* Allow it to take available space */
+    overflow-y: hidden; /* Default: no scrollbar */
 }
 
 /* ========= SETTINGS MENU =========== */
 
 .options-container h2 {
-  color: #61afef;
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 1.1em;
-  border-bottom: 1px solid #444;
-  padding-bottom: 10px;
+    color: var(--color-accent-blue);
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+    border-bottom: 1px solid var(--color-border-medium);
+    padding-bottom: 10px;
 }
 
 .option-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
 .option-item input[type="checkbox"] {
-  margin-right: 10px;
-  width: 18px;
-  height: 18px;
-  accent-color: #98c379;
-  cursor: pointer;
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-accent-green);
+    cursor: pointer;
 }
 
 .option-item label {
-  font-size: 0.95em;
-  color: #e0e0e0;
-  cursor: pointer;
+    font-size: 0.95em;
+    color: var(--color-text-primary);
+    cursor: pointer;
 }
 
 .custom-tab-section {
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 1px dashed #555;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px dashed var(--color-border-dashed);
 }
 
 .custom-tab-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
 .custom-tab-section h3 {
-  color: #98c379;
-  margin-top: 0;
-  margin-bottom: 0;
-  font-size: 1em;
+    color: var(--color-accent-green);
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 1em;
 }
 
 .custom-tab-section .option-item {
-  margin-bottom: 0;
-  align-items: center;
-  display: flex;
+    margin-bottom: 0;
+    align-items: center;
+    display: flex;
 }
 
 .custom-tab-section .option-item input[type="checkbox"] {
-  margin-right: 5px;
-  width: 16px;
-  height: 16px;
+    margin-right: 5px;
+    width: 16px;
+    height: 16px;
 }
 
 .custom-tab-section .option-item label {
-  font-size: 0.85em;
-  white-space: nowrap;
+    font-size: 0.85em;
+    white-space: nowrap;
 }
 
 .custom-tab-section input[type="text"] {
-  width: calc(100% - 20px);
-  padding: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #555;
-  border-radius: 4px;
-  background-color: #2c313a;
-  color: #e0e0e0;
+    width: calc(100% - 20px);
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid var(--color-border-dashed);
+    border-radius: 4px;
+    background-color: var(--color-background-secondary);
+    color: var(--color-text-primary);
 }
 
 /* Info text at the bottom of the main UI */
 .info-text {
-  text-align: center;
-  color: #888;
-  font-size: 0.85em;
-  margin-top: 0.5rem;
-  padding-top: 5px;
-  border-top: 1px solid #333;
-  flex-shrink: 0; /* Prevent it from shrinking */
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: 0.85em;
+    margin-top: 0.5rem;
+    padding-top: 5px;
+    border-top: 1px solid var(--color-border-dark);
+    flex-shrink: 0; /* Prevent it from shrinking */
 }
 
 /* Utility class to hide elements */
 .hidden {
-  display: none !important;
+    display: none !important;
 }

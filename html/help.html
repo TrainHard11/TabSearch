@@ -1,110 +1,98 @@
 <div class="help-container">
-    <h1>Fuzzy Tab & Search Navigator Help</h1>
+    <h2>Your Smart Tab & Bookmark Guide</h2>
+    <p>
+        Welcome! This extension helps you find and manage your tabs and favorite websites super fast.
+    </p>
 
-    <p>This extension helps you navigate Chrome tabs and Google search results more efficiently.</p>
+    <hr>
 
-    <section class="help-section">
-        <h2>Tab Search (Popup)</h2>
-        <ul>
-            <li><strong>Open Popup:</strong> Use the extension icon or the configured shortcut (default: <code>Alt+A</code>).</li>
-            <li><strong>Search:</strong> Start typing to fuzzy search through your open tabs by title or URL.</li>
-            <li><strong>Navigate Results:</strong>
-                <ul>
-                    <li><code>Arrow Up</code> / <code>Alt+K</code>: Move selection up.</li>
-                    <li><code>Arrow Down</code> / <code>Alt+J</code>: Move selection down.</li>
-                </ul>
-            </li>
-            <li><strong>Switch Tab:</strong> Press <code>Enter</code> on a selected tab to switch to it.</li>
-            <li><strong>Search Google:</strong> If no tabs match your query and the "Search on Enter if no results" setting is enabled, pressing <code>Enter</code> will open a new Google search tab with your query.</li>
-            <li><strong>Delete Tab:</strong>
-                <ul>
-                    <li><code>Delete</code> key: Close the currently selected tab.</li>
-                    <li><code>Ctrl+D</code>: Close the currently selected tab.</li>
-                    <li><code>Ctrl+Shift+D</code>: Close ALL filtered tabs. Use with caution!</li>
-                </ul>
-            </li>
-        </ul>
-    </section>
+    <h3>1. Quick Search (Main View)</h3>
+    <p>This is where you usually start. Just type to instantly find any open tab or your saved "Marks."</p>
+    <ul>
+        <li><strong>Smart Results:</strong> Your personal "Marks" appear first if they match an open tab, keeping your favorite sites easy to spot.</li>
+        <li><strong>Instant Access:</strong> Hit <kbd>Enter</kbd> to switch to a selected tab or open a Mark. No results? Press <kbd>Enter</kbd> again for a quick Google search (you can turn this off in Settings).</li>
+        <li><strong>Persistent Search:</strong> Your last search stays active. Just start typing or hit <kbd>Backspace</kbd> to begin a new one.</li>
+    </ul>
 
-    <section class="help-section">
-        <h2>Web Search Navigator (Google Search Pages)</h2>
-        <p>When on a Google search results page, this feature allows you to navigate results using keyboard shortcuts:</p>
-        <ul>
-            <li><strong>Enable/Disable:</strong> Can be toggled in the extension settings (F1).</li>
-            <li><strong>Navigate Results:</strong>
-                <ul>
-                    <li><code>Arrow Up</code>: Move arrow cursor to the previous search result.</li>
-                    <li><code>Arrow Down</code>: Move arrow cursor to the next search result.</li>
-                </ul>
-            </li>
-            <li><strong>Open Link:</strong>
-                <ul>
-                    <li><code>Enter</code>: Open the link marked by the arrow cursor in the current tab.</li>
-                    <li><code>Ctrl+Enter</code>: Open the link marked by the arrow cursor in a new background tab.</li>
-                </ul>
-            </li>
-        </ul>
-    </section>
+    <hr>
 
-    <section class="help-section">
-        <h2>Customizing Keyboard Shortcuts</h2>
-        <p>While the extension provides default keymaps, you can customize almost all of them to your preference within your browser's extension settings. You can directly open this settings page:</p>
-        <ul>
-            <li><strong>Press <code>F4</code></strong> in the extension popup to go directly to the keyboard shortcuts configuration page.</li>
-        </ul>
-        <h3>For Google Chrome:</h3>
-        <ol>
-            <li>Type <code>chrome://extensions/shortcuts</code> into your Chrome address bar and press Enter, OR press <code>F4</code> in the popup.</li>
-            <li>Find "Fuzzy Tab & Search Navigator" in the list.</li>
-            <li>Click the edit icon (pencil) next to each command to set your desired keyboard shortcut.</li>
-            <li>Most commands can be assigned a global shortcut (works even when Chrome is not focused) or in-Chrome only.</li>
-        </ol>
-        <h3>For Mozilla Firefox:</h3>
-        <ol>
-            <li>Type <code>about:addons</code> into your Firefox address bar and press Enter, then navigate to "Manage Extension Shortcuts", OR press <code>F4</code> in the popup (this will take you to <code>about:addons</code>).</li>
-            <li>In the Add-ons Manager, click on "Extensions" on the left sidebar.</li>
-            <li>Find "Fuzzy Tab & Search Navigator" and click on its "Options" or "Preferences" (if available, otherwise proceed to step 4).</li>
-            <li>Alternatively, click the gear icon (⚙️) on the top right of the Add-ons Manager and select "Manage Extension Shortcuts".</li>
-            <li>Here you can view and edit the shortcuts for "Fuzzy Tab & Search Navigator" and other extensions.</li>
-        </ol>
-    </section>
+    <h3>2. Extension Views & Navigation</h3>
+    <p>Jump between different tools using the Function (F) keys:</p>
+    <ul>
+        <li>
+            <p><strong><kbd>F1</kbd>: Settings</strong></p>
+            <p>Customize how the extension works:</p>
+            <ul>
+                <li>Enable/disable Google search if no results.</li>
+                <li>Choose if Marks show in main search.</li>
+                <li>Set up custom URLs for quick tab moving (<kbd>Ctrl + 1-4</kbd>).</li>
+            </ul>
+            <p class="settings-hint"><em>Press <kbd>F1</kbd> again to go back to Search.</em></p>
+        </li>
+        <li>
+            <p><strong><kbd>F2</kbd>: My Bookmarks (Marks)</strong></p>
+            <p>Your personal, quick-access bookmarks:</p>
+            <ul>
+                <li>Save the current tab as a new Mark.</li>
+                <li>Edit or remove your saved Marks.</li>
+            </ul>
+            <p class="settings-hint"><em>Press <kbd>F2</kbd> again to go back to Search.</em></p>
+        </li>
+        <li>
+            <p><strong><kbd>F3</kbd>: Harpoon</strong></p>
+            <p>Your essential tabs, always at your fingertips:</p>
+            <ul>
+                <li>Add the current tab to your Harpoon list.</li>
+                <li>Reorder, activate, or remove Harpooned tabs.</li>
+            </ul>
+            <p class="settings-hint"><em>Press <kbd>F3</kbd> again to go back to Search.</em></p>
+        </li>
+        <li>
+            <p><strong><kbd>F4</kbd>: Help</strong></p>
+            <p>You're here! This guide helps you get the most out of the extension.</p>
+            <p class="settings-hint"><em>Press <kbd>F4</kbd> again to go back to Search.</em></p>
+        </li>
+        <li>
+            <p><strong><kbd>F5</kbd>: Keyboard Shortcuts (Chrome)</strong></p>
+            <p>Opens Chrome's shortcut page where you can customize global keys for this extension.</p>
+            <p class="settings-hint"><em>This will close the popup.</em></p>
+        </li>
+    </ul>
 
-    <section class="help-section">
-        <h2>Global Shortcuts (Configurable in Browser)</h2>
-        <p>These commands can be assigned keyboard shortcuts in your browser's extension settings (see "Customizing Keyboard Shortcuts" above).</p>
-        <ul>
-            <li><code>Open Fuzzy Tab Switcher</code>: (Default: <code>Alt+A</code>)</li>
-            <li><code>Custom Tab 1</code> to <code>Custom Tab 7</code>: Open or focus your custom defined tabs. Configure these URLs in the extension settings (F1).</li>
-            <li><code>Move current tab to the left</code></li>
-            <li><code>Move current tab to the right</code></li>
-            <li><code>Cycle media tabs</code></li>
-            <li><code>Move tab to 1st place</code></li>
-            <li><code>Move tab to 2nd place</code></li>
-            <li><code>Move tab to 3rd place</code></li>
-            <li><code>Move tab to 4th place</code></li>
-            <li><code>New empty tab</code></li>
-            <li><code>Cycle tabs playing audio</code></li>
-            <li><code>Cycle YouTube tabs</code></li>
-        </ul>
-    </section>
+    <hr>
 
-    <section class="help-section">
-        <h2>Settings (F1)</h2>
-        <p>Press <code>F1</code> in the extension popup to toggle the settings menu. Here you can:</p>
-        <ul>
-            <li>Toggle the "Enable Web Search Navigator" feature.</li>
-            <li>Toggle "Search on Enter if no results".</li>
-            <li><strong>Configure Custom Tabs (1-7):</strong> Enter URLs for your custom tab shortcuts.</li>
-            <li><strong>Exact URL Match:</strong> For each custom tab, use the checkbox next to the section title to determine if the tab should be matched by its exact URL or if a partial match (URL starts with the entered string) is sufficient.</li>
-        </ul>
-    </section>
-    <section class="help-section">
-        <h2>General Information</h2>
-        <p>The extension icon in your browser toolbar also opens the tab switcher popup.</p>
-        <p>Your settings are saved automatically.</p>
-    </section>
+    <h3>3. Keyboard Shortcuts</h3>
+    <p>Speed up your workflow with these handy shortcuts:</p>
 
-    <div class="help-footer">
-        <p>© 2025 Fuzzy Tab & Search Navigator</p>
-    </div>
+    <h4>A. Global Shortcuts:</h4>
+    <ul>
+        <li><p><kbd>Ctrl + 1</kbd> to <kbd>Ctrl + 4</kbd>: Move selected tab/Mark to a custom URL (set in Settings).</p></li>
+        <li><p><kbd>F1</kbd>: Open/close **Settings**.</p></li>
+        <li><p><kbd>F2</kbd>: Open/close **My Bookmarks (Marks)**.</p></li>
+        <li><p><kbd>F3</kbd>: Open/close **Harpoon**.</p></li>
+        <li><p><kbd>F4</kbd>: Open/close **Help**.</p></li>
+        <li><p><kbd>F5</kbd>: Open Chrome's extension shortcuts page.</p></li>
+    </ul>
+
+    <h4>B. In Quick Search View:</h4>
+    <ul>
+        <li><p><kbd>&#x2191;</kbd> (Up) / <kbd>Alt + K</kbd>: Move selection up.</p></li>
+        <li><p><kbd>&#x2193;</kbd> (Down) / <kbd>Alt + J</kbd>: Move selection down.</p></li>
+        <li><p><kbd>Enter</kbd>: Activate selected item or Google search.</p></li>
+        <li><p><kbd>Delete</kbd> / <kbd>Ctrl + D</kbd>: Close selected **tab**.</p></li>
+        <li><p><kbd>Ctrl + Shift + D</kbd>: Close **all** filtered tabs.</p></li>
+        <li><p>Typing / <kbd>Backspace</kbd> / <kbd>Delete</kbd>: Clear previous search and start new.</p></li>
+    </ul>
+
+    <h4>C. In Harpoon View (<kbd>F3</kbd>):</h4>
+    <ul>
+        <li><p><kbd>&#x2191;</kbd> (Up) / <kbd>K</kbd> / <kbd>Alt + K</kbd>: Move selection up.</p></li>
+        <li><p><kbd>&#x2193;</kbd> (Down) / <kbd>J</kbd> / <kbd>Alt + J</kbd>: Move selection down.</p></li>
+        <li><p><kbd>Enter</kbd>: Activate selected Harpoon tab.</p></li>
+        <li><p><kbd>N</kbd> / <kbd>J</kbd> (Shift+J) / <kbd>Alt + N</kbd>: Move selected Harpoon item **down**.</p></li>
+        <li><p><kbd>P</kbd> / <kbd>K</kbd> (Shift+K) / <kbd>Alt + P</kbd>: Move selected Harpoon item **up**.</p></li>
+        <li><p><kbd>Ctrl + D</kbd>: Remove selected item from Harpoon (doesn't close the tab).</p></li>
+    </ul>
+
+    <p class="settings-hint">Press <kbd>F4</kbd> again to close help and return to search.</p>
 </div>
