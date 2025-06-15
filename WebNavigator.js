@@ -4,107 +4,91 @@ let isExtensionInitialized = false; // Tracks if the content script's listeners 
 let mutationObserverInstance = null;
 
 const SCROLL_MARGIN_PX = 100;
-const SCROLL_FROM_BOTTOM_PERCENT = 0.25;
 const SCROLL_FROM_TOP_PERCENT = 0.25;
+const SCROLL_FROM_BOTTOM_PERCENT = 0.25;
 
 // Variable to hold the current web navigator enabled state
-let webNavigatorEnabledState = true; // Default to enabled
+let webNavigatorEnabledState = true; // Default to enabled until setting is loaded
 
 /**
- * Retrieves the webNavigatorEnabled setting from storage.
+ * Safely retrieves the webNavigatorEnabled setting from storage.
+ * It will always attempt to get the setting and handles errors gracefully.
  * @returns {Promise<boolean>} Resolves with the boolean value of the setting,
- * or the default if the context is invalidated.
+ * or the default (true) if storage access fails.
  */
 async function getWebNavigatorSetting() {
     try {
         const result = await chrome.storage.local.get({ webNavigatorEnabled: true });
+        // chrome.runtime.lastError is the standard way to check for API errors after a call.
         if (chrome.runtime.lastError) {
-            console.warn("Chrome storage error:", chrome.runtime.lastError.message);
-            return true;
+            console.warn("Chrome storage read error:", chrome.runtime.lastError.message);
+            return true; // Fallback to default if there's an error getting the setting
         }
         return result.webNavigatorEnabled;
     } catch (error) {
-        console.error("Error getting webNavigatorEnabled setting:", error);
-        return true;
+        // Catch any unexpected errors during the storage operation itself
+        console.error("Error retrieving webNavigatorEnabled setting:", error);
+        return true; // Fallback to default
     }
 }
 
-
 /**
- * Finds all eligible search result links.
- * This version simplifies selectors to be more robust across Google's frequent DOM changes.
- * It prioritizes links that are clearly part of organic search results or prominent related links.
+ * Finds all eligible search result links, specifically targeting Google's
+ * primary organic and featured snippet links for simplicity.
+ * This should make the arrow consistently point at the main search results.
+ * @returns {Array<HTMLAnchorElement>} A sorted array of unique, valid link elements.
  */
 function findAllResultLinks() {
-    const hostname = window.location.hostname;
-    let searchResultsContainer = document.getElementById('search'); // Primary container for search results
-
-    if (!hostname.includes('google.com')) {
-        return []; // Only run on Google search pages
+    // Ensure we are on a Google search domain
+    if (!window.location.hostname.includes('google.com')) {
+        return [];
     }
 
-    if (!searchResultsContainer) {
-        // Fallback if the 'search' ID is not present (e.g., in rare variations)
-        searchResultsContainer = document.body;
-    }
+    const uniqueLinks = new Set();
+    // Prioritize the main search results container for efficiency
+    const searchResultsContainer = document.getElementById('search') || document.body;
 
-    // Key selectors for various result types. Order matters for prioritization.
-    // Starting with more specific, commonly used patterns.
-    const linkSelectors = [
-        'div.g a:not([role="button"]):not(.fl):not(.eZt8xd)', // Standard organic results (main links)
-        'div.tF2Cxc a:not([role="button"]):not(.fl):not(.eZt8xd)', // Another common main result structure
-        'div.yuRUbf a:not([role="button"]):not(.fl):not(.eZt8xd)', // Yet another main result structure
-        'div.X5OiLe a:not([role="button"]):not(.fl):not(.eZt8xd)', // News/video results
-        'div.qv3Wpe a:not([role="button"]):not(.fl):not(.eZt8xd)', // "People also ask" direct links
-        'g-scrolling-carousel a:not([role="button"]):not(.fl):not(.eZt8xd)', // Links within carousels (videos, products)
-        'div[data-sokoban-container] a:not([role="button"]):not(.fl):not(.eZt8xd)', // Featured snippets, knowledge panels
-        'div.jtfGm a:not([role="button"]):not(.fl):not(.eZt8xd)', // Might capture some ads, but also legitimate sub-links
-        'div.Ww4FFb a:not([role="button"]):not(.fl):not(.eZt8xd)', // General result block links
-        'a[jsaction*="click:h"]:not([role="button"]):not(.fl):not(.eZt8xd)', // Generic click handler for result links
-        'a[href^="http"]:not([role="button"]):not(.fl):not(.eZt8xd):not([ping])' // Broadest valid links, excluding known non-result elements
+    // Use broader, more stable selectors for main search results
+    // Google's DOM structure is complex, but these are generally reliable for primary links.
+    const primaryLinkSelectors = [
+        'div.g a', // Most common organic search result link container
+        'div[data-async-type="snippet"] a', // Featured snippets often use this structure
+        'div.tF2Cxc a', // Another common organic result structure
+        'div.yuRUbf a', // Yet another common organic result structure
+        'div.X5OiLe a' // May capture some news/video results that are direct links
     ];
 
-    // Exclusions to prevent selecting non-navigable or irrelevant elements.
-    // Keep this list minimal and target specific non-link types.
+    // Stronger exclusion criteria to prevent selecting non-navigable elements.
+    // Order and specificity are important here.
     const excludeSelectors = [
-        '[role="button"]', // Anything explicitly a button
-        'a[ping]', // Often analytics/ad tracking links, or non-direct navigation
-        '.gL9Hy', // Footer/bottom links (e.g., "Next page", page numbers)
-        '#pnnext', // Next page button
-        '.fl', // Various footer/utility links
-        'a[href="#"]', // Anchor links within the same page
-        'a[href^="javascript:"]', // Javascript links
-        '.commercial-unit', // Ads (usually have this class)
-        'input, textarea, [contenteditable="true"]', // User input fields
-        '.sbsb_c a', // Search suggestions dropdown links
-        '.jhp button', // Search button in input field
-        '.GHDv0b', // Specific "More results from..." links that are often redundant or bad targets
-        '.xERGE', // Google Translate / More languages
-        '.fP1Qef a', // "About this result" links
-        '.mI8kLc a', // "Similar results" links
-        '.wQ3eC a', // Some related searches or quick answers
-        '.v5rswb a', // "See results about" links
-        '.nBDE2d a', // Shopping/product links often duplicated
-        // Exclude specific elements that are part of the input or visual decorations
-        '.gLFyf', '.RNNXgb', '.a4bIc', '.SDkEP', // Search input related
-        '[aria-label="Search by image"]' // Image search icon
+        '[role="button"]', // Exclude anything that's clearly a button
+        'a[ping]', // Exclude analytics/tracking links that redirect (often ads or internal analytics)
+        '.gL9Hy', '.fl', '#pnnext', // Exclude footer/pagination, "more results" type links
+        'a[href="#"]', 'a[href^="javascript:"]', // Exclude internal anchor links or JS functions
+        'input', 'textarea', '[contenteditable="true"]', // Exclude input fields
+        '.sbsb_c a', // Exclude search suggestions from the search bar dropdown
+        '.commercial-unit', // Exclude ad blocks (they usually have this class or similar)
+        '.gLFyf', '.RNNXgb', '.a4bIc', '.SDkEP', // Exclude elements related to the search input box
+        '[aria-label="Search by image"]', // Exclude search by image icon
+        '.ab_button', // Exclude generic buttons within search results
+        'div[jsname="x3Bms"] a[aria-expanded]', // Exclude "People also ask" accordion headers (they expand, not navigate)
+        // Additional exclusions for common non-result links that might match 'a'
+        '.Lqc6Hd a', // "Related searches" links often at the bottom
+        '.kp-blk a', // Knowledge panel internal links (sometimes too broad)
+        '.kno-ft a' // More knowledge panel internal links
     ];
 
-    const uniqueLinks = new Set(); // Use a Set to automatically handle duplicates
-
-    // Iterate through selectors and collect potential links
-    for (const selector of linkSelectors) {
+    for (const selector of primaryLinkSelectors) {
         const elements = searchResultsContainer.querySelectorAll(selector);
         for (const el of elements) {
-            // Basic validity checks
+            // Basic check: Must be an anchor with an HTTP/S href, visible, and have content
             let isValid = el.tagName === 'A' && el.href && el.href.startsWith('http') && el.offsetParent !== null;
 
-            // Ensure the link has some meaningful content (text or image)
             if (isValid) {
                 const textContent = el.textContent.trim();
-                const hasText = textContent.length > 0;
+                const hasVisibleText = textContent.length > 0 && el.offsetWidth > 0 && el.offsetHeight > 0;
                 const hasImage = el.querySelector('img') !== null;
-                isValid = hasText || hasImage;
+                isValid = hasVisibleText || hasImage;
             }
 
             // Apply exclusion selectors to the element itself or its ancestors
@@ -117,96 +101,77 @@ function findAllResultLinks() {
                 }
             }
 
-            // Additional check for "People also ask" question headers that act as links
-            // We want to avoid selecting the expand/collapse triggers themselves if they just reveal content.
-            if (isValid && el.closest('div[jsname="x3Bms"]')) { // Common parent for PAA
-                if (el.matches('a[aria-expanded]')) { // The actual question link that expands
-                    isValid = false;
-                }
-            }
-            
-            // Filter out empty or non-meaningful links, e.g., icons without text
-            if (isValid && el.textContent.trim() === '' && !el.querySelector('img')) {
-                isValid = false;
-            }
-
             if (isValid) {
                 uniqueLinks.add(el);
             }
         }
     }
 
-    // Convert Set to Array and sort by vertical position to maintain natural order
-    const sortedLinks = Array.from(uniqueLinks).sort((a, b) => {
+    // Convert Set to Array and sort by vertical position for natural navigation order
+    return Array.from(uniqueLinks).sort((a, b) => {
         const rectA = a.getBoundingClientRect();
         const rectB = b.getBoundingClientRect();
-
-        if (rectA.top !== rectB.top) {
-            return rectA.top - rectB.top;
-        }
-        return rectA.left - rectB.left;
+        // Primary sort by top position, secondary by left position
+        return rectA.top - rectB.top || rectA.left - rectB.left;
     });
-
-    return sortedLinks;
 }
 
+/**
+ * Removes all previously injected arrow cursors from the page.
+ */
 function removeExistingArrows() {
-    const existingArrowContainers = document.querySelectorAll('.extension-arrow-container');
-    existingArrowContainers.forEach(container => {
-        // Restore original z-index of the parent link if it was modified
+    document.querySelectorAll('.extension-arrow-container').forEach(container => {
+        // Restore original z-index if it was modified
         const parentLink = container.closest('a');
         if (parentLink && parentLink.dataset.originalZIndex !== undefined) {
             parentLink.style.zIndex = parentLink.dataset.originalZIndex;
             delete parentLink.dataset.originalZIndex;
         } else if (parentLink && parentLink.style.zIndex === '10000') {
-            // If we set it to 10000 and didn't store an original, clear it
-            parentLink.style.zIndex = '';
+            parentLink.style.zIndex = ''; // Clear if it was our set value and no original was stored
         }
-
-        if (container.parentNode) {
-            container.parentNode.removeChild(container);
-        }
+        container.remove();
     });
 }
 
+/**
+ * Injects an arrow cursor next to the given link element.
+ * @param {HTMLAnchorElement} linkElement The link to inject the arrow next to.
+ */
 function injectArrow(linkElement) {
-    const targetAnchor = linkElement.tagName === 'A' ? linkElement : linkElement.querySelector('a');
-
-    if (!targetAnchor || targetAnchor.querySelector('.extension-arrow-container')) {
-        return; // Don't inject if no anchor or arrow container already exists
+    if (linkElement.tagName !== 'A' || linkElement.querySelector('.extension-arrow-container')) {
+        return; // Don't inject if not an anchor or arrow already exists
     }
 
-    // Create a container for our arrow. This container will have position: relative
-    // and hold our absolutely positioned arrow, without affecting the targetAnchor's
-    // own layout or existing children's positioning.
     const arrowContainer = document.createElement('span');
     arrowContainer.classList.add('extension-arrow-container');
-    arrowContainer.style.position = 'relative'; // This makes the arrow absolute to this container
-    arrowContainer.style.display = 'inline-block'; // Occupy space, but not block level
-    arrowContainer.style.width = '0'; // Don't take up width in the text flow
-    arrowContainer.style.height = '0'; // Don't take up height
-    arrowContainer.style.verticalAlign = 'middle'; // Adjust vertical alignment if needed
+    // Minimal styling, mostly handled by CSS
+    arrowContainer.style.position = 'relative'; // For arrow's absolute positioning
+    arrowContainer.style.display = 'inline-block'; // To occupy space and respect text flow
+    arrowContainer.style.verticalAlign = 'middle';
+    arrowContainer.style.width = '0'; // Take no horizontal space
+    arrowContainer.style.height = '0'; // Take no vertical space
 
     const arrow = document.createElement('span');
     arrow.classList.add('extension-arrow');
     arrow.textContent = '➤';
 
-    // Append the arrow to its dedicated container
     arrowContainer.appendChild(arrow);
+    linkElement.prepend(arrowContainer); // Place the arrow at the very beginning of the link's content
 
-    // Prepend the arrow container to the targetAnchor
-    // This places our arrow at the very beginning of the link's content.
-    targetAnchor.prepend(arrowContainer);
-
-    // Attempt to bring the target link itself to the front to avoid clipping issues from parents
-    // Store original z-index if it exists, before setting a high z-index.
-    // This is still useful for general visibility, even if not for the "small arrows" issue.
-    if (targetAnchor.style.zIndex) {
-        targetAnchor.dataset.originalZIndex = targetAnchor.style.zIndex;
+    // Ensure the link and its arrow are visible by elevating z-index
+    if (linkElement.style.zIndex) {
+        linkElement.dataset.originalZIndex = linkElement.style.zIndex;
     }
-    targetAnchor.style.zIndex = '10000'; // Very high z-index for the selected link and its arrow
+    linkElement.style.zIndex = '10000';
+    linkElement.style.position = 'relative'; // z-index requires a positioned element
 }
 
+/**
+ * Checks if an element is fully visible within the viewport, with a given margin.
+ * @param {HTMLElement} element The DOM element to check.
+ * @param {number} marginPx The margin in pixels to consider around the viewport.
+ * @returns {boolean} True if the element is fully visible within the margin, false otherwise.
+ */
 function isElementFullyVisibleWithMargin(element, marginPx) {
     const rect = element.getBoundingClientRect();
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
@@ -220,15 +185,18 @@ function isElementFullyVisibleWithMargin(element, marginPx) {
     );
 }
 
+/**
+ * Updates the position of the arrow cursor to the new index. Handles scrolling.
+ * @param {number} newIndex The index of the link to point to in `allResultLinks`.
+ */
 function updateArrowPosition(newIndex) {
-    if (!webNavigatorEnabledState) return;
-
-    if (allResultLinks.length === 0) {
+    if (!webNavigatorEnabledState || allResultLinks.length === 0) {
         currentSelectedIndex = -1;
         removeExistingArrows();
         return;
     }
 
+    // Ensure newIndex wraps around the array
     if (newIndex < 0) {
         newIndex = allResultLinks.length - 1;
     } else if (newIndex >= allResultLinks.length) {
@@ -236,7 +204,6 @@ function updateArrowPosition(newIndex) {
     }
 
     removeExistingArrows(); // Always remove existing before injecting new
-
     currentSelectedIndex = newIndex;
     const targetLink = allResultLinks[currentSelectedIndex];
 
@@ -247,88 +214,98 @@ function updateArrowPosition(newIndex) {
         const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
         const currentScrollY = window.scrollY;
 
-        // Special handling for the first link
+        // Special handling for the first link: always scroll to top
         if (currentSelectedIndex === 0) {
             if (currentScrollY > 0) {
                 window.scrollTo({ top: 0, behavior: 'auto' });
             }
         } else {
-            // General scrolling for other links
+            // General scrolling for other links if not fully visible
             if (!isElementFullyVisibleWithMargin(targetLink, SCROLL_MARGIN_PX)) {
                 let scrollToY = currentScrollY;
 
                 if (linkRect.top < SCROLL_MARGIN_PX) {
+                    // Scroll up if link is above the desired top margin
                     const desiredLinkTopFromViewportTop = viewportHeight * SCROLL_FROM_TOP_PERCENT;
                     scrollToY = currentScrollY + linkRect.top - desiredLinkTopFromViewportTop;
-                }
-                else if (linkRect.bottom > (viewportHeight - SCROLL_MARGIN_PX)) {
+                } else if (linkRect.bottom > (viewportHeight - SCROLL_MARGIN_PX)) {
+                    // Scroll down if link is below the desired bottom margin
                     const desiredLinkBottomFromViewportTop = viewportHeight - (viewportHeight * SCROLL_FROM_BOTTOM_PERCENT);
                     scrollToY = currentScrollY + linkRect.bottom - desiredLinkBottomFromViewportTop;
                 }
 
+                // Clamp scroll position to document bounds
                 scrollToY = Math.max(0, Math.min(scrollToY, document.body.scrollHeight - viewportHeight));
 
+                // Only scroll if there's a meaningful change
                 if (Math.abs(scrollToY - currentScrollY) > 1) {
                     window.scrollTo({ top: scrollToY, behavior: 'auto' });
                 }
             }
         }
     } else {
-        // If targetLink is somehow null/undefined (e.g., after a filter or DOM change),
-        // re-initialize to try and find links and select the first one.
+        // If targetLink is invalid (e.g., removed from DOM), re-initialize to re-scan
         initializeExtension();
     }
 }
 
+/**
+ * Handles keyboard navigation (ArrowUp, ArrowDown, Enter, Space).
+ * Prevents default browser behavior for these keys when navigating.
+ * @param {KeyboardEvent} event The keyboard event.
+ */
 function handleKeyDown(event) {
-    if (!webNavigatorEnabledState) return;
+    if (!webNavigatorEnabledState || allResultLinks.length === 0) {
+        return;
+    }
 
     // Check if the event target is an input field, textarea, or contenteditable element.
     const tagName = event.target.tagName;
-    if (tagName === 'INPUT' || tagName === 'TEXTAREA' || event.target.isContentEditable) {
-        // Allow normal typing for relevant keys unless Ctrl/Alt is pressed
-        if (!event.ctrlKey && !event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ')) {
-            return;
-        }
-        // If Ctrl/Alt IS pressed with one of these keys, then we might want to intervene.
-        // For now, if it's an input and not one of our navigation keys, let it pass.
-        if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown' && event.key !== 'Enter' && event.key !== ' ') {
-            return;
-        }
-    }
+    const isInputField = tagName === 'INPUT' || tagName === 'TEXTAREA' || event.target.isContentEditable;
 
-    if (allResultLinks.length === 0) {
-        return;
+    // Allow normal typing behavior for relevant keys if in an input field,
+    // unless a modifier key (Ctrl/Alt) is also pressed.
+    if (isInputField) {
+        if (!event.ctrlKey && !event.altKey && ['ArrowUp', 'ArrowDown', 'Enter', ' '].includes(event.key)) {
+            return; // Allow default navigation/typing in inputs without modifiers
+        }
+        // If it's an input and not one of our specific navigation keys (even with modifiers), pass through
+        if (!['ArrowUp', 'ArrowDown', 'Enter', ' '].includes(event.key)) {
+            return;
+        }
     }
 
     switch (event.key) {
         case 'ArrowUp':
-            event.preventDefault();
+            event.preventDefault(); // Prevent page scroll
             updateArrowPosition(currentSelectedIndex - 1);
             break;
         case 'ArrowDown':
-            event.preventDefault();
+            event.preventDefault(); // Prevent page scroll
             updateArrowPosition(currentSelectedIndex + 1);
             break;
         case 'Enter':
         case ' ': // Handle space bar for activation
-            // Prevent default only if we are taking action
             if (currentSelectedIndex !== -1 && allResultLinks[currentSelectedIndex]) {
-                event.preventDefault();
+                event.preventDefault(); // Prevent default if we are taking action
                 const selectedLink = allResultLinks[currentSelectedIndex];
                 if (event.ctrlKey) {
-                    window.open(selectedLink.href, '_blank');
+                    window.open(selectedLink.href, '_blank'); // Open in new tab
                 } else {
-                    selectedLink.click();
+                    selectedLink.click(); // Navigate
                 }
             } else if (event.key === ' ') {
-                // If no link selected and space pressed, allow default space behavior (e.g., scroll page)
+                // If no link is selected and space is pressed, allow default space behavior (e.g., scroll page)
                 return;
             }
             break;
     }
 }
 
+/**
+ * Refreshes the list of found links and updates the arrow position.
+ * Uses debouncing to prevent excessive calls during rapid DOM changes.
+ */
 function refreshLinksAndArrowPosition() {
     if (!webNavigatorEnabledState) {
         removeExistingArrows();
@@ -340,20 +317,22 @@ function refreshLinksAndArrowPosition() {
     const oldResultLinks = [...allResultLinks];
     const newLinks = findAllResultLinks();
 
+    // Determine if the list of links has actually changed
     const linksChanged = oldResultLinks.length !== newLinks.length ||
         !oldResultLinks.every((link, i) => link === newLinks[i]);
 
     if (linksChanged) {
         allResultLinks = newLinks;
+        let newIndex = 0; // Default to the first link
 
-        let newIndex = 0; // Default to selecting the first link
+        // Attempt to preserve the selection if the previously selected link still exists
         if (currentSelectedIndex !== -1 && oldResultLinks[currentSelectedIndex]) {
             const previouslySelectedLink = oldResultLinks[currentSelectedIndex];
             const foundIndexInNewList = newLinks.indexOf(previouslySelectedLink);
             if (foundIndexInNewList !== -1) {
                 newIndex = foundIndexInNewList;
             } else {
-                // Try to find by href if the DOM element itself changed
+                // If the DOM element changed, try to find by href
                 const sameHrefLinkIndex = newLinks.findIndex(link => link.href === previouslySelectedLink.href);
                 if (sameHrefLinkIndex !== -1) {
                     newIndex = sameHrefLinkIndex;
@@ -362,56 +341,35 @@ function refreshLinksAndArrowPosition() {
         }
         updateArrowPosition(newIndex);
     } else if (allResultLinks.length > 0 && (currentSelectedIndex === -1 || !allResultLinks[currentSelectedIndex]?.querySelector('.extension-arrow-container'))) {
-        // If links didn't change but arrow is missing (e.g., page re-render without full DOM reset)
+        // If links didn't change but the arrow is missing (e.g., a re-render removed it), re-inject.
         updateArrowPosition(currentSelectedIndex === -1 ? 0 : currentSelectedIndex);
     }
 }
 
-// Function to attach all event listeners and observer
+/**
+ * Attaches all necessary event listeners and the MutationObserver.
+ * Ensures listeners are not duplicated.
+ */
 function attachContentScriptListeners() {
-    if (isExtensionInitialized) return;
+    if (isExtensionInitialized) return; // Prevent double initialization
 
-    // Detach any pre-existing listeners to prevent duplicates
+    // Ensure only one keydown listener is active
     if (window.extensionKeyDownListener) {
         document.removeEventListener('keydown', window.extensionKeyDownListener);
     }
-    const newListener = (event) => handleKeyDown(event);
-    document.addEventListener('keydown', newListener);
-    window.extensionKeyDownListener = newListener;
+    const newKeyDownListener = (event) => handleKeyDown(event);
+    document.addEventListener('keydown', newKeyDownListener);
+    window.extensionKeyDownListener = newKeyDownListener; // Store reference
 
+    // Initialize MutationObserver if not already active
     if (!mutationObserverInstance) {
-        mutationObserverInstance = new MutationObserver((mutations) => {
-            let relevantChangeDetected = false;
-            for (const mutation of mutations) {
-                if (mutation.type === 'childList') {
-                    // Check if nodes were added/removed from relevant search sections
-                    const hasRelevantNode = (nodes) => Array.from(nodes).some(node =>
-                        node.nodeType === Node.ELEMENT_NODE && (
-                            node.id === 'search' || node.closest('#search') ||
-                            node.matches('div.g, div.tF2Cxc, div.yuRUbf, div.rc, div.srg, div.X5OiLe, div.qv3Wpe, div.jtfGm, div.Ww4FFb')
-                        )
-                    );
-                    if (hasRelevantNode(mutation.addedNodes) || hasRelevantNode(mutation.removedNodes)) {
-                        relevantChangeDetected = true;
-                        break;
-                    }
-                } else if (mutation.type === 'attributes' && mutation.target.tagName === 'A' && mutation.attributeName === 'href') {
-                    // Also consider changes to href attributes on links as relevant
-                    if (mutation.target.closest('#search')) {
-                        relevantChangeDetected = true;
-                        break;
-                    }
-                }
-            }
-
-            if (relevantChangeDetected) {
-                clearTimeout(window.extensionRefreshTimeout);
-                window.extensionRefreshTimeout = setTimeout(() => {
-                    refreshLinksAndArrowPosition();
-                }, 200);
-            }
+        mutationObserverInstance = new MutationObserver(() => {
+            // Debounce the refresh to avoid performance issues from rapid DOM changes
+            clearTimeout(window.extensionRefreshTimeout);
+            window.extensionRefreshTimeout = setTimeout(refreshLinksAndArrowPosition, 200);
         });
 
+        // Observe the main search results container. Fallback to body if not found.
         const googleSearchContainer = document.getElementById('search');
         if (googleSearchContainer) {
             mutationObserverInstance.observe(googleSearchContainer, { childList: true, subtree: true, attributes: true });
@@ -421,11 +379,15 @@ function attachContentScriptListeners() {
     }
 
     isExtensionInitialized = true;
+    console.log("WebNavigator content script initialized.");
 }
 
-// Function to remove all event listeners and disconnect observer
+/**
+ * Removes all event listeners and disconnects the MutationObserver.
+ * Cleans up the DOM by removing any injected arrows.
+ */
 function detachContentScriptListeners() {
-    if (!isExtensionInitialized) return;
+    if (!isExtensionInitialized) return; // Already detached
 
     if (window.extensionKeyDownListener) {
         document.removeEventListener('keydown', window.extensionKeyDownListener);
@@ -439,58 +401,66 @@ function detachContentScriptListeners() {
     allResultLinks = [];
     currentSelectedIndex = -1;
     isExtensionInitialized = false;
+    console.log("WebNavigator content script detached.");
 }
 
-// Main initialization logic, now conditional
+/**
+ * Main function to initialize or de-initialize the extension's content script.
+ * It reads the 'webNavigatorEnabled' setting and activates/deactivates functionality.
+ */
 async function initializeExtension() {
-    // Check if the extension runtime is valid.
-    // chrome.runtime.id will be undefined or null if the runtime is invalidated.
-    if (chrome.runtime && chrome.runtime.id) {
-        // If runtime is valid, fetch the setting from storage.
-        webNavigatorEnabledState = await getWebNavigatorSetting();
-    } else {
-        // If runtime is invalidated, log a warning and assume default state.
-        // This prevents attempting to access chrome.storage.local.get() when it's not available.
-        console.warn("Extension runtime is invalidated during initializeExtension. Falling back to default webNavigatorEnabledState = true.");
-        webNavigatorEnabledState = true; // Assume enabled as a safe default
-    }
+    // Attempt to get the setting regardless of chrome.runtime.id.
+    // The getWebNavigatorSetting function itself now handles runtime errors.
+    webNavigatorEnabledState = await getWebNavigatorSetting();
 
     if (webNavigatorEnabledState) {
         attachContentScriptListeners();
-        refreshLinksAndArrowPosition();
+        // Initial scan and arrow placement might need a slight delay
+        // to ensure all DOM elements are rendered, especially on complex pages.
+        // Though document_idle helps, a small timeout ensures robustness.
+        setTimeout(refreshLinksAndArrowPosition, 50);
     } else {
-        detachContentScriptListeners();
+        detachContentScriptListeners(); // Clean up if disabled
     }
 }
 
-// Listen for changes in storage (from popup)
+// Listen for changes in extension storage (e.g., from the popup UI)
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'local' && changes.webNavigatorEnabled) {
-        // Only proceed if runtime is valid (extension is still active)
-        if (chrome.runtime && chrome.runtime.id) {
-            webNavigatorEnabledState = changes.webNavigatorEnabled.newValue;
+        // We only re-initialize if the runtime appears to be active to avoid
+        // errors from an invalid context attempting storage operations.
+        // The `getWebNavigatorSetting` now handles the fallback if the context
+        // *becomes* invalid during its execution.
+        if (chrome.runtime?.id) {
             initializeExtension();
+        } else {
+            console.warn("Storage change received but chrome.runtime is invalid. Cannot update webNavigator state until runtime is restored.");
         }
-        // If runtime is invalid here, the content script will simply not react to the setting change
-        // until the page is reloaded or the extension context is restored.
     }
 });
 
-// Initial load events
+// --- Initial Load and Lifecycle Event Handlers ---
+
+// Ensure the extension initializes when the DOM is fully loaded or already ready.
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeExtension);
 } else {
-    initializeExtension();
+    initializeExtension(); // DOM is already ready
 }
 
+// Re-initialize if the tab becomes visible (e.g., user switches back to it)
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
+        console.log("Tab became visible. Re-initializing WebNavigator.");
         initializeExtension();
     }
 });
 
+// Handle pages that are served from the back/forward cache (bfcache).
+// These pages don't trigger 'DOMContentLoaded' or 'load'.
 window.addEventListener('pageshow', (event) => {
     if (event.persisted) {
+        console.log("Page restored from bfcache. Re-initializing WebNavigator.");
         initializeExtension();
     }
 });

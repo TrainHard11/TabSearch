@@ -148,18 +148,28 @@ body {
 
 /* ========= CURSOR ARROW THEME =========== */
 
+.extension-arrow-container {
+  position: relative; 
+  display: inline-block; 
+  vertical-align: middle; 
+  width: 0; 
+  height: 1em; 
+  overflow: visible; 
+}
+
 .extension-arrow {
-  position: absolute;
-  left: -35px;
-  top: 150%;
-  transform: translateY(-80%);
+  position: absolute; 
+  left: -35px; 
+  top: 150%; 
+  transform: translateY(-80%); 
   font-size: 1.2em;
   font-weight: bold;
   color: #ffa500;
-  pointer-events: none;
-  transition: none !important;
-  animation: none !important;
+  pointer-events: none; 
+  transition: none !important; 
+  animation: none !important; 
 }
+
 
 /* Styles for the options section */
 .options-container {
