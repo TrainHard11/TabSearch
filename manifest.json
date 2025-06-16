@@ -18,7 +18,7 @@
       },
       "description": "Open_Main_View"
     },
-	    "open_harpoon_view": {
+    "open_harpoon_view": {
       "description": "Harpoon_open"
     },
     "harpoon_current_tab": {
@@ -35,6 +35,12 @@
     },
     "harpoon_command_4": {
       "description": "Harpoon_4"
+    },
+    "add_current_tab_as_bookmark": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+B"
+      },
+      "description": "Add current tab as a bookmark and open Marks view"
     },
     "custom_tab_1": {
       "description": "Custom_Tab_1"

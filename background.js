@@ -17,7 +17,7 @@ async function focusOrCreateTab(tabUrl, exactMatch = false) {
 		return targetTab; // Return the tab object
 	} else {
 		// 2. If no existing tab matching the criteria is found,
-		//    check the current active tab to see if it's empty.
+		//    check the current active tab to see if it's empty.
 		const [currentTab] = await chrome.tabs.query({
 			active: true,
 			currentWindow: true,
@@ -42,10 +42,10 @@ async function focusOrCreateTab(tabUrl, exactMatch = false) {
 }
 
 /**
- * Moves a given tab to a specific position (0-indexed) in its window.
- * @param {chrome.tabs.Tab} tab The tab object to move.
- * @param {number} targetIndex The 0-indexed position to move the tab to.
- */
+ * Moves a given tab to a specific position (0-indexed) in its window.
+ * @param {chrome.tabs.Tab} tab The tab object to move.
+ * @param {number} targetIndex The 0-indexed position to move the tab to.
+ */
 async function moveTabToPosition(tab, targetIndex) {
 	try {
 		if (!tab || typeof tab.id === 'undefined') {
@@ -69,12 +69,12 @@ async function moveTabToPosition(tab, targetIndex) {
 }
 
 /**
- * Handles moving either an existing tab or a new tab (created from a URL)
- * to a specified position.
- * @param {string} itemUrl The URL of the tab/bookmark.
- * @param {boolean} exactMatch Whether to perform an exact URL match when looking for an existing tab.
- * @param {number} targetIndex The 0-indexed position to move the tab to.
- */
+ * Handles moving either an existing tab or a new tab (created from a URL)
+ * to a specified position.
+ * @param {string} itemUrl The URL of the tab/bookmark.
+ * @param {boolean} exactMatch Whether to perform an exact URL match when looking for an existing tab.
+ * @param {number} targetIndex The 0-indexed position to move the tab to.
+ */
 async function handleMoveItemToPosition(itemUrl, exactMatch, targetIndex) {
 	try {
 		// First, try to find and focus/create the tab
@@ -177,8 +177,8 @@ async function cycleYoutubeTabs() {
 }
 
 /**
- * Moves the current active tab one position to the left.
- */
+ * Moves the current active tab one position to the left.
+ */
 async function moveCurrentTabLeft() {
 	const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
 	if (currentTab && currentTab.index > 0) {
@@ -187,8 +187,8 @@ async function moveCurrentTabLeft() {
 }
 
 /**
- * Moves the current active tab one position to the right.
- */
+ * Moves the current active tab one position to the right.
+ */
 async function moveCurrentTabRight() {
 	const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
 	if (currentTab) {
@@ -202,9 +202,9 @@ async function moveCurrentTabRight() {
 }
 
 /**
- * Cycles through tabs that are identified as "media content tabs" based on specific URL patterns,
- * AND includes any tabs that are currently playing audio.
- */
+ * Cycles through tabs that are identified as "media content tabs" based on specific URL patterns,
+ * AND includes any tabs that are currently playing audio.
+ */
 async function cycleMediaTabs() {
 	const allTabs = await chrome.tabs.query({});
 
@@ -278,9 +278,9 @@ const HARPOON_STORAGE_KEY = "fuzzyTabSearch_harpoonedTabs";
 const MAX_HARPOON_LINKS = 4;
 
 /**
- * Adds the currently active tab to the harpoon list.
- * @returns {Promise<boolean>} A promise that resolves to true if a new tab was added, false otherwise (e.g., duplicate).
- */
+ * Adds the currently active tab to the harpoon list.
+ * @returns {Promise<boolean>} A promise that resolves to true if a new tab was added, false otherwise (e.g., duplicate).
+ */
 async function addCurrentTabToHarpoonList() {
 	try {
 		const [activeTab] = await chrome.tabs.query({
@@ -323,9 +323,9 @@ async function addCurrentTabToHarpoonList() {
 }
 
 /**
- * Retrieves the list of harpooned tabs from local storage.
- * @returns {Promise<Array<Object>>} A promise that resolves with the array of harpooned tabs.
- */
+ * Retrieves the list of harpooned tabs from local storage.
+ * @returns {Promise<Array<Object>>} A promise that resolves with the array of harpooned tabs.
+ */
 async function getHarpoonedTabs() {
 	try {
 		const result = await chrome.storage.local.get({ [HARPOON_STORAGE_KEY]: [] });
@@ -337,9 +337,9 @@ async function getHarpoonedTabs() {
 }
 
 /**
- * Removes a harpooned tab by its URL.
- * @param {string} urlToRemove The URL of the tab to remove from the harpoon list.
- */
+ * Removes a harpooned tab by its URL.
+ * @param {string} urlToRemove The URL of the tab to remove from the harpoon list.
+ */
 async function removeHarpoonedTab(urlToRemove) {
 	try {
 		let harpoonedTabs = await getHarpoonedTabs();
@@ -358,10 +358,10 @@ async function removeHarpoonedTab(urlToRemove) {
 }
 
 /**
- * Activates a harpooned tab by its index.
- * Used by manifest commands.
- * @param {number} index The 0-indexed position of the harpooned tab to activate.
- */
+ * Activates a harpooned tab by its index.
+ * Used by manifest commands.
+ * @param {number} index The 0-indexed position of the harpooned tab to activate.
+ */
 async function activateHarpoonedTabByIndex(index) {
 	const harpoonedTabs = await getHarpoonedTabs();
 	if (index >= 0 && index < harpoonedTabs.length) {
@@ -371,6 +371,67 @@ async function activateHarpoonedTabByIndex(index) {
 		console.warn(`Attempted to activate harpooned tab at invalid index: ${index}. List has ${harpoonedTabs.length} items.`);
 	}
 }
+
+// --- Bookmark Feature Functions (New) ---
+const MARKS_STORAGE_KEY = "fuzzyTabSearch_bookmarks"; // Use the same key as Marks/marks.js
+
+/**
+ * Adds the currently active tab as a bookmark to local storage.
+ * It performs checks for duplicate URLs and names before adding.
+ * Defaults exactMatch to false and searchableInTabSearch to true.
+ * @returns {Promise<Object>} A promise resolving with success status and message.
+ */
+async function addCurrentTabAsBookmark() {
+    try {
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        if (!activeTab || !activeTab.url || !activeTab.title) {
+            console.warn("Cannot add bookmark: No active tab found or missing URL/title.");
+            return { success: false, message: "No active tab or missing URL/title." };
+        }
+
+        const newBookmarkName = activeTab.title.trim();
+        const newBookmarkUrl = activeTab.url.trim();
+
+        if (!newBookmarkName || !newBookmarkUrl) {
+            return { success: false, message: "Bookmark name or URL cannot be empty." };
+        }
+
+        let existingBookmarks = await chrome.storage.local.get({ [MARKS_STORAGE_KEY]: [] });
+        existingBookmarks = existingBookmarks[MARKS_STORAGE_KEY];
+
+        // Check for duplicate URL
+        const urlExists = existingBookmarks.some(mark => mark.url === newBookmarkUrl);
+        if (urlExists) {
+            console.log("Bookmark not added: A bookmark with this URL already exists.");
+            return { success: false, message: "A bookmark with this URL already exists." };
+        }
+
+        // Check for duplicate name (case-insensitive)
+        const nameExists = existingBookmarks.some(mark => mark.name.toLowerCase() === newBookmarkName.toLowerCase());
+        if (nameExists) {
+            console.log("Bookmark not added: A bookmark with this name already exists.");
+            return { success: false, message: "A bookmark with this name already exists. Please choose a unique name." };
+        }
+
+        const newBookmark = {
+            name: newBookmarkName,
+            url: newBookmarkUrl,
+            exactMatch: false,          // Default to false for quick add
+            searchableInTabSearch: true // Default to true, makes it immediately available in unified search
+        };
+
+        existingBookmarks.push(newBookmark);
+        await chrome.storage.local.set({ [MARKS_STORAGE_KEY]: existingBookmarks });
+        console.log("Bookmark added successfully:", newBookmark);
+        return { success: true, message: "Bookmark added successfully!" };
+
+    } catch (error) {
+        console.error("Error adding current tab as bookmark:", error);
+        return { success: false, message: `Error: ${error.message}` };
+    }
+}
+
 
 // Key for commanding the initial view upon popup opening
 const COMMAND_INITIAL_VIEW_KEY = "fuzzyTabSearch_commandInitialView";
@@ -472,7 +533,7 @@ chrome.commands.onCommand.addListener(async (command) => {
 		case "harpoon_current_tab":
 			// Call the function to add the current tab to the harpoon list.
 			// The return value (tabAdded) now only indicates if a *new* tab was added.
-			await addCurrentTabToHarpoonList(); 
+			await addCurrentTabToHarpoonList(); 
 			
 			// Always open the harpoon view, regardless of whether a new tab was added or it was a duplicate.
 			await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "harpoon" });
@@ -490,6 +551,12 @@ chrome.commands.onCommand.addListener(async (command) => {
 		case "harpoon_command_4":
 			await activateHarpoonedTabByIndex(3);
 			break;
+		case "add_current_tab_as_bookmark":
+            await addCurrentTabAsBookmark(); // Add the bookmark
+            // Set the initial view to 'marks' and open the popup
+            await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "marks" });
+            await chrome.action.openPopup();
+            break;
 	}
 });
 
