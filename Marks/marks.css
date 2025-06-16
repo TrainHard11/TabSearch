@@ -387,3 +387,33 @@
 .hidden {
   display: none !important;
 }
+
+/* NEW: Styles for the marks message (success/error) */
+.marks-message {
+  padding: 10px 15px;
+  border-radius: 6px;
+  margin-top: 10px;
+  text-align: center;
+  font-weight: 600;
+  opacity: 0; /* Start hidden */
+  transition: opacity 0.3s ease-in-out;
+  visibility: hidden; /* Hide from screen readers when not visible */
+  pointer-events: none; /* Do not block clicks */
+}
+
+.marks-message.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.marks-message.error {
+  background-color: #ffebeb; /* Light red background */
+  color: #cc0000; /* Dark red text */
+  border: 1px solid #ff3333;
+}
+
+.marks-message.success {
+  background-color: #e6ffe6; /* Light green background */
+  color: #008000; /* Dark green text */
+  border: 1px solid #00cc00;
+}

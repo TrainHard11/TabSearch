@@ -14,8 +14,9 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   const addMarkButton = document.getElementById("addMarkButton");
   const marksListContainer = document.getElementById("marksList");
   const noMarksMessage = marksListContainer.querySelector(".no-marks-message");
-  const marksSearchContainer = document.getElementById("marksSearchContainer"); // NEW
-  const marksSearchInput = document.getElementById("marksSearchInput"); // NEW
+  const marksSearchContainer = document.getElementById("marksSearchContainer");
+  const marksSearchInput = document.getElementById("marksSearchInput");
+  const marksMessageDiv = document.getElementById("marksMessage"); // NEW: Message div
 
   // Exit if essential elements are not found, indicating an issue with HTML injection.
   if (
@@ -25,7 +26,8 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     !addMarkButton ||
     !marksListContainer ||
     !marksSearchContainer ||
-    !marksSearchInput
+    !marksSearchInput ||
+    !marksMessageDiv
   ) {
     console.error(
       "Marks feature: Essential DOM elements not found after initMarksFeature call.",
@@ -46,10 +48,39 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   // To track the currently selected bookmark in the list for keyboard navigation
   let selectedMarkIndex = -1;
 
-  // NEW: State for the Marks search feature
+  // State for the Marks search feature
   let isMarksSearchActive = false;
   let currentMarksSearchQuery = "";
   let filteredMarksResults = []; // Stores the currently filtered results for rendering
+
+  let messageTimeoutId = null; // To manage message display timeout
+
+  /**
+   * Displays a temporary message in the marksMessageDiv.
+   * @param {string} message The message text.
+   * @param {'success'|'error'} type The type of message (for styling).
+   * @param {number} durationMs The duration in milliseconds to display the message.
+   */
+  const displayMessage = (message, type, durationMs = 3000) => {
+    if (messageTimeoutId) {
+      clearTimeout(messageTimeoutId); // Clear any existing timeout
+    }
+
+    marksMessageDiv.textContent = message;
+    marksMessageDiv.className = `marks-message show ${type}`; // Apply type class and show
+
+    marksMessageDiv.classList.remove("hidden"); // Ensure it's not hidden by the utility class
+
+    messageTimeoutId = setTimeout(() => {
+      marksMessageDiv.classList.remove("show");
+      marksMessageDiv.classList.add("hidden"); // Hide after transition
+      // Small delay to allow fade-out animation before clearing text
+      setTimeout(() => {
+        marksMessageDiv.textContent = "";
+        marksMessageDiv.className = "marks-message hidden"; // Reset class for next use
+      }, 300); // Matches CSS transition duration
+    }, durationMs);
+  };
 
   /**
    * Highlights the query in the text. (Copied from popup.js for self-containment)
@@ -83,7 +114,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
    * @returns {Array<Object>} The filtered and sorted list of items.
    */
   const fuzzySearchItems = (items, query, nameKey) => {
-    // Corrected parameter order
     if (!query) return items;
     const lowerCaseQuery = query.toLowerCase();
     const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
@@ -228,6 +258,10 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     // If search is active, this action is disabled or has a different effect.
     if (isMarksSearchActive) {
       console.log("Cannot reorder bookmarks while search is active.");
+      displayMessage(
+        "Cannot reorder bookmarks while search is active.",
+        "error",
+      );
       return;
     }
 
@@ -326,6 +360,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       await chrome.storage.local.set({ [STORAGE_KEY]: bookmarks });
     } catch (error) {
       console.error("Error saving bookmarks:", error);
+      displayMessage("Error saving bookmark.", "error");
     }
   };
 
@@ -496,12 +531,35 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     if (!name || !url) {
       if (!name) urlNameInput.classList.add("input-error");
       if (!url) urlInput.classList.add("input-error");
+      displayMessage("Bookmark name and URL cannot be empty.", "error");
+      return;
+    }
+
+    // Validate for unique URL
+    const urlExists = bookmarks.some((mark) => mark.url === url);
+    if (urlExists) {
+      displayMessage("A bookmark with this URL already exists.", "error");
+      urlInput.classList.add("input-error");
+      return;
+    }
+
+    // Validate for unique name (case-insensitive for user experience)
+    const nameExists = bookmarks.some(
+      (mark) => mark.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (nameExists) {
+      displayMessage(
+        "A bookmark with this name already exists. Please choose a unique name.",
+        "error",
+      );
+      urlNameInput.classList.add("input-error");
       return;
     }
 
     // Add new bookmark with exactMatch property
     bookmarks.push({ name, url, exactMatch });
     await saveBookmarks();
+    displayMessage("Bookmark added successfully!", "success"); // Success message
 
     // After adding, clear any active search and refresh the full list
     clearMarksSearchState();
@@ -530,6 +588,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       if (originalIndex > -1) {
         bookmarks.splice(originalIndex, 1); // Remove the item from the original list
         await saveBookmarks();
+        displayMessage("Bookmark removed.", "success"); // Message on removal
 
         // If search is active, re-filter the list; otherwise, just re-render the full list
         if (isMarksSearchActive) {
@@ -565,7 +624,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   };
 
   /**
-   * NEW: Performs a search on the bookmarks and updates the displayed list.
+   * Performs a search on the bookmarks and updates the displayed list.
    * @param {string} query The search query.
    */
   const performMarksSearch = (query) => {
@@ -586,7 +645,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   };
 
   /**
-   * NEW: Clears the Marks search state and reverts the list to its full, unfiltered state.
+   * Clears the Marks search state and reverts the list to its full, unfiltered state.
    */
   const clearMarksSearchState = () => {
     isMarksSearchActive = false;
@@ -725,8 +784,8 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
           selectedMarkIndex = 0; // Ensure first item is selected for activation
           activateSelectedMarkItem();
         } else {
-          // No search results, maybe perform a google search or just stay
-          console.log("No search results for marks to activate.");
+          // No search results, maybe display a message or do nothing.
+          displayMessage("No search results to activate.", "error");
         }
       } else if (
         selectedMarkIndex !== -1 &&
@@ -742,7 +801,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       activeElement !== urlInput &&
       activeElement !== addMarkButton
     ) {
-      // NEW: Trigger search mode on '/'
+      // Trigger search mode on '/'
       e.preventDefault(); // Prevent typing '/'
       isMarksSearchActive = true;
       marksSearchContainer.classList.remove("hidden");
@@ -751,7 +810,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       highlightMarkItem(); // Update highlight
       performMarksSearch(currentMarksSearchQuery); // Re-render with existing (empty) query
     } else if (e.key === "Escape" && isMarksSearchActive) {
-      // NEW: Exit search mode on Escape key
+      // Exit search mode on Escape key
       e.preventDefault();
       clearMarksSearchState();
       addMarkButton.focus(); // Return focus to the add button
@@ -792,12 +851,12 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   // Initial load of bookmarks when the initMarksFeature function is called
   await loadBookmarks();
 
-  // NEW: Add event listener for marks search input
+  // Add event listener for marks search input
   marksSearchInput.addEventListener("input", () => {
     performMarksSearch(marksSearchInput.value);
   });
 
-  // NEW: Add a click listener to the document to detect clicks outside the marks container
+  // Add a click listener to the document to detect clicks outside the marks container
   // and clear the search if active.
   document.addEventListener("click", (e) => {
     // Check if the click occurred outside the marks-content area AND marks search is active

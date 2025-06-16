@@ -35,7 +35,14 @@
     Add Bookmark
   </button>
 
-  <!-- NEW: Container for the bookmark search input -->
+  <!-- NEW: Element for displaying temporary messages -->
+  <div
+    id="marksMessage"
+    class="marks-message hidden"
+    role="alert"
+    aria-live="assertive"
+  ></div>
+
   <div id="marksSearchContainer" class="marks-search-container hidden">
     <label for="marksSearchInput" class="input-label">Search Bookmarks:</label>
     <input
