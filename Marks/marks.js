@@ -16,7 +16,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   const noMarksMessage = marksListContainer.querySelector(".no-marks-message");
   const marksSearchContainer = document.getElementById("marksSearchContainer");
   const marksSearchInput = document.getElementById("marksSearchInput");
-  const marksMessageDiv = document.getElementById("marksMessage"); // NEW: Message div
+  const marksMessageDiv = document.getElementById("marksMessage"); // Message div
 
   // Exit if essential elements are not found, indicating an issue with HTML injection.
   if (
@@ -114,6 +114,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
    * @returns {Array<Object>} The filtered and sorted list of items.
    */
   const fuzzySearchItems = (items, query, nameKey) => {
+    // Corrected parameter order
     if (!query) return items;
     const lowerCaseQuery = query.toLowerCase();
     const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
@@ -560,6 +561,11 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     bookmarks.push({ name, url, exactMatch });
     await saveBookmarks();
     displayMessage("Bookmark added successfully!", "success"); // Success message
+
+    // Clear input fields and reset checkbox after successful addition
+    urlNameInput.value = "";
+    urlInput.value = "";
+    exactMatchCheckbox.checked = false; // Reset to default (unchecked)
 
     // After adding, clear any active search and refresh the full list
     clearMarksSearchState();
