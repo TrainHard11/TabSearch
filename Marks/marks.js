@@ -17,7 +17,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   const marksSearchContainer = document.getElementById("marksSearchContainer");
   const marksSearchInput = document.getElementById("marksSearchInput");
   const marksMessageDiv = document.getElementById("marksMessage"); // Message div
-  const addMarkSection = document.getElementById("addMarkSection"); // NEW: Add bookmark section container
+  const addMarkSection = document.getElementById("addMarkSection"); // Add bookmark section container
 
   // Exit if essential elements are not found, indicating an issue with HTML injection.
   if (
@@ -51,11 +51,12 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   let selectedMarkIndex = -1;
 
   // State for the Marks search feature
-  let isMarksSearchActive = false;
+  let isMarksSearchActive = false; // True if search input is focused, regardless of always-visible setting
   let currentMarksSearchQuery = "";
   let filteredMarksResults = []; // Stores the currently filtered results for rendering
 
   let messageTimeoutId = null; // To manage message display timeout
+  let alwaysShowSearchInput = false; // NEW: Local state for the setting
 
   /**
    * Displays a temporary message in the marksMessageDiv.
@@ -166,31 +167,26 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
    */
   const navigateMarksList = (direction) => {
     const items = marksListContainer.querySelectorAll(".mark-item");
-    let focusableElements = [urlNameInput, urlInput, addMarkButton];
+    let focusableElements = [];
 
-    // Only add search input to focusable elements if it's currently active/visible
-    if (isMarksSearchActive) {
+    // Add elements based on their visibility
+    if (!addMarkSection.classList.contains("hidden")) {
+      focusableElements.push(urlNameInput, urlInput, addMarkButton);
+    }
+    if (alwaysShowSearchInput || isMarksSearchActive) {
+      // Search input is always visible OR active
       focusableElements.push(marksSearchInput);
     }
-    focusableElements.push(...Array.from(items)); // Add bookmark items last
+    focusableElements.push(...Array.from(items));
 
     let currentFocusIndex = -1;
-
-    // Determine which element currently has focus
     const activeElement = document.activeElement;
-    if (activeElement === urlNameInput) {
-      currentFocusIndex = 0;
-    } else if (activeElement === urlInput) {
-      currentFocusIndex = 1;
-    } else if (activeElement === addMarkButton) {
-      currentFocusIndex = 2;
-    } else if (activeElement === marksSearchInput && isMarksSearchActive) {
-      currentFocusIndex = focusableElements.indexOf(marksSearchInput); // Find its dynamic index
-    } else {
-      // Check if focus is on a mark item
-      const focusedItem = activeElement.closest(".mark-item");
-      if (focusedItem) {
-        currentFocusIndex = focusableElements.indexOf(focusedItem);
+
+    // Determine current focus index
+    for (let i = 0; i < focusableElements.length; i++) {
+      if (activeElement === focusableElements[i]) {
+        currentFocusIndex = i;
+        break;
       }
     }
 
@@ -336,7 +332,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         ? result[STORAGE_KEY].map((mark) => ({
             ...mark,
             exactMatch: mark.exactMatch ?? false,
-            searchableInTabSearch: mark.searchableInTabSearch ?? false, // NEW: default to false
+            searchableInTabSearch: mark.searchableInTabSearch ?? false,
           }))
         : [];
 
@@ -616,7 +612,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     }
 
     // Add new bookmark with exactMatch and searchableInTabSearch property (default to false)
-    bookmarks.push({ name, url, exactMatch, searchableInTabSearch: false }); // NEW: searchableInTabSearch default
+    bookmarks.push({ name, url, exactMatch, searchableInTabSearch: false });
     await saveBookmarks();
     displayMessage("Bookmark added successfully!", "success"); // Success message
 
@@ -650,7 +646,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
           mark.url === markToRemove.url &&
           mark.name === markToRemove.name &&
           mark.exactMatch === markToRemove.exactMatch &&
-          mark.searchableInTabSearch === markToRemove.searchableInTabSearch, // Include new property in comparison
+          mark.searchableInTabSearch === markToRemove.searchableInTabSearch,
       );
 
       if (originalIndex > -1) {
@@ -674,7 +670,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
    */
   const removeSelectedMarkItem = async () => {
     if (selectedMarkIndex !== -1 && filteredMarksResults[selectedMarkIndex]) {
-      const indexToRemove = selectedIndex; // Use selectedIndex directly, as it refers to filteredMarksResults
+      const indexToRemove = selectedIndex;
       await removeBookmark(indexToRemove); // Use existing removeBookmark function
 
       // After removal, adjust selected index if necessary
@@ -714,12 +710,16 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
 
   /**
    * Clears the Marks search state and reverts the list to its full, unfiltered state.
+   * Note: This will not hide the search input if `alwaysShowSearchInput` is true.
    */
   const clearMarksSearchState = () => {
     isMarksSearchActive = false;
     currentMarksSearchQuery = "";
     marksSearchInput.value = "";
-    marksSearchContainer.classList.add("hidden"); // Hide the search input
+    if (!alwaysShowSearchInput) {
+      // NEW: Only hide if setting is off
+      marksSearchContainer.classList.add("hidden");
+    }
     filteredMarksResults = [...bookmarks]; // Show all bookmarks
     selectedMarkIndex = -1; // Clear list selection
     renderBookmarks();
@@ -738,8 +738,8 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       } else {
         addMarkSection.classList.add("hidden");
         // If the section is hidden, ensure no focus is trapped in its elements.
-        // Move focus to marks search input if active, or marks list if not.
-        if (isMarksSearchActive) {
+        if (alwaysShowSearchInput || isMarksSearchActive) {
+          // NEW: Focus search if always visible or currently active
           marksSearchInput.focus();
         } else if (bookmarks.length > 0) {
           const firstMarkItem = marksListContainer.querySelector(".mark-item");
@@ -747,14 +747,33 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
             selectedMarkIndex = 0;
             firstMarkItem.focus();
             highlightMarkItem();
+          } else {
+            document.body.focus();
           }
         } else {
-          // Fallback if no bookmarks either
-          addMarkButton.focus(); // Focus on a safe element like the add button, even if hidden.
-          // Note: This button will be inside addMarkSection, so it might not be ideal.
-          // A better fallback might be the marksSearchInput if visible, or nothing specific.
-          // For now, let's just make sure something else is not focused within the hidden section.
-          document.body.focus(); // Focus on body if nothing else can be focused.
+          document.body.focus();
+        }
+      }
+    }
+  };
+
+  /**
+   * NEW: Toggles the persistent visibility of the marks search input.
+   * This function is called from popup.js when the setting changes.
+   * @param {boolean} shouldBeAlwaysVisible True to always show, false to revert to toggle behavior.
+   */
+  window.toggleMarksSearchInputAlwaysVisible = (shouldBeAlwaysVisible) => {
+    alwaysShowSearchInput = shouldBeAlwaysVisible;
+    if (marksSearchContainer) {
+      if (alwaysShowSearchInput) {
+        marksSearchContainer.classList.remove("hidden");
+        isMarksSearchActive = true; // Consider it active when always visible
+        marksSearchInput.focus(); // Focus it when it becomes always visible
+      } else {
+        // If it's no longer always visible, and not currently searched, hide it
+        if (currentMarksSearchQuery === "") {
+          marksSearchContainer.classList.add("hidden");
+          isMarksSearchActive = false; // Not active if query is empty and not always visible
         }
       }
     }
@@ -784,110 +803,14 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
 
     if (e.key === "ArrowDown" || e.key === "j" || (e.altKey && e.key === "j")) {
       e.preventDefault();
-      // Order of navigation depends on whether addMarkSection is visible
-      const isAddSectionVisible = !addMarkSection.classList.contains("hidden");
-
-      if (activeElement === urlNameInput) {
-        urlInput.focus();
-      } else if (activeElement === urlInput) {
-        addMarkButton.focus();
-      } else if (activeElement === addMarkButton) {
-        if (isMarksSearchActive) {
-          marksSearchInput.focus();
-          selectedMarkIndex = -1;
-        } else if (items.length > 0) {
-          selectedMarkIndex = 0;
-          items[selectedMarkIndex].focus();
-        } else {
-          // If add section visible, and no search/marks, loop to urlNameInput
-          if (isAddSectionVisible) urlNameInput.focus();
-        }
-      } else if (activeElement === marksSearchInput && isMarksSearchActive) {
-        if (filteredMarksResults.length > 0) {
-          selectedMarkIndex = 0;
-          items[selectedMarkIndex].focus();
-        }
-        // If no results, stay focused on marksSearchInput.
-      } else if (selectedMarkIndex !== -1) {
-        selectedMarkIndex = (selectedMarkIndex + 1) % items.length;
-        items[selectedMarkIndex].focus();
-      } else if (items.length > 0) {
-        selectedMarkIndex = 0;
-        items[selectedMarkIndex].focus();
-      } else {
-        // If no items, and not on input/button/search
-        if (isAddSectionVisible) urlNameInput.focus();
-        else if (isMarksSearchActive) marksSearchInput.focus(); // If add hidden, and no marks, stay in search.
-        // If search is also empty, it will stay in search input.
-      }
-      highlightMarkItem();
+      navigateMarksList("down"); // Use the updated navigation logic
     } else if (
       e.key === "ArrowUp" ||
       e.key === "k" ||
       (e.altKey && e.key === "k")
     ) {
       e.preventDefault();
-      const isAddSectionVisible = !addMarkSection.classList.contains("hidden");
-
-      if (selectedMarkIndex !== -1) {
-        if (selectedMarkIndex === 0) {
-          if (isMarksSearchActive) {
-            marksSearchInput.focus();
-          } else if (isAddSectionVisible) {
-            addMarkButton.focus();
-          } else {
-            // If add section is hidden and no search, loop to last item if any
-            if (items.length > 0) {
-              selectedMarkIndex = items.length - 1;
-              items[selectedMarkIndex].focus();
-            }
-          }
-          selectedMarkIndex = -1; // No item selected in list
-        } else {
-          selectedMarkIndex =
-            (selectedMarkIndex - 1 + items.length) % items.length;
-          items[selectedMarkIndex].focus();
-        }
-      } else if (activeElement === marksSearchInput && isMarksSearchActive) {
-        if (isAddSectionVisible) {
-          addMarkButton.focus();
-        } else {
-          // If add section is hidden, cycle back to last list item if any
-          if (items.length > 0) {
-            selectedMarkIndex = items.length - 1;
-            items[selectedMarkIndex].focus();
-          } else {
-            marksSearchInput.focus(); // Stay in search input if no marks
-          }
-        }
-      } else if (activeElement === addMarkButton) {
-        urlInput.focus();
-      } else if (activeElement === urlInput) {
-        urlNameInput.focus();
-      } else if (activeElement === urlNameInput) {
-        // If on name input, cycle to last focusable element based on visibility
-        if (items.length > 0) {
-          selectedMarkIndex = items.length - 1;
-          items[selectedMarkIndex].focus();
-        } else if (isMarksSearchActive) {
-          marksSearchInput.focus();
-        } else if (isAddSectionVisible) {
-          addMarkButton.focus();
-        }
-      } else {
-        // If no specific element is focused, try to focus the last focusable element
-        if (items.length > 0) {
-          selectedMarkIndex = items.length - 1;
-          items[selectedMarkIndex].focus();
-        } else if (isMarksSearchActive) {
-          marksSearchInput.focus();
-        } else if (isAddSectionVisible) {
-          addMarkButton.focus();
-        } else {
-          document.body.focus(); // Fallback
-        }
-      }
-      highlightMarkItem();
+      navigateMarksList("up"); // Use the updated navigation logic
     } else if (e.key === "Enter") {
       e.preventDefault(); // Prevent default browser behavior for Enter key
 
@@ -902,7 +825,8 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         !addMarkSection.classList.contains("hidden")
       ) {
         addBookmark(); // Directly call addBookmark if an input field is focused and visible
-      } else if (activeElement === marksSearchInput && isMarksSearchActive) {
+      } else if (activeElement === marksSearchInput) {
+        // No longer check isMarksSearchActive here directly
         // If on search input and enter is pressed, and there are results, activate the first one
         if (filteredMarksResults.length > 0) {
           selectedMarkIndex = 0; // Ensure first item is selected for activation
@@ -918,24 +842,66 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         // If a bookmark item is selected/focused, activate it
         activateSelectedMarkItem();
       }
-    } else if (e.key === "/" && !isMarksSearchActive) {
+    } else if (e.key === "/" && !alwaysShowSearchInput) {
+      // NEW: Only toggle if NOT always visible
       // Trigger search mode on '/'
       e.preventDefault(); // Prevent typing '/'
-      isMarksSearchActive = true;
-      marksSearchContainer.classList.remove("hidden");
+      if (!isMarksSearchActive) {
+        // Only show if not already active
+        isMarksSearchActive = true;
+        marksSearchContainer.classList.remove("hidden");
+      }
       marksSearchInput.focus();
       selectedMarkIndex = -1; // Clear current selection visually
       highlightMarkItem(); // Update highlight
       performMarksSearch(currentMarksSearchQuery); // Re-render with existing (empty) query
-    } else if (e.key === "Escape" && isMarksSearchActive) {
-      // Exit search mode on Escape key
+    } else if (
+      e.key === "/" &&
+      alwaysShowSearchInput &&
+      activeElement !== marksSearchInput
+    ) {
+      // NEW: If always visible, just focus
       e.preventDefault();
-      clearMarksSearchState();
-      // After clearing search, if add section is visible, focus add button, otherwise focus body
-      if (!addMarkSection.classList.contains("hidden")) {
-        addMarkButton.focus();
+      marksSearchInput.focus();
+    } else if (e.key === "Escape") {
+      // Escape now resets search state or returns focus based on settings
+      e.preventDefault();
+      if (isMarksSearchActive && currentMarksSearchQuery !== "") {
+        // If search is active and has a query, clear query
+        clearMarksSearchState();
+        if (!alwaysShowSearchInput) {
+          // If not always visible, focus add button after clearing
+          if (!addMarkSection.classList.contains("hidden")) {
+            addMarkButton.focus();
+          } else {
+            document.body.focus();
+          }
+        } else {
+          marksSearchInput.focus(); // If always visible, clear query and stay in search input
+        }
+      } else if (
+        isMarksSearchActive &&
+        currentMarksSearchQuery === "" &&
+        !alwaysShowSearchInput
+      ) {
+        // If active, empty, and not always visible, hide and shift focus
+        clearMarksSearchState(); // This will hide it
+        if (!addMarkSection.classList.contains("hidden")) {
+          addMarkButton.focus();
+        } else {
+          document.body.focus();
+        }
       } else {
-        document.body.focus();
+        // If not in active search mode (or always visible with empty query)
+        // If add section visible, try to focus there, else body
+        if (!addMarkSection.classList.contains("hidden")) {
+          addMarkButton.focus();
+        } else if (alwaysShowSearchInput) {
+          // If always visible, stay in search input
+          marksSearchInput.focus();
+        } else {
+          document.body.focus();
+        }
       }
     } else if ((e.altKey && e.key === "p") || (e.altKey && e.key === "P")) {
       e.preventDefault();
@@ -955,27 +921,48 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
    */
   const attachMarksListeners = () => {
     document.addEventListener("keydown", marksKeydownHandler);
-    // Initial focus when the Marks view is opened based on visibility
-    chrome.storage.local.get("enableMarksAddition", (result) => {
-      if (result.enableMarksAddition !== false) {
-        // Default is true if not set
-        addMarkButton.focus();
-      } else if (bookmarks.length > 0) {
-        const firstMarkItem = marksListContainer.querySelector(".mark-item");
-        if (firstMarkItem) {
-          selectedMarkIndex = 0;
-          firstMarkItem.focus();
-          highlightMarkItem();
+    // Initial focus when the Marks view is opened based on visibility settings
+    chrome.storage.local.get(
+      ["enableMarksAddition", "alwaysShowMarksSearchInput"],
+      (result) => {
+        const initialEnableMarksAddition = result.enableMarksAddition !== false; // Default to true
+        const initialAlwaysShowSearchInput =
+          result.alwaysShowMarksSearchInput === true; // Default to false
+
+        alwaysShowSearchInput = initialAlwaysShowSearchInput; // Sync local state
+
+        // Apply visibility of add section
+        window.toggleMarksAddSection(initialEnableMarksAddition);
+
+        // Apply visibility of search input
+        window.toggleMarksSearchInputAlwaysVisible(
+          initialAlwaysShowSearchInput,
+        ); // Also sets isMarksSearchActive
+
+        // Determine initial focus
+        if (initialAlwaysShowSearchInput) {
+          marksSearchInput.focus();
+        } else if (initialEnableMarksAddition) {
+          addMarkButton.focus();
+        } else if (bookmarks.length > 0) {
+          const firstMarkItem = marksListContainer.querySelector(".mark-item");
+          if (firstMarkItem) {
+            selectedMarkIndex = 0;
+            firstMarkItem.focus();
+            highlightMarkItem();
+          } else {
+            document.body.focus();
+          }
         } else {
-          document.body.focus(); // Nothing to focus
+          document.body.focus();
         }
-      } else {
-        document.body.focus(); // Nothing to focus
-      }
-    });
+      },
+    );
+
     selectedMarkIndex = -1; // Reset selected index visually
     highlightMarkItem(); // Ensure no highlight initially on list
-    clearMarksSearchState(); // Ensure search is cleared when view is opened
+    // clearMarksSearchState() is now conditionally called by toggleMarksSearchInputAlwaysVisible
+    // which itself sets initial isMarksSearchActive state
   };
 
   /**
@@ -999,11 +986,13 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   // and clear the search if active.
   document.addEventListener("click", (e) => {
     // Check if the click occurred outside the marks-content area AND marks search is active
+    // ONLY clear search state if it's NOT in "always visible" mode
     const marksContent = document.querySelector(".marks-content");
     if (
       isMarksSearchActive &&
       marksContent &&
-      !marksContent.contains(e.target)
+      !marksContent.contains(e.target) &&
+      !alwaysShowSearchInput
     ) {
       clearMarksSearchState();
     }
