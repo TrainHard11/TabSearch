@@ -16,7 +16,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   const noMarksMessage = marksListContainer.querySelector(".no-marks-message");
   const marksSearchContainer = document.getElementById("marksSearchContainer");
   const marksSearchInput = document.getElementById("marksSearchInput");
-  const marksMessageDiv = document.getElementById("marksMessage"); // Message div
+  // marksMessageDiv is removed - no longer needed
   const addMarkSection = document.getElementById("addMarkSection"); // Add bookmark section container
 
   // Exit if essential elements are not found, indicating an issue with HTML injection.
@@ -28,7 +28,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     !marksListContainer ||
     !marksSearchContainer ||
     !marksSearchInput ||
-    !marksMessageDiv ||
     !addMarkSection
   ) {
     console.error(
@@ -58,49 +57,10 @@ const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
   let currentMarksSearchQuery = "";
   let filteredMarksResults = []; // Stores the currently filtered results for rendering
 
-  let messageTimeoutId = null; // To manage message display timeout
+  // let messageTimeoutId = null; // Removed - no longer needed
   let alwaysShowSearchInput = false; // Local state for the setting
 
-  /**
-   * Displays a temporary message in the marksMessageDiv.
-   * @param {string} message The message text.
-   * @param {'success'|'error'} type The type of message (for styling).
-   * @param {number} durationMs The duration in milliseconds to display the message.
-   * @param {Array<HTMLElement>} [inputElements=[]] An optional array of input elements
-   * to remove the 'input-error' class from when the message disappears.
-   */
-  const displayMessage = (
-    message,
-    type,
-    durationMs = 3000,
-    inputElements = [],
-  ) => {
-    if (messageTimeoutId) {
-      clearTimeout(messageTimeoutId); // Clear any existing timeout
-    }
-
-    marksMessageDiv.textContent = message;
-    marksMessageDiv.className = `marks-message show ${type}`; // Apply type class and show
-
-    marksMessageDiv.classList.remove("hidden"); // Ensure it's not hidden by the utility class
-
-    messageTimeoutId = setTimeout(() => {
-      marksMessageDiv.classList.remove("show");
-      marksMessageDiv.classList.add("hidden"); // Hide after transition
-      // Small delay to allow fade-out animation before clearing text
-      setTimeout(() => {
-        marksMessageDiv.textContent = "";
-        marksMessageDiv.className = "marks-message hidden"; // Reset class for next use
-
-        // NEW: Clear error classes from specified input elements
-        inputElements.forEach((el) => {
-          if (el && el.classList.contains("input-error")) {
-            el.classList.remove("input-error");
-          }
-        });
-      }, 300); // Matches CSS transition duration
-    }, durationMs);
-  };
+  // displayMessage function removed
 
   /**
    * Highlights the query in the text. (Copied from popup.js for self-containment)
@@ -274,10 +234,7 @@ const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
     // If search is active, this action is disabled or has a different effect.
     if (isMarksSearchActive) {
       console.log("Cannot reorder bookmarks while search is active.");
-      displayMessage(
-        "Cannot reorder bookmarks while search is active.",
-        "error",
-      );
+      // displayMessage("Cannot reorder bookmarks while search is active.", "error",); // Removed
       return;
     }
 
@@ -378,7 +335,7 @@ const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
       await chrome.storage.local.set({ [STORAGE_KEY]: bookmarks });
     } catch (error) {
       console.error("Error saving bookmarks:", error);
-      displayMessage("Error saving bookmark.", "error");
+      // displayMessage("Error saving bookmark.", "error"); // Removed
     }
   };
 
@@ -483,10 +440,10 @@ const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
         if (originalMarkIndex > -1) {
           bookmarks[originalMarkIndex].searchableInTabSearch = e.target.checked;
           await saveBookmarks();
-          displayMessage(
-            `Bookmark "${mark.name}" ${e.target.checked ? "will" : "will NOT"} appear in Tab Search.`,
-            "success",
-          );
+          // displayMessage( // Removed
+          //   `Bookmark "${mark.name}" ${e.target.checked ? "will" : "will NOT"} appear in Tab Search.`,
+          //   "success",
+          // );
           // No need to re-render marks here, but popups.js will need to reload marks
           // when it performs its search, which is handled in popup.js
         }
@@ -626,61 +583,43 @@ const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
     let url = urlInput.value.trim();
     const exactMatch = exactMatchCheckbox.checked; // Get exact match state
 
-    // Remove error classes before validation (in case they were manually added and cleared message)
+    // Remove error classes before validation
     urlNameInput.classList.remove("input-error");
     urlInput.classList.remove("input-error");
 
     if (!name || !url) {
-      const errorInputs = [];
       if (!name) {
         urlNameInput.classList.add("input-error");
-        errorInputs.push(urlNameInput);
       }
       if (!url) {
         urlInput.classList.add("input-error");
-        errorInputs.push(urlInput);
       }
-      displayMessage(
-        "Bookmark name and URL cannot be empty.",
-        "error",
-        3000,
-        errorInputs,
-      ); // Pass inputs to clear
+      // No message, just visual feedback
       return;
     }
 
     // Validate for unique URL
-    const urlExists = bookmarks.some((mark) => mark.url === url);
-    if (urlExists) {
+    const existingMarkByUrl = bookmarks.find((mark) => mark.url === url);
+    if (existingMarkByUrl) {
       urlInput.classList.add("input-error");
-      displayMessage(
-        "A bookmark with this URL already exists.",
-        "error",
-        3000,
-        [urlInput],
-      ); // Pass input to clear
+      focusBookmarkByUrl(url); // Focus existing bookmark
       return;
     }
 
     // Validate for unique name (case-insensitive for user experience)
-    const nameExists = bookmarks.some(
+    const existingMarkByName = bookmarks.find(
       (mark) => mark.name.toLowerCase() === name.toLowerCase(),
     );
-    if (nameExists) {
+    if (existingMarkByName) {
       urlNameInput.classList.add("input-error");
-      displayMessage(
-        "A bookmark with this name already exists. Please choose a unique name.",
-        "error",
-        3000,
-        [urlNameInput],
-      ); // Pass input to clear
+      focusBookmarkByUrl(existingMarkByName.url); // Focus existing bookmark by its URL
       return;
     }
 
     // Add new bookmark with exactMatch and searchableInTabSearch property (default to false)
     bookmarks.push({ name, url, exactMatch, searchableInTabSearch: false });
     await saveBookmarks();
-    displayMessage("Bookmark added successfully!", "success"); // No inputs to clear for success
+    // No success message needed here
 
     // Clear input fields and reset checkbox after successful addition
     urlNameInput.value = "";
@@ -718,7 +657,7 @@ const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
       if (originalIndex > -1) {
         bookmarks.splice(originalIndex, 1); // Remove the item from the original list
         await saveBookmarks();
-        displayMessage("Bookmark removed.", "success"); // Message on removal
+        // displayMessage("Bookmark removed.", "success"); // Removed
 
         // If search is active, re-filter the list; otherwise, just re-render the full list
         if (isMarksSearchActive) {
@@ -897,8 +836,8 @@ const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
           selectedMarkIndex = 0; // Ensure first item is selected for activation
           activateSelectedMarkItem();
         } else {
-          // No search results, maybe display a message or do nothing.
-          displayMessage("No search results to activate.", "error");
+          // No search results, maybe just clear search or do nothing.
+          clearMarksSearchState(); // Clear search on Enter if no results
         }
       } else if (
         selectedMarkIndex !== -1 &&
@@ -928,7 +867,9 @@ const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
       // If always visible, just focus
       e.preventDefault();
       marksSearchInput.focus();
-    } else if ((e.altKey && e.key === "p") || (e.altKey && e.key === "P")) {
+    }
+    // Removed all 'Escape' key handling
+    else if ((e.altKey && e.key === "p") || (e.altKey && e.key === "P")) {
       e.preventDefault();
       moveMarkItem("up");
     } else if (e.altKey && (e.key === "n" || e.key === "N")) {
