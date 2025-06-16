@@ -1,274 +1,376 @@
+/* Marks/marks.css */
+
 .marks-container {
-    display: flex;
-    flex-direction: column;
-    padding: 15px;
-    gap: 15px;
-    background-color: var(--color-background-tertiary);
-    border-radius: 8px;
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border-dark);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    flex-grow: 1;
-    overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  gap: 15px;
+  background-color: var(--color-background-tertiary);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-dark);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  flex-grow: 1;
+  overflow-y: hidden;
 }
 
 .marks-content {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .marks-container h2 {
-    color: var(--color-accent-blue);
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1.8em;
-    text-align: center;
-    border-bottom: 1px solid var(--color-border-medium);
-    padding-bottom: 10px;
+  color: var(--color-accent-blue);
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.8em;
+  text-align: center;
+  border-bottom: 1px solid var(--color-border-medium);
+  padding-bottom: 10px;
 }
 
 .input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .checkbox-group {
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-    margin-top: 5px;
-    margin-bottom: 5px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 
 .input-label {
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    font-size: 0.9em;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: 0.9em;
 }
 
 .marks-input {
-    padding: 10px 12px;
-    border: 1px solid var(--color-border-medium);
-    border-radius: 6px;
-    background-color: var(--color-background-secondary);
-    color: var(--color-text-primary);
-    font-size: 1em;
-    width: 100%;
-    box-sizing: border-box;
-    outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-medium);
+  border-radius: 6px;
+  background-color: var(--color-background-secondary);
+  color: var(--color-text-primary);
+  font-size: 1em;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .marks-input::placeholder {
-    color: var(--color-text-secondary);
+  color: var(--color-text-secondary);
 }
 
 .marks-input:focus {
-    border-color: var(--color-accent-blue);
-    box-shadow: 0 0 0 2px rgba(97, 175, 239, 0.3);
+  border-color: var(--color-accent-blue);
+  box-shadow: 0 0 0 2px rgba(97, 175, 239, 0.3);
 }
 
 .marks-input.input-error {
-    border-color: #f44336;
-    box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.3);
+  border-color: #f44336;
+  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.3);
 }
 
 .marks-checkbox {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    border: 1px solid var(--color-accent-blue);
-    border-radius: 4px;
-    width: 18px;
-    height: 18px;
-    background-color: var(--color-background-secondary);
-    cursor: pointer;
-    position: relative;
-    outline: none;
-    transition: background-color 0.2s, border-color 0.2s;
-    flex-shrink: 0;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border: 1px solid var(--color-accent-blue);
+  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  background-color: var(--color-background-secondary);
+  cursor: pointer;
+  position: relative;
+  outline: none;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+  flex-shrink: 0;
 }
 
 .marks-checkbox:checked {
-    background-color: var(--color-accent-blue);
-    border-color: var(--color-accent-blue);
+  background-color: var(--color-accent-blue);
+  border-color: var(--color-accent-blue);
 }
 
 .marks-checkbox:focus {
-    box-shadow: 0 0 0 2px rgba(97, 175, 239, 0.4);
+  box-shadow: 0 0 0 2px rgba(97, 175, 239, 0.4);
 }
 
 .marks-checkbox:checked::before {
-    content: '✔';
-    display: block;
-    color: var(--color-background-primary);
-    font-size: 14px;
-    line-height: 1;
-    text-align: center;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  content: "✔";
+  display: block;
+  color: var(--color-background-primary);
+  font-size: 14px;
+  line-height: 1;
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .checkbox-label {
-    color: var(--color-text-primary);
-    font-size: 0.95em;
-    cursor: pointer;
+  color: var(--color-text-primary);
+  font-size: 0.95em;
+  cursor: pointer;
 }
 
 .marks-button {
-    padding: 12px 20px;
-    background-color: var(--color-accent-green);
-    color: var(--color-background-primary);
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1.1em;
-    font-weight: 700;
-    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  padding: 12px 20px;
+  background-color: var(--color-accent-green);
+  color: var(--color-background-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: 700;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease,
+    box-shadow 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  outline: none; /* Remove default focus outline */
 }
 
 .marks-button:hover {
-    background-color: #82b36a;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  background-color: #82b36a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .marks-button:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.marks-button:focus {
+  /* Custom focus style for button */
+  box-shadow: 0 0 0 3px rgba(97, 175, 239, 0.7); /* Stronger blue glow for focus */
 }
 
 .bookmarks-list-title {
-    color: var(--color-accent-blue);
-    margin-top: 20px;
-    margin-bottom: 10px;
-    font-size: 1.4em;
-    text-align: center;
-    border-top: 1px dashed var(--color-border-dashed);
-    padding-top: 15px;
+  color: var(--color-accent-blue);
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 1.4em;
+  text-align: center;
+  border-top: 1px dashed var(--color-border-dashed);
+  padding-top: 15px;
 }
 
 .marks-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 0;
-    margin: 0;
-    max-height: 300px;
-    overflow-y: auto;
-    padding-right: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 5px;
 }
 
 .marks-list::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
 
 .marks-list::-webkit-scrollbar-track {
-    background: var(--color-scrollbar-track);
-    border-radius: 4px;
+  background: var(--color-scrollbar-track);
+  border-radius: 4px;
 }
 
 .marks-list::-webkit-scrollbar-thumb {
-    background: var(--color-scrollbar-thumb);
-    border-radius: 4px;
+  background: var(--color-scrollbar-thumb);
+  border-radius: 4px;
 }
 
 .marks-list::-webkit-scrollbar-thumb:hover {
-    background: var(--color-scrollbar-thumb-hover);
+  background: var(--color-scrollbar-thumb-hover);
 }
 
 .no-marks-message {
-    text-align: center;
-    color: var(--color-text-muted);
-    font-style: italic;
-    padding: 20px 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding: 20px 0;
 }
 
 .mark-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: var(--color-border-light);
-    padding: 10px 15px;
-    border-radius: 6px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    transition: transform 0.1s ease, background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--color-border-light);
+  padding: 10px 15px;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  cursor: pointer; /* Indicate clickable */
+  border-bottom: 1px solid var(--color-background-tertiary); /* Similar to harpoon */
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease;
+  outline: none; /* Remove default focus outline */
+}
+
+.marks-list .mark-item:last-child {
+  border-bottom: none;
 }
 
 .mark-item:hover {
-    transform: translateY(-2px);
-    background-color: var(--color-selected-item-bg);
+  background-color: var(--color-selected-item-bg);
+  transform: translateY(-1px); /* Slight lift on hover */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Selected state for keyboard navigation */
+.mark-item.selected {
+  background-color: #bbc2cf; /* Matching harpoon selected color */
+  color: var(--color-background-primary);
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.mark-item.selected .mark-name {
+  color: var(--color-background-primary);
+}
+
+.mark-item.selected .mark-url {
+  color: var(
+    --color-scrollbar-thumb
+  ); /* Light blue for URL in selected state */
+}
+
+/* New style for temporary highlight on moved items (matching harpoon) */
+.mark-item.moved-highlight {
+  background-color: #f7e0a0; /* Temporary highlight color */
+  transition: background-color 0.4s ease-out; /* Smooth fade-out */
+}
+
+.mark-item:focus {
+  /* Custom focus style for list items */
+  box-shadow: 0 0 0 3px rgba(97, 175, 239, 0.5); /* Blue glow */
+  border-color: var(--color-accent-blue);
 }
 
 .mark-info {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    margin-right: 10px;
-    overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  margin-right: 10px;
+  overflow: hidden;
+  flex-shrink: 1; /* Allow shrinking */
+  min-width: 0; /* Important for ellipsis to work */
 }
 
 .mark-name {
-    font-weight: 600;
-    color: var(--color-text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mark-url {
-    font-size: 0.85em;
-    color: var(--color-text-muted);
-    text-decoration: none;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-size: 0.85em;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%; /* Ensure it respects parent width */
 }
 
 .mark-url:hover {
-    text-decoration: underline;
-    color: var(--color-accent-blue);
+  text-decoration: underline;
+  color: var(--color-accent-blue);
 }
 
 .exact-match-status {
-    font-size: 0.75em;
-    margin-top: 2px;
-    white-space: nowrap;
+  font-size: 0.75em;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* New action buttons container for marks, similar to harpoon */
+.marks-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+/* New move button style for marks, similar to harpoon */
+.marks-move-button {
+  background-color: var(--color-accent-blue);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9em;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.2s ease;
+  outline: none; /* Remove default focus outline */
+}
+
+.marks-move-button:hover {
+  background-color: #4b8cd9;
+}
+
+.marks-move-button:focus {
+  /* Custom focus style for move buttons */
+  box-shadow: 0 0 0 2px rgba(97, 175, 239, 0.7); /* Stronger blue glow */
 }
 
 .remove-mark-button {
-    background-color: #e06c75;
-    color: var(--color-background-primary);
-    border: none;
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2em;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    flex-shrink: 0;
+  background-color: #e06c75;
+  color: var(--color-background-primary);
+  border: none;
+  border-radius: 50%;
+  width: 28px; /* Slightly larger for easier click */
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+  flex-shrink: 0;
+  outline: none; /* Remove default focus outline */
 }
 
 .remove-mark-button:hover {
-    background-color: #be504c;
-    transform: scale(1.1);
+  background-color: #be504c;
+  transform: scale(1.1);
 }
 
 .remove-mark-button:active {
-    transform: scale(1);
+  transform: scale(1);
+}
+
+.remove-mark-button:focus {
+  /* Custom focus style for remove button */
+  box-shadow: 0 0 0 2px rgba(224, 108, 117, 0.7); /* Reddish glow */
 }
 
 .settings-hint {
-    text-align: center;
-    margin-top: 20px;
-    font-size: 0.9em;
-    color: var(--color-text-secondary);
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.9em;
+  color: var(--color-text-secondary);
 }
