@@ -372,14 +372,14 @@ async function activateHarpoonedTabByIndex(index) {
 	}
 }
 
-// --- Bookmark Feature Functions (New) ---
+// --- Bookmark Feature Functions (New & Modified) ---
 const MARKS_STORAGE_KEY = "fuzzyTabSearch_bookmarks"; // Use the same key as Marks/marks.js
 
 /**
  * Adds the currently active tab as a bookmark to local storage.
  * It performs checks for duplicate URLs and names before adding.
  * Defaults exactMatch to false and searchableInTabSearch to true.
- * @returns {Promise<Object>} A promise resolving with success status and message.
+ * @returns {Promise<Object>} A promise resolving with success status, message, and the URL of the bookmark (newly added or existing).
  */
 async function addCurrentTabAsBookmark() {
     try {
@@ -387,14 +387,14 @@ async function addCurrentTabAsBookmark() {
 
         if (!activeTab || !activeTab.url || !activeTab.title) {
             console.warn("Cannot add bookmark: No active tab found or missing URL/title.");
-            return { success: false, message: "No active tab or missing URL/title." };
+            return { success: false, message: "No active tab or missing URL/title.", url: null };
         }
 
         const newBookmarkName = activeTab.title.trim();
         const newBookmarkUrl = activeTab.url.trim();
 
         if (!newBookmarkName || !newBookmarkUrl) {
-            return { success: false, message: "Bookmark name or URL cannot be empty." };
+            return { success: false, message: "Bookmark name or URL cannot be empty.", url: null };
         }
 
         let existingBookmarks = await chrome.storage.local.get({ [MARKS_STORAGE_KEY]: [] });
@@ -404,14 +404,14 @@ async function addCurrentTabAsBookmark() {
         const urlExists = existingBookmarks.some(mark => mark.url === newBookmarkUrl);
         if (urlExists) {
             console.log("Bookmark not added: A bookmark with this URL already exists.");
-            return { success: false, message: "A bookmark with this URL already exists." };
+            return { success: false, message: "A bookmark with this URL already exists.", url: newBookmarkUrl };
         }
 
         // Check for duplicate name (case-insensitive)
         const nameExists = existingBookmarks.some(mark => mark.name.toLowerCase() === newBookmarkName.toLowerCase());
         if (nameExists) {
             console.log("Bookmark not added: A bookmark with this name already exists.");
-            return { success: false, message: "A bookmark with this name already exists. Please choose a unique name." };
+            return { success: false, message: "A bookmark with this name already exists. Please choose a unique name.", url: newBookmarkUrl };
         }
 
         const newBookmark = {
@@ -424,17 +424,20 @@ async function addCurrentTabAsBookmark() {
         existingBookmarks.push(newBookmark);
         await chrome.storage.local.set({ [MARKS_STORAGE_KEY]: existingBookmarks });
         console.log("Bookmark added successfully:", newBookmark);
-        return { success: true, message: "Bookmark added successfully!" };
+        return { success: true, message: "Bookmark added successfully!", url: newBookmarkUrl };
 
     } catch (error) {
         console.error("Error adding current tab as bookmark:", error);
-        return { success: false, message: `Error: ${error.message}` };
+        return { success: false, message: `Error: ${error.message}`, url: null };
     }
 }
 
 
 // Key for commanding the initial view upon popup opening
 const COMMAND_INITIAL_VIEW_KEY = "fuzzyTabSearch_commandInitialView";
+// New key to store the URL of the bookmark to focus after adding/finding it
+const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
+
 
 // Listen for commands defined in manifest.json
 chrome.commands.onCommand.addListener(async (command) => {
@@ -453,10 +456,14 @@ chrome.commands.onCommand.addListener(async (command) => {
 		case "_execute_action":
 			// When the default action command is triggered, explicitly set the view to tabSearch
 			await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "tabSearch" });
+			// Clear any lingering initial mark URL command
+            await chrome.storage.session.remove(INITIAL_MARK_URL_KEY);
 			// chrome.action.openPopup() is usually implicitly called by _execute_action
 			break;
 		case "open_harpoon_view": // NEW command
 			await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "harpoon" });
+			// Clear any lingering initial mark URL command
+            await chrome.storage.session.remove(INITIAL_MARK_URL_KEY);
 			await chrome.action.openPopup(); // Programmatically open the popup
 			break;
 		case "custom_tab_1":
@@ -533,10 +540,12 @@ chrome.commands.onCommand.addListener(async (command) => {
 		case "harpoon_current_tab":
 			// Call the function to add the current tab to the harpoon list.
 			// The return value (tabAdded) now only indicates if a *new* tab was added.
-			await addCurrentTabToHarpoonList(); 
+			await addCurrentTabToHarpoonList();
 			
 			// Always open the harpoon view, regardless of whether a new tab was added or it was a duplicate.
 			await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "harpoon" });
+            // Clear any lingering initial mark URL command
+            await chrome.storage.session.remove(INITIAL_MARK_URL_KEY);
 			await chrome.action.openPopup(); // Programmatically open the popup
 			break;
 		case "harpoon_command_1":
@@ -552,7 +561,11 @@ chrome.commands.onCommand.addListener(async (command) => {
 			await activateHarpoonedTabByIndex(3);
 			break;
 		case "add_current_tab_as_bookmark":
-            await addCurrentTabAsBookmark(); // Add the bookmark
+            const bookmarkResult = await addCurrentTabAsBookmark(); // Add the bookmark
+            if (bookmarkResult.url) {
+                // Store the URL of the bookmark to be focused
+                await chrome.storage.session.set({ [INITIAL_MARK_URL_KEY]: bookmarkResult.url });
+            }
             // Set the initial view to 'marks' and open the popup
             await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "marks" });
             await chrome.action.openPopup();
