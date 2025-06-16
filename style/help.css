@@ -1,129 +1,129 @@
 .help-container {
-    font-family: 'Inter', sans-serif;
-    color: var(--color-text-primary);
-    background-color: var(--color-background-tertiary);
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    /* max-width: 550px; */
-    margin: 0 auto;
-    line-height: 1.6;
-    font-size: 14px;
-    overflow-y: hidden;
-    flex-grow: 1;
+  font-family: "Inter", sans-serif;
+  color: var(--color-text-primary);
+  background-color: var(--color-background-tertiary);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  /* max-width: 550px; */
+  margin: 0 auto;
+  line-height: 1.6;
+  font-size: 14px;
+  overflow-y: hidden;
+  flex-grow: 1;
 }
 
 .help-container h2 {
-    color: var(--color-accent-blue);
-    font-size: 26px;
-    margin-bottom: 20px;
-    text-align: center;
-    border-bottom: 2px solid var(--color-border-medium);
-    padding-bottom: 10px;
+  color: var(--color-accent-blue);
+  font-size: 26px;
+  margin-bottom: 20px;
+  text-align: center;
+  border-bottom: 2px solid var(--color-border-medium);
+  padding-bottom: 10px;
 }
 
 .help-container h3 {
-    color: var(--color-text-primary);
-    font-size: 20px;
-    margin-top: 25px;
-    margin-bottom: 15px;
-    background-color: var(--color-background-secondary);
-    padding: 8px 15px;
-    border-radius: 5px;
-    border-left: 5px solid var(--color-accent-green);
+  color: var(--color-text-primary);
+  font-size: 20px;
+  margin-top: 25px;
+  margin-bottom: 15px;
+  background-color: var(--color-background-secondary);
+  padding: 8px 15px;
+  border-radius: 5px;
+  border-left: 5px solid var(--color-accent-green);
 }
 
 .help-container h4 {
-    color: var(--color-text-primary);
-    font-size: 16px;
-    margin-top: 20px;
-    margin-bottom: 10px;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+  color: var(--color-text-primary);
+  font-size: 16px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .help-container p {
-    margin-bottom: 15px;
+  margin-bottom: 15px;
 }
 
 .help-container ul {
-    list-style: none;
-    padding-left: 0;
-    margin-bottom: 20px;
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 20px;
 }
 
 .help-container ul li {
-    margin-bottom: 10px;
-    padding-left: 25px;
-    position: relative;
+  margin-bottom: 10px;
+  padding-left: 25px;
+  position: relative;
 }
 
 .help-container ul li:before {
-    content: '\2022';
-    color: var(--color-accent-green);
-    position: absolute;
-    left: 8px;
-    font-size: 1.2em;
-    line-height: inherit;
+  content: "\2022";
+  color: var(--color-accent-green);
+  position: absolute;
+  left: 8px;
+  font-size: 1.2em;
+  line-height: inherit;
 }
 
 .help-container ul ul {
-    margin-top: 8px;
-    margin-bottom: 8px;
-    padding-left: 15px;
-    border-left: 2px solid var(--color-border-medium);
+  margin-top: 8px;
+  margin-bottom: 8px;
+  padding-left: 15px;
+  border-left: 2px solid var(--color-border-medium);
 }
 
 .help-container ul ul li:before {
-    content: '\2013';
-    color: var(--color-text-secondary);
-    font-size: 1em;
+  content: "\2013";
+  color: var(--color-text-secondary);
+  font-size: 1em;
 }
 
 .help-container kbd {
-    display: inline-block;
-    padding: 3px 8px;
-    font-family: 'Consolas', 'Menlo', monospace;
-    background-color: var(--color-background-secondary);
-    border: 1px solid var(--color-border-medium);
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    font-size: 0.9em;
-    color: var(--color-text-primary);
-    white-space: nowrap;
-    vertical-align: middle;
-    margin: 0 2px;
+  display: inline-block;
+  padding: 3px 8px;
+  font-family: "Consolas", "Menlo", monospace;
+  background-color: var(--color-background-secondary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  font-size: 0.9em;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  vertical-align: middle;
+  margin: 0 2px;
 }
 
 .help-container hr {
-    border: none;
-    border-top: 1px solid var(--color-border-medium);
-    margin: 25px 0;
+  border: none;
+  border-top: 1px solid var(--color-border-medium);
+  margin: 25px 0;
 }
 
 .settings-hint {
-    text-align: center;
-    font-size: 0.85em;
-    color: var(--color-text-secondary);
-    margin-top: 25px;
-    font-style: italic;
-    padding: 5px;
+  text-align: center;
+  font-size: 0.85em;
+  color: var(--color-text-secondary);
+  margin-top: 25px;
+  font-style: italic;
+  padding: 5px;
 }
 
 .help-container::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
 
 .help-container::-webkit-scrollbar-track {
-    background: var(--color-scrollbar-track);
-    border-radius: 4px;
+  background: var(--color-scrollbar-track);
+  border-radius: 4px;
 }
 
 .help-container::-webkit-scrollbar-thumb {
-    background: var(--color-scrollbar-thumb);
-    border-radius: 4px;
+  background: var(--color-scrollbar-thumb);
+  border-radius: 4px;
 }
 
 .help-container::-webkit-scrollbar-thumb:hover {
-    background: var(--color-scrollbar-thumb-hover);
+  background: var(--color-scrollbar-thumb-hover);
 }
