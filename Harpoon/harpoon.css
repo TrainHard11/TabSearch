@@ -1,202 +1,202 @@
 .harpoon-container {
-    display: flex;
-    flex-direction: column;
-    padding: 15px;
-    gap: 15px;
-    background-color: var(--color-background-tertiary);
-    border-radius: 8px;
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border-dark);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  gap: 15px;
+  background-color: var(--color-background-tertiary);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-dark);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  flex-grow: 1;
 }
 
 .harpoon-content {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex-grow: 1;
 }
 
 .harpoon-container h3 {
-    color: var(--color-accent-orange);
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1.8em;
-    border-bottom: 1px solid var(--color-border-medium);
-    padding-bottom: 10px;
+  color: var(--color-accent-orange);
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.8em;
+  border-bottom: 1px solid var(--color-border-medium);
+  padding-bottom: 10px;
 }
 
 .harpoon-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 0;
-    margin: 0 auto;
-    width: 90%;
-    list-style: none;
-    overflow-y: auto;
-    max-height: 100%;
-    padding-right: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  margin: 0 auto;
+  width: 90%;
+  list-style: none;
+  overflow-y: auto;
+  max-height: 100%;
+  padding-right: 5px;
 }
 
 .harpoon-list::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
 
 .harpoon-list::-webkit-scrollbar-track {
-    background: var(--color-scrollbar-track);
-    border-radius: 4px;
+  background: var(--color-scrollbar-track);
+  border-radius: 4px;
 }
 
 .harpoon-list::-webkit-scrollbar-thumb {
-    background: var(--color-scrollbar-thumb);
-    border-radius: 4px;
+  background: var(--color-scrollbar-thumb);
+  border-radius: 4px;
 }
 
 .harpoon-list::-webkit-scrollbar-thumb:hover {
-    background: var(--color-scrollbar-thumb-hover);
+  background: var(--color-scrollbar-thumb-hover);
 }
 
 .no-harpooned-message {
-    text-align: center;
-    color: var(--color-text-muted);
-    font-style: italic;
-    padding: 20px 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding: 20px 0;
 }
 
 .harpoon-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: nowrap;
-    background-color: var(--color-border-light);
-    padding: 10px 15px;
-    border-radius: 6px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    border-bottom: 1px solid var(--color-background-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: nowrap;
+  background-color: var(--color-border-light);
+  padding: 10px 15px;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-background-tertiary);
 }
 
 .harpoon-list .harpoon-item:last-child {
-    border-bottom: none;
+  border-bottom: none;
 }
 
 .harpoon-item:hover {
-    background-color: var(--color-selected-item-bg);
+  background-color: var(--color-selected-item-bg);
 }
 
 .harpoon-item.selected {
-    background-color: #bbc2cf;
-    color: var(--color-background-primary);
-    font-weight: bold;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  background-color: #bbc2cf;
+  color: var(--color-background-primary);
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
 .harpoon-item.selected .harpoon-title {
-    color: var(--color-background-primary);
+  color: var(--color-background-primary);
 }
 
 .harpoon-item.selected .harpoon-url {
-    color: var(--color-scrollbar-thumb);
+  color: var(--color-scrollbar-thumb);
 }
 
 /* New style for temporary highlight on moved items */
 .harpoon-item.moved-highlight {
-	background-color: #f7e0a0; 
+  background-color: #f7e0a0;
 }
 
 .harpoon-item .favicon {
-    width: 16px;
-    height: 16px;
-    margin-right: 0;
-    flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-right: 0;
+  flex-shrink: 0;
 }
 
 .harpoon-info {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    flex-shrink: 1;
-    min-width: 0;
-    margin-right: 0;
-    overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 0;
+  margin-right: 0;
+  overflow: hidden;
 }
 
 .harpoon-title {
-    font-weight: 600;
-    color: var(--color-text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .harpoon-url {
-    font-size: 0.85em;
-    color: var(--color-text-muted);
-    text-decoration: none;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+  font-size: 0.85em;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .harpoon-url:hover {
-    text-decoration: underline;
-    color: var(--color-accent-blue);
+  text-decoration: underline;
+  color: var(--color-accent-blue);
 }
 
 .harpoon-action-buttons {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
 }
 
 .harpoon-move-button {
-    background-color: var(--color-accent-blue);
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9em;
-    cursor: pointer;
-    padding: 0;
+  background-color: var(--color-accent-blue);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9em;
+  cursor: pointer;
+  padding: 0;
 }
 
 .harpoon-move-button:hover {
-    background-color: #4b8cd9;
+  background-color: #4b8cd9;
 }
 
 .remove-harpoon-button {
-    background-color: #e06c75;
-    color: var(--color-background-primary);
-    border: none;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2em;
-    cursor: pointer;
-    flex-shrink: 0;
+  background-color: #e06c75;
+  color: var(--color-background-primary);
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .remove-harpoon-button:hover {
-    background-color: #be504c;
+  background-color: #be504c;
 }
 
 .harpoon-container .settings-hint {
-    text-align: center;
-    color: var(--color-text-secondary);
-    font-size: 0.85em;
-    margin-top: 1rem;
-    padding-top: 5px;
-    border-top: 1px solid var(--color-border-dark);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.85em;
+  margin-top: 1rem;
+  padding-top: 5px;
+  border-top: 1px solid var(--color-border-dark);
 }

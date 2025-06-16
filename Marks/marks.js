@@ -56,15 +56,22 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   let filteredMarksResults = []; // Stores the currently filtered results for rendering
 
   let messageTimeoutId = null; // To manage message display timeout
-  let alwaysShowSearchInput = false; // NEW: Local state for the setting
+  let alwaysShowSearchInput = false; // Local state for the setting
 
   /**
    * Displays a temporary message in the marksMessageDiv.
    * @param {string} message The message text.
    * @param {'success'|'error'} type The type of message (for styling).
    * @param {number} durationMs The duration in milliseconds to display the message.
+   * @param {Array<HTMLElement>} [inputElements=[]] An optional array of input elements
+   * to remove the 'input-error' class from when the message disappears.
    */
-  const displayMessage = (message, type, durationMs = 3000) => {
+  const displayMessage = (
+    message,
+    type,
+    durationMs = 3000,
+    inputElements = [],
+  ) => {
     if (messageTimeoutId) {
       clearTimeout(messageTimeoutId); // Clear any existing timeout
     }
@@ -81,6 +88,13 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       setTimeout(() => {
         marksMessageDiv.textContent = "";
         marksMessageDiv.className = "marks-message hidden"; // Reset class for next use
+
+        // NEW: Clear error classes from specified input elements
+        inputElements.forEach((el) => {
+          if (el && el.classList.contains("input-error")) {
+            el.classList.remove("input-error");
+          }
+        });
       }, 300); // Matches CSS transition duration
     }, durationMs);
   };
@@ -579,22 +593,39 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     let url = urlInput.value.trim();
     const exactMatch = exactMatchCheckbox.checked; // Get exact match state
 
-    // Remove error classes before validation
+    // Remove error classes before validation (in case they were manually added and cleared message)
     urlNameInput.classList.remove("input-error");
     urlInput.classList.remove("input-error");
 
     if (!name || !url) {
-      if (!name) urlNameInput.classList.add("input-error");
-      if (!url) urlInput.classList.add("input-error");
-      displayMessage("Bookmark name and URL cannot be empty.", "error");
+      const errorInputs = [];
+      if (!name) {
+        urlNameInput.classList.add("input-error");
+        errorInputs.push(urlNameInput);
+      }
+      if (!url) {
+        urlInput.classList.add("input-error");
+        errorInputs.push(urlInput);
+      }
+      displayMessage(
+        "Bookmark name and URL cannot be empty.",
+        "error",
+        3000,
+        errorInputs,
+      ); // Pass inputs to clear
       return;
     }
 
     // Validate for unique URL
     const urlExists = bookmarks.some((mark) => mark.url === url);
     if (urlExists) {
-      displayMessage("A bookmark with this URL already exists.", "error");
       urlInput.classList.add("input-error");
+      displayMessage(
+        "A bookmark with this URL already exists.",
+        "error",
+        3000,
+        [urlInput],
+      ); // Pass input to clear
       return;
     }
 
@@ -603,18 +634,20 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       (mark) => mark.name.toLowerCase() === name.toLowerCase(),
     );
     if (nameExists) {
+      urlNameInput.classList.add("input-error");
       displayMessage(
         "A bookmark with this name already exists. Please choose a unique name.",
         "error",
-      );
-      urlNameInput.classList.add("input-error");
+        3000,
+        [urlNameInput],
+      ); // Pass input to clear
       return;
     }
 
     // Add new bookmark with exactMatch and searchableInTabSearch property (default to false)
     bookmarks.push({ name, url, exactMatch, searchableInTabSearch: false });
     await saveBookmarks();
-    displayMessage("Bookmark added successfully!", "success"); // Success message
+    displayMessage("Bookmark added successfully!", "success"); // No inputs to clear for success
 
     // Clear input fields and reset checkbox after successful addition
     urlNameInput.value = "";
@@ -670,7 +703,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
    */
   const removeSelectedMarkItem = async () => {
     if (selectedMarkIndex !== -1 && filteredMarksResults[selectedMarkIndex]) {
-      const indexToRemove = selectedIndex;
+      const indexToRemove = selectedMarkIndex; // Use selectedIndex directly, as it refers to filteredMarksResults
       await removeBookmark(indexToRemove); // Use existing removeBookmark function
 
       // After removal, adjust selected index if necessary
@@ -717,7 +750,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     currentMarksSearchQuery = "";
     marksSearchInput.value = "";
     if (!alwaysShowSearchInput) {
-      // NEW: Only hide if setting is off
+      // Only hide if setting is off
       marksSearchContainer.classList.add("hidden");
     }
     filteredMarksResults = [...bookmarks]; // Show all bookmarks
@@ -726,7 +759,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   };
 
   /**
-   * NEW: Toggles the visibility of the add bookmark section.
+   * Toggles the visibility of the add bookmark section.
    * This function is called from popup.js when the setting changes.
    * @param {boolean} isVisible True to show, false to hide.
    */
@@ -739,7 +772,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         addMarkSection.classList.add("hidden");
         // If the section is hidden, ensure no focus is trapped in its elements.
         if (alwaysShowSearchInput || isMarksSearchActive) {
-          // NEW: Focus search if always visible or currently active
+          // Focus search if always visible or currently active
           marksSearchInput.focus();
         } else if (bookmarks.length > 0) {
           const firstMarkItem = marksListContainer.querySelector(".mark-item");
@@ -758,7 +791,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   };
 
   /**
-   * NEW: Toggles the persistent visibility of the marks search input.
+   * Toggles the persistent visibility of the marks search input.
    * This function is called from popup.js when the setting changes.
    * @param {boolean} shouldBeAlwaysVisible True to always show, false to revert to toggle behavior.
    */
@@ -843,7 +876,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         activateSelectedMarkItem();
       }
     } else if (e.key === "/" && !alwaysShowSearchInput) {
-      // NEW: Only toggle if NOT always visible
+      // Only toggle if NOT always visible
       // Trigger search mode on '/'
       e.preventDefault(); // Prevent typing '/'
       if (!isMarksSearchActive) {
@@ -860,7 +893,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       alwaysShowSearchInput &&
       activeElement !== marksSearchInput
     ) {
-      // NEW: If always visible, just focus
+      // If always visible, just focus
       e.preventDefault();
       marksSearchInput.focus();
     } else if (e.key === "Escape") {

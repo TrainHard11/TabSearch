@@ -125,6 +125,14 @@
   cursor: pointer;
 }
 
+/* NEW: Styles for the button container to align button right */
+.marks-button-container {
+  display: flex;
+  justify-content: flex-end; /* Aligns content to the right */
+  width: 100%; /* Ensure it takes full width to allow right alignment */
+  margin-top: 10px; /* Add some space above the button */
+}
+
 .marks-button {
   padding: 12px 20px;
   background-color: var(--color-accent-green);
@@ -340,8 +348,8 @@
   color: var(--color-background-primary);
   border: none;
   border-radius: 50%;
-  width: 28px; /* Slightly larger for easier click */
-  height: 28px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -434,7 +442,7 @@
   height: 16px;
 }
 
-/* NEW: Style for the hint in Marks view */
+/* Style for the hint in Marks view */
 .marks-hint {
   text-align: center;
   margin-top: 15px;
