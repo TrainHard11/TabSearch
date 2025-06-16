@@ -892,7 +892,6 @@ const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
       ) {
         addBookmark(); // Directly call addBookmark if an input field is focused and visible
       } else if (activeElement === marksSearchInput) {
-        // No longer check isMarksSearchActive here directly
         // If on search input and enter is pressed, and there are results, activate the first one
         if (filteredMarksResults.length > 0) {
           selectedMarkIndex = 0; // Ensure first item is selected for activation
@@ -929,46 +928,6 @@ const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
       // If always visible, just focus
       e.preventDefault();
       marksSearchInput.focus();
-    } else if (e.key === "Escape") {
-      // Escape now resets search state or returns focus based on settings
-      e.preventDefault();
-      if (isMarksSearchActive && currentMarksSearchQuery !== "") {
-        // If search is active and has a query, clear query
-        clearMarksSearchState();
-        if (!alwaysShowSearchInput) {
-          // If not always visible, focus add button after clearing
-          if (!addMarkSection.classList.contains("hidden")) {
-            addMarkButton.focus();
-          } else {
-            document.body.focus();
-          }
-        } else {
-          marksSearchInput.focus(); // If always visible, clear query and stay in search input
-        }
-      } else if (
-        isMarksSearchActive &&
-        currentMarksSearchQuery === "" &&
-        !alwaysShowSearchInput
-      ) {
-        // If active, empty, and not always visible, hide and shift focus
-        clearMarksSearchState(); // This will hide it
-        if (!addMarkSection.classList.contains("hidden")) {
-          addMarkButton.focus();
-        } else {
-          document.body.focus();
-        }
-      } else {
-        // If not in active search mode (or always visible with empty query)
-        // If add section visible, try to focus there, else body
-        if (!addMarkSection.classList.contains("hidden")) {
-          addMarkButton.focus();
-        } else if (alwaysShowSearchInput) {
-          // If always visible, stay in search input
-          marksSearchInput.focus();
-        } else {
-          document.body.focus();
-        }
-      }
     } else if ((e.altKey && e.key === "p") || (e.altKey && e.key === "P")) {
       e.preventDefault();
       moveMarkItem("up");

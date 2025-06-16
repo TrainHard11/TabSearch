@@ -418,7 +418,7 @@ async function addCurrentTabAsBookmark() {
             name: newBookmarkName,
             url: newBookmarkUrl,
             exactMatch: false,          // Default to false for quick add
-            searchableInTabSearch: true // Default to true, makes it immediately available in unified search
+            searchableInTabSearch: false // MODIFIED: Default to false as per request
         };
 
         existingBookmarks.push(newBookmark);
