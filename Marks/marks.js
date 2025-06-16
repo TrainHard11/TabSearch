@@ -66,8 +66,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   const navigateMarksList = (direction) => {
     const items = marksListContainer.querySelectorAll(".mark-item");
     // Define all focusable elements in logical order
-    // The list items need to be actual elements to be focused programmatically,
-    // so we'll make them focusable via tabindex.
     const focusableElements = [
       urlNameInput,
       urlInput,
@@ -295,7 +293,13 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       markUrl.href = mark.url;
       markUrl.textContent = mark.url;
       markUrl.target = "_blank"; // Open in a new tab
-      markUrl.addEventListener("click", (e) => e.stopPropagation()); // Prevent item selection when clicking URL
+      // Prevent default navigation for the URL link within the item
+      markUrl.addEventListener("click", (e) => {
+        e.preventDefault(); // Stop default browser action (opening URL)
+        e.stopPropagation(); // Stop event from bubbling up to the markItem click listener
+        // Optionally, if you still want to offer a way to open in a new tab
+        // you could add a specific button or Ctrl+Click behavior here.
+      });
 
       // Display exact match status
       const exactMatchStatus = document.createElement("span");
@@ -359,6 +363,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       markItem.appendChild(markInfo);
       markItem.appendChild(actionButtonsContainer); // Append action buttons container
 
+      // Main click listener for the entire mark item
       markItem.addEventListener("click", () => {
         selectedMarkIndex = index; // Update selected index on click
         highlightMarkItem();
@@ -379,6 +384,8 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
    * Adds a new bookmark to the list.
    */
   const addBookmark = async () => {
+    console.log("addBookmark called!"); // Debugging log
+
     const name = urlNameInput.value.trim();
     let url = urlInput.value.trim();
     const exactMatch = exactMatchCheckbox.checked; // Get exact match state
@@ -448,6 +455,18 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
    */
   const marksKeydownHandler = (e) => {
     const activeElement = document.activeElement;
+
+    // Prevent j/k navigation if in input fields (unless Alt is pressed for global shortcuts)
+    if (
+      !e.altKey &&
+      (activeElement === urlNameInput || activeElement === urlInput)
+    ) {
+      if (e.key === "j" || e.key === "k") {
+        // Allow j/k to be typed normally in inputs
+        return;
+      }
+    }
+
     const items = marksListContainer.querySelectorAll(".mark-item");
 
     if (e.key === "ArrowDown" || e.key === "j" || (e.altKey && e.key === "j")) {
@@ -565,4 +584,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   window.attachMarksListeners = attachMarksListeners;
   window.detachMarksListeners = detachMarksListeners;
   window.getAllBookmarks = () => bookmarks; // Ensure this is always available after initialization
+
+  // Ensure the addMarkButton's direct click listener is robustly set.
+  addMarkButton.addEventListener("click", addBookmark);
 };
