@@ -7,7 +7,7 @@ window.initHarpoonFeature = async () => {
 
 	if (!harpoonListContainer) {
 		console.error("Harpoon feature: Essential DOM elements not found after initHarpoonFeature call.");
-		return;;
+		return;
 	}
 
 	let selectedHarpoonIndex = -1;
