@@ -31,10 +31,21 @@
     >
   </div>
 
-  <!-- Added tabindex to make it focusable for keyboard navigation -->
   <button id="addMarkButton" class="marks-button" tabindex="0">
     Add Bookmark
   </button>
+
+  <!-- NEW: Container for the bookmark search input -->
+  <div id="marksSearchContainer" class="marks-search-container hidden">
+    <label for="marksSearchInput" class="input-label">Search Bookmarks:</label>
+    <input
+      type="text"
+      id="marksSearchInput"
+      placeholder="Search by name or URL..."
+      class="marks-input"
+      aria-label="Search Bookmarks"
+    />
+  </div>
 
   <h3 class="bookmarks-list-title">Saved Bookmarks</h3>
   <div id="marksList" class="marks-list">

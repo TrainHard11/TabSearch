@@ -374,3 +374,16 @@
   font-size: 0.9em;
   color: var(--color-text-secondary);
 }
+
+/* NEW: Styles for the bookmark search input */
+.marks-search-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px; /* Space between search and list */
+}
+
+/* Utility class to hide elements */
+.hidden {
+  display: none !important;
+}
