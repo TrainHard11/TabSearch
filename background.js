@@ -276,10 +276,12 @@ async function cycleMediaTabs() {
 
 const HARPOON_STORAGE_KEY = "fuzzyTabSearch_harpoonedTabs";
 const MAX_HARPOON_LINKS = 4;
+// New key to store the URL of the harpooned item to focus after adding/finding it
+const INITIAL_HARPOON_URL_KEY = "fuzzyTabSearch_initialHarpoonUrl";
 
 /**
  * Adds the currently active tab to the harpoon list.
- * @returns {Promise<boolean>} A promise that resolves to true if a new tab was added, false otherwise (e.g., duplicate).
+ * @returns {Promise<string|null>} A promise that resolves with the URL of the added/existing harpooned tab, or null if unsuccessful.
  */
 async function addCurrentTabToHarpoonList() {
 	try {
@@ -292,11 +294,14 @@ async function addCurrentTabToHarpoonList() {
 			let harpoonedTabs = await getHarpoonedTabs();
 
 			// Check for duplicates before adding
-			const isDuplicate = harpoonedTabs.some(
+			const existingHarpoon = harpoonedTabs.find(
 				(harpoonedTab) => harpoonedTab.url === activeTab.url
 			);
 
-			if (!isDuplicate) {
+			if (existingHarpoon) {
+                // If duplicate, return its URL for focusing
+                return existingHarpoon.url;
+			} else {
 				const newHarpoonedTab = {
 					id: activeTab.id,
 					url: activeTab.url,
@@ -310,15 +315,15 @@ async function addCurrentTabToHarpoonList() {
 					harpoonedTabs.push(newHarpoonedTab);
 				}
 				await chrome.storage.local.set({ [HARPOON_STORAGE_KEY]: harpoonedTabs });
-				return true; // Indicate success of adding a NEW tab
+				return newHarpoonedTab.url; // Return URL of the newly added tab
 			}
 		} else {
 			console.warn("Could not harpoon tab: No active tab found or missing URL/title.");
 		}
-		return false; // Indicate no NEW tab was added (e.g., duplicate or no active tab)
+		return null; // Indicate unsuccessful harpooning
 	} catch (error) {
 		console.error("Error adding current tab to harpoon list:", error);
-		return false;
+		return null;
 	}
 }
 
@@ -372,7 +377,7 @@ async function activateHarpoonedTabByIndex(index) {
 	}
 }
 
-// --- Bookmark Feature Functions (New & Modified) ---
+// --- Bookmark Feature Functions ---
 const MARKS_STORAGE_KEY = "fuzzyTabSearch_bookmarks"; // Use the same key as Marks/marks.js
 
 /**
@@ -418,7 +423,7 @@ async function addCurrentTabAsBookmark() {
             name: newBookmarkName,
             url: newBookmarkUrl,
             exactMatch: false,          // Default to false for quick add
-            searchableInTabSearch: false // MODIFIED: Default to false as per request
+            searchableInTabSearch: false // Default to false as per request
         };
 
         existingBookmarks.push(newBookmark);
@@ -435,7 +440,7 @@ async function addCurrentTabAsBookmark() {
 
 // Key for commanding the initial view upon popup opening
 const COMMAND_INITIAL_VIEW_KEY = "fuzzyTabSearch_commandInitialView";
-// New key to store the URL of the bookmark to focus after adding/finding it
+// Key to store the URL of the bookmark to focus after adding/finding it
 const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
 
 
@@ -456,14 +461,16 @@ chrome.commands.onCommand.addListener(async (command) => {
 		case "_execute_action":
 			// When the default action command is triggered, explicitly set the view to tabSearch
 			await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "tabSearch" });
-			// Clear any lingering initial mark URL command
+			// Clear any lingering initial focus commands
             await chrome.storage.session.remove(INITIAL_MARK_URL_KEY);
+            await chrome.storage.session.remove(INITIAL_HARPOON_URL_KEY);
 			// chrome.action.openPopup() is usually implicitly called by _execute_action
 			break;
 		case "open_harpoon_view": // NEW command
 			await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "harpoon" });
-			// Clear any lingering initial mark URL command
+			// Clear any lingering initial focus commands
             await chrome.storage.session.remove(INITIAL_MARK_URL_KEY);
+            await chrome.storage.session.remove(INITIAL_HARPOON_URL_KEY);
 			await chrome.action.openPopup(); // Programmatically open the popup
 			break;
 		case "custom_tab_1":
@@ -538,13 +545,14 @@ chrome.commands.onCommand.addListener(async (command) => {
 			await cycleMediaTabs();
 			break;
 		case "harpoon_current_tab":
-			// Call the function to add the current tab to the harpoon list.
-			// The return value (tabAdded) now only indicates if a *new* tab was added.
-			await addCurrentTabToHarpoonList();
-			
+			const harpoonTabUrl = await addCurrentTabToHarpoonList();
+            if (harpoonTabUrl) {
+                // Store the URL of the harpooned tab to be focused
+                await chrome.storage.session.set({ [INITIAL_HARPOON_URL_KEY]: harpoonTabUrl });
+            }
 			// Always open the harpoon view, regardless of whether a new tab was added or it was a duplicate.
 			await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "harpoon" });
-            // Clear any lingering initial mark URL command
+            // Clear any lingering initial mark URL command (only one focus per popup open)
             await chrome.storage.session.remove(INITIAL_MARK_URL_KEY);
 			await chrome.action.openPopup(); // Programmatically open the popup
 			break;
@@ -568,6 +576,8 @@ chrome.commands.onCommand.addListener(async (command) => {
             }
             // Set the initial view to 'marks' and open the popup
             await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "marks" });
+            // Clear any lingering initial harpoon URL command (only one focus per popup open)
+            await chrome.storage.session.remove(INITIAL_HARPOON_URL_KEY);
             await chrome.action.openPopup();
             break;
 	}

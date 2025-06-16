@@ -7,13 +7,14 @@ window.initHarpoonFeature = async () => {
 
 	if (!harpoonListContainer) {
 		console.error("Harpoon feature: Essential DOM elements not found after initHarpoonFeature call.");
-		return;
+		return;;
 	}
 
 	let selectedHarpoonIndex = -1;
 	let harpoonedTabs = [];
 
 	const LS_HARPOONED_TABS_KEY = "fuzzyTabSearch_harpoonedTabs";
+    const INITIAL_HARPOON_URL_KEY = "fuzzyTabSearch_initialHarpoonUrl"; // Corrected variable name
 
 	/**
 	 * Highlights the currently selected item in the harpoon list.
@@ -24,6 +25,7 @@ window.initHarpoonFeature = async () => {
 		items.forEach((item, index) => {
 			if (index === selectedHarpoonIndex) {
 				item.classList.add("selected");
+				item.focus(); // Ensure the actual DOM element is focused for keyboard navigation
 				item.scrollIntoView({ block: "nearest", behavior: "smooth" });
 			} else {
 				item.classList.remove("selected");
@@ -164,15 +166,26 @@ window.initHarpoonFeature = async () => {
 	const loadHarpoonedTabs = async () => {
 		harpoonedTabs = await loadHarpoonedTabsFromStorage();
 		renderHarpoonedTabs();
-		if (harpoonedTabs.length > 0) {
-			// Only set selectedIndex to 0 if no item is currently selected
-			if (selectedHarpoonIndex === -1 || selectedHarpoonIndex >= harpoonedTabs.length) {
-				selectedHarpoonIndex = 0;
-			}
-			highlightHarpoonItem();
-		} else {
-			selectedHarpoonIndex = -1;
-		}
+
+        // Check for a specific URL to focus from session storage (set by background.js)
+        const { [INITIAL_HARPOON_URL_KEY]: urlToFocus } = await chrome.storage.session.get(INITIAL_HARPOON_URL_KEY);
+        if (urlToFocus) {
+            const foundIndex = harpoonedTabs.findIndex(tab => tab.url === urlToFocus);
+            if (foundIndex !== -1) {
+                selectedHarpoonIndex = foundIndex;
+                highlightHarpoonItem();
+            }
+            // Clear the session storage key after using it
+            await chrome.storage.session.remove(INITIAL_HARPOON_URL_KEY);
+        } else if (harpoonedTabs.length > 0) {
+            // If no specific URL to focus, and there are items, default to the first
+            if (selectedHarpoonIndex === -1) { // Only set to 0 if no item is already selected
+                selectedHarpoonIndex = 0;
+            }
+            highlightHarpoonItem();
+        } else {
+            selectedHarpoonIndex = -1; // No items, no selection
+        }
 	};
 
 	/**
@@ -204,6 +217,7 @@ window.initHarpoonFeature = async () => {
 			harpoonItem.classList.add("harpoon-item");
 			harpoonItem.dataset.index = index; // Store index for direct access
 			harpoonItem.dataset.url = harpoonedTab.url; // Store URL for identifying after re-render
+            harpoonItem.tabIndex = 0; // Make item focusable for keyboard navigation
 
 			const favicon = document.createElement("img");
 			favicon.classList.add("favicon");
@@ -222,6 +236,12 @@ window.initHarpoonFeature = async () => {
 			harpoonUrl.href = harpoonedTab.url;
 			harpoonUrl.textContent = harpoonedTab.url;
 			harpoonUrl.target = "_blank"; // Open in a new tab
+            // Prevent default navigation for the URL link within the item
+            harpoonUrl.addEventListener("click", (e) => {
+                e.preventDefault(); // Stop default browser action (opening URL)
+                e.stopPropagation(); // Stop event from bubbling up to the harpoonItem click listener
+            });
+
 
 			harpoonInfo.appendChild(harpoonTitle);
 			harpoonInfo.appendChild(harpoonUrl);
@@ -232,7 +252,7 @@ window.initHarpoonFeature = async () => {
 			// Up button
 			const upButton = document.createElement("button");
 			upButton.classList.add("harpoon-move-button", "harpoon-move-up");
-			upButton.innerHTML = '&#9650;'; // Up arrow character
+			upButton.innerHTML = '▲'; // Up arrow character
 			upButton.title = "Move Up";
 			upButton.setAttribute('aria-label', 'Move Harpooned Tab Up'); // Accessibility
 			upButton.addEventListener("click", async (e) => {
@@ -246,7 +266,7 @@ window.initHarpoonFeature = async () => {
 			// Down button
 			const downButton = document.createElement("button");
 			downButton.classList.add("harpoon-move-button", "harpoon-move-down");
-			downButton.innerHTML = '&#9660;'; // Down arrow character
+			downButton.innerHTML = '▼'; // Down arrow character
 			downButton.title = "Move Down";
 			downButton.setAttribute('aria-label', 'Move Harpooned Tab Down'); // Accessibility
 			downButton.addEventListener("click", async (e) => {
@@ -337,10 +357,10 @@ window.initHarpoonFeature = async () => {
 		} else if (e.key === "Enter") {
 			e.preventDefault();
 			activateSelectedHarpoonItem();
-		} else if ((e.altKey && e.key === "p") || e.key === "N" || e.key === "K") {
+		} else if ((e.altKey && e.key === "p") || (e.shiftKey && e.key === "K")) { // Restored Shift+K for moving up
 			e.preventDefault();
 			moveHarpoonItem("up");
-		} else if ((e.altKey && e.key === "n") || e.key === "n" || e.key === "J") {
+		} else if ((e.altKey && e.key === "n") || (e.shiftKey && e.key === "J")) { // Restored Shift+J for moving down
 			e.preventDefault();
 			moveHarpoonItem("down");
 		} else if (e.ctrlKey && e.key === "d") {
@@ -355,6 +375,14 @@ window.initHarpoonFeature = async () => {
 	 */
 	const attachHarpoonListeners = () => {
 		document.addEventListener("keydown", harpoonKeydownHandler);
+        // Set initial focus when the Harpoon view becomes active
+        if (harpoonedTabs.length > 0) {
+            // If we have items and no specific one was pre-selected (from initial load), default to the first
+            if (selectedHarpoonIndex === -1) {
+                selectedHarpoonIndex = 0;
+            }
+            highlightHarpoonItem(); // Ensure the first item is visually highlighted and focused
+        }
 	};
 
 	/**
