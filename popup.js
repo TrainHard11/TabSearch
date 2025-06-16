@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let searchOnNoResultsCheckbox;
   let searchMarksCheckbox;
   let enableMarksAdditionCheckbox;
-  let alwaysShowMarksSearchInputCheckbox; // NEW: Reference for the new checkbox
+  let alwaysShowMarksSearchInputCheckbox;
   let customTabInputs = [];
   let customTabExactMatchCheckboxes = [];
 
@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
     searchOnNoResults: true,
     searchMarksEnabled: true,
     enableMarksAddition: true,
-    alwaysShowMarksSearchInput: false, // NEW: Default to false (hidden by default)
+    alwaysShowMarksSearchInput: false,
     customTab1Url: "https://web.whatsapp.com/",
     customTab1ExactMatch: false,
     customTab2Url: "https://gemini.google.com/app",
@@ -401,7 +401,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof window.toggleMarksAddSection === "function") {
           window.toggleMarksAddSection(currentSettings.enableMarksAddition);
         }
-        // NEW: Apply the setting for search input visibility
+        // Apply the setting for search input visibility
         if (typeof window.toggleMarksSearchInputAlwaysVisible === "function") {
           window.toggleMarksSearchInputAlwaysVisible(
             currentSettings.alwaysShowMarksSearchInput,
@@ -460,7 +460,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     alwaysShowMarksSearchInputCheckbox = settingsContentContainer.querySelector(
       "#alwaysShowMarksSearchInput",
-    ); // NEW
+    );
     customTabInputs = [];
     customTabExactMatchCheckboxes = [];
     for (let i = 1; i <= 7; i++) {
@@ -493,7 +493,6 @@ document.addEventListener("DOMContentLoaded", () => {
       enableMarksAdditionCheckbox.checked = currentSettings.enableMarksAddition;
     }
     if (alwaysShowMarksSearchInputCheckbox) {
-      // NEW
       alwaysShowMarksSearchInputCheckbox.checked =
         currentSettings.alwaysShowMarksSearchInput;
     }
@@ -504,7 +503,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (customTabExactMatchCheckboxes[i]) {
         customTabExactMatchCheckboxes[i].checked =
-          currentSettings[`customTab${i + 1}ExactMatch`]; // Corrected: assign checked property
+          currentSettings[`customTab${i + 1}ExactMatch`];
       }
     }
   };
@@ -526,9 +525,20 @@ document.addEventListener("DOMContentLoaded", () => {
       currentSettings.enableMarksAddition = enableMarksAdditionCheckbox.checked;
     }
     if (alwaysShowMarksSearchInputCheckbox) {
-      // NEW
       currentSettings.alwaysShowMarksSearchInput =
         alwaysShowMarksSearchInputCheckbox.checked;
+    }
+
+    // FIX: Capture values from custom URL input fields before saving
+    for (let i = 0; i < 7; i++) {
+      if (customTabInputs[i]) {
+        currentSettings[`customTab${i + 1}Url`] = customTabInputs[i].value;
+      }
+      // Exact match checkbox is already handled below, but this ensures consistency
+      if (customTabExactMatchCheckboxes[i]) {
+        currentSettings[`customTab${i + 1}ExactMatch`] =
+          customTabExactMatchCheckboxes[i].checked;
+      }
     }
 
     await chrome.storage.local.set(currentSettings);
@@ -546,7 +556,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.toggleMarksAddSection(currentSettings.enableMarksAddition);
     }
 
-    // NEW: If alwaysShowMarksSearchInput changes AND Marks view is active, update its display
+    // If alwaysShowMarksSearchInput changes AND Marks view is active, update its display
     if (
       ViewManager.getActive() === "marks" &&
       typeof window.toggleMarksSearchInputAlwaysVisible === "function"
@@ -574,7 +584,6 @@ document.addEventListener("DOMContentLoaded", () => {
       enableMarksAdditionCheckbox.addEventListener("change", saveSettings);
     }
     if (alwaysShowMarksSearchInputCheckbox) {
-      // NEW
       alwaysShowMarksSearchInputCheckbox.addEventListener(
         "change",
         saveSettings,
