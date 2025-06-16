@@ -279,6 +279,7 @@ const MAX_HARPOON_LINKS = 4;
 
 /**
  * Adds the currently active tab to the harpoon list.
+ * @returns {Promise<boolean>} A promise that resolves to true if a new tab was added, false otherwise (e.g., duplicate).
  */
 async function addCurrentTabToHarpoonList() {
 	try {
@@ -309,12 +310,15 @@ async function addCurrentTabToHarpoonList() {
 					harpoonedTabs.push(newHarpoonedTab);
 				}
 				await chrome.storage.local.set({ [HARPOON_STORAGE_KEY]: harpoonedTabs });
+				return true; // Indicate success of adding a NEW tab
 			}
 		} else {
 			console.warn("Could not harpoon tab: No active tab found or missing URL/title.");
 		}
+		return false; // Indicate no NEW tab was added (e.g., duplicate or no active tab)
 	} catch (error) {
 		console.error("Error adding current tab to harpoon list:", error);
+		return false;
 	}
 }
 
@@ -466,7 +470,13 @@ chrome.commands.onCommand.addListener(async (command) => {
 			await cycleMediaTabs();
 			break;
 		case "harpoon_current_tab":
-			await addCurrentTabToHarpoonList();
+			// Call the function to add the current tab to the harpoon list.
+			// The return value (tabAdded) now only indicates if a *new* tab was added.
+			await addCurrentTabToHarpoonList(); 
+			
+			// Always open the harpoon view, regardless of whether a new tab was added or it was a duplicate.
+			await chrome.storage.session.set({ [COMMAND_INITIAL_VIEW_KEY]: "harpoon" });
+			await chrome.action.openPopup(); // Programmatically open the popup
 			break;
 		case "harpoon_command_1":
 			await activateHarpoonedTabByIndex(0);
