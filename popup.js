@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let enableWebNavigatorCheckbox;
   let searchOnNoResultsCheckbox;
   let searchMarksCheckbox;
+  let enableMarksAdditionCheckbox; // NEW: Reference for the new checkbox
   let customTabInputs = [];
   let customTabExactMatchCheckboxes = [];
 
@@ -54,6 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
     webNavigatorEnabled: false,
     searchOnNoResults: true,
     searchMarksEnabled: true,
+    enableMarksAddition: true, // NEW: Default to true (visible)
     customTab1Url: "https://web.whatsapp.com/",
     customTab1ExactMatch: false,
     customTab2Url: "https://gemini.google.com/app",
@@ -393,6 +395,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof window.refreshMarks === "function") {
           window.refreshMarks(); // Ensure marks are re-rendered
         }
+        // NEW: Apply the setting for add section visibility immediately
+        if (typeof window.toggleMarksAddSection === "function") {
+          window.toggleMarksAddSection(currentSettings.enableMarksAddition);
+        }
       } else {
         // Clear search input and visual list when switching away from tabSearch
         searchInput.value = "";
@@ -441,6 +447,9 @@ document.addEventListener("DOMContentLoaded", () => {
     searchMarksCheckbox = settingsContentContainer.querySelector(
       "#searchMarksCheckbox",
     );
+    enableMarksAdditionCheckbox = settingsContentContainer.querySelector(
+      "#enableMarksAddition",
+    ); // NEW
     customTabInputs = [];
     customTabExactMatchCheckboxes = [];
     for (let i = 1; i <= 7; i++) {
@@ -470,6 +479,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (searchMarksCheckbox) {
       searchMarksCheckbox.checked = currentSettings.searchMarksEnabled;
     }
+    if (enableMarksAdditionCheckbox) {
+      // NEW
+      enableMarksAdditionCheckbox.checked = currentSettings.enableMarksAddition;
+    }
 
     for (let i = 0; i < 7; i++) {
       if (customTabInputs[i]) {
@@ -495,21 +508,24 @@ document.addEventListener("DOMContentLoaded", () => {
     if (searchMarksCheckbox) {
       currentSettings.searchMarksEnabled = searchMarksCheckbox.checked;
     }
-
-    for (let i = 0; i < 7; i++) {
-      if (customTabInputs[i]) {
-        currentSettings[`customTab${i + 1}Url`] =
-          customTabInputs[i].value.trim();
-      }
-      if (customTabExactMatchCheckboxes[i]) {
-        currentSettings[`customTab${i + 1}ExactMatch`] =
-          customTabExactMatchCheckboxes[i].checked; // Corrected: assign checked property
-      }
+    if (enableMarksAdditionCheckbox) {
+      // NEW
+      currentSettings.enableMarksAddition = enableMarksAdditionCheckbox.checked;
     }
+
     await chrome.storage.local.set(currentSettings);
+
     // If searchMarksEnabled changes, trigger a re-search in case we're in tabSearch
     if (ViewManager.getActive() === "tabSearch") {
       performUnifiedSearch(currentQuery);
+    }
+
+    // NEW: If enableMarksAddition changes AND Marks view is active, update its display
+    if (
+      ViewManager.getActive() === "marks" &&
+      typeof window.toggleMarksAddSection === "function"
+    ) {
+      window.toggleMarksAddSection(currentSettings.enableMarksAddition);
     }
   };
 
@@ -525,6 +541,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (searchMarksCheckbox) {
       searchMarksCheckbox.addEventListener("change", saveSettings);
+    }
+    if (enableMarksAdditionCheckbox) {
+      // NEW
+      enableMarksAdditionCheckbox.addEventListener("change", saveSettings);
     }
 
     for (let i = 0; i < 7; i++) {
@@ -1201,10 +1221,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Initialization ---
   // Load settings first as they might influence initial behavior
   loadSettings().then(async () => {
-    // Load marks content eagerly if searchMarksEnabled is true to ensure bookmarks are available for search
+    // Load marks content eagerly if searchMarksEnabled or enableMarksAddition is true
     // This is important because initMarksFeature and getAllBookmarks are asynchronous
-    if (currentSettings.searchMarksEnabled) {
-      await loadMarksContent(); // Ensure marks are loaded and getAllBookmarks is callable
+    if (
+      currentSettings.searchMarksEnabled ||
+      currentSettings.enableMarksAddition
+    ) {
+      await loadMarksContent(); // Ensure marks are loaded and getAllBookmarks/toggleMarksAddSection is callable
     }
 
     // Determine the initial view based on a command flag from background script,

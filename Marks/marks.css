@@ -418,7 +418,7 @@
   border: 1px solid #00cc00;
 }
 
-/* NEW: Styles for the searchable checkbox */
+/* Styles for the searchable checkbox */
 .searchable-checkbox-container {
   display: flex;
   align-items: center;
@@ -432,4 +432,15 @@
 .searchable-checkbox-container .marks-checkbox {
   width: 16px; /* Slightly smaller checkbox */
   height: 16px;
+}
+
+/* NEW: Style for the hint in Marks view */
+.marks-hint {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 0.85em;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  padding-top: 5px;
+  border-top: 1px dotted var(--color-border-dashed); /* subtle separator */
 }
