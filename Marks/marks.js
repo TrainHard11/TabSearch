@@ -329,10 +329,12 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     try {
       const result = await chrome.storage.local.get(STORAGE_KEY);
       // Ensure bookmarks is always an array, and default exactMatch to false if not present
+      // Also, ensure `searchableInTabSearch` defaults to `false` for existing bookmarks without the property.
       bookmarks = Array.isArray(result[STORAGE_KEY])
         ? result[STORAGE_KEY].map((mark) => ({
             ...mark,
             exactMatch: mark.exactMatch ?? false,
+            searchableInTabSearch: mark.searchableInTabSearch ?? false, // NEW: default to false
           }))
         : [];
 
@@ -441,6 +443,58 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       markInfo.appendChild(markUrl);
       markInfo.appendChild(exactMatchStatus); // Append status
 
+      // NEW: Searchable checkbox
+      const searchableCheckboxContainer = document.createElement("div");
+      searchableCheckboxContainer.classList.add(
+        "searchable-checkbox-container",
+      );
+
+      const searchableCheckbox = document.createElement("input");
+      searchableCheckbox.type = "checkbox";
+      searchableCheckbox.id = `searchable-${mark.url.replace(/[^a-zA-Z0-9]/g, "")}-${index}`; // Unique ID
+      searchableCheckbox.classList.add("marks-checkbox"); // Re-use existing checkbox style
+      searchableCheckbox.checked = mark.searchableInTabSearch;
+      searchableCheckbox.title = "Include in Tab Search";
+      searchableCheckbox.setAttribute("aria-label", "Include in Tab Search");
+
+      // Event listener for the new searchable checkbox
+      searchableCheckbox.addEventListener("change", async (e) => {
+        e.stopPropagation(); // Prevent item selection and bubbling to markItem
+        // Find the original bookmark object in the 'bookmarks' array
+        // We use findIndex to get the original index, not the 'displayedIndex'
+        const originalMarkIndex = bookmarks.findIndex(
+          (b) => b.url === mark.url && b.name === mark.name,
+        );
+        if (originalMarkIndex > -1) {
+          bookmarks[originalMarkIndex].searchableInTabSearch = e.target.checked;
+          await saveBookmarks();
+          displayMessage(
+            `Bookmark "${mark.name}" ${e.target.checked ? "will" : "will NOT"} appear in Tab Search.`,
+            "success",
+          );
+          // No need to re-render marks here, but popups.js will need to reload marks
+          // when it performs its search, which is handled in popup.js
+        }
+      });
+
+      // NEW: Crucially, stop click event propagation directly on the checkbox itself
+      searchableCheckbox.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent this click from bubbling to markItem
+      });
+
+      const searchableLabel = document.createElement("label");
+      searchableLabel.htmlFor = searchableCheckbox.id;
+      searchableLabel.textContent = "Tab Search";
+      searchableLabel.classList.add("checkbox-label"); // Re-use existing label style
+
+      // NEW: Stop click event propagation directly on the label as well
+      searchableLabel.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent this click from bubbling to markItem
+      });
+
+      searchableCheckboxContainer.appendChild(searchableCheckbox);
+      searchableCheckboxContainer.appendChild(searchableLabel);
+
       const actionButtonsContainer = document.createElement("div");
       actionButtonsContainer.classList.add("marks-action-buttons"); // Use marks-specific class
 
@@ -493,7 +547,9 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       });
       actionButtonsContainer.appendChild(removeButton);
 
+      // Append searchable checkbox container before action buttons
       markItem.appendChild(markInfo);
+      markItem.appendChild(searchableCheckboxContainer); // NEW: Positioned before action buttons
       markItem.appendChild(actionButtonsContainer); // Append action buttons container
 
       // Main click listener for the entire mark item
@@ -557,8 +613,8 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
       return;
     }
 
-    // Add new bookmark with exactMatch property
-    bookmarks.push({ name, url, exactMatch });
+    // Add new bookmark with exactMatch and searchableInTabSearch property (default to false)
+    bookmarks.push({ name, url, exactMatch, searchableInTabSearch: false }); // NEW: searchableInTabSearch default
     await saveBookmarks();
     displayMessage("Bookmark added successfully!", "success"); // Success message
 
@@ -586,9 +642,13 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     if (displayedIndex > -1 && displayedIndex < filteredMarksResults.length) {
       const markToRemove = filteredMarksResults[displayedIndex];
       // Find the index of this mark in the original, unfiltered 'bookmarks' array
+      // Now comparing all properties to be safe after adding searchableInTabSearch
       const originalIndex = bookmarks.findIndex(
         (mark) =>
-          mark.url === markToRemove.url && mark.name === markToRemove.name,
+          mark.url === markToRemove.url &&
+          mark.name === markToRemove.name &&
+          mark.exactMatch === markToRemove.exactMatch &&
+          mark.searchableInTabSearch === markToRemove.searchableInTabSearch, // Include new property in comparison
       );
 
       if (originalIndex > -1) {

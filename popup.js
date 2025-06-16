@@ -476,8 +476,8 @@ document.addEventListener("DOMContentLoaded", () => {
         customTabInputs[i].value = currentSettings[`customTab${i + 1}Url`];
       }
       if (customTabExactMatchCheckboxes[i]) {
-        customTabExactMatchCheckboxes[i].checked =
-          currentSettings[`customTab${i + 1}ExactMatch`];
+        currentSettings[`customTab${i + 1}ExactMatch`] =
+          customTabExactMatchCheckboxes[i].checked; // Corrected: assign checked property
       }
     }
   };
@@ -717,15 +717,18 @@ document.addEventListener("DOMContentLoaded", () => {
     let tabsToSearch = allTabs;
     let marksToSearch = [];
 
-    // Conditionally fetch marks if setting is enabled and marks.js is initialized
+    // Conditionally fetch marks if global setting is enabled AND per-bookmark setting is true
     if (
       currentSettings.searchMarksEnabled &&
       typeof window.getAllBookmarks === "function"
     ) {
-      allMarks = window.getAllBookmarks(); // Get the latest marks from marks.js
-      marksToSearch = allMarks;
+      const allRawMarks = window.getAllBookmarks(); // Get ALL marks from marks.js
+      // Filter marks based on the new per-bookmark searchableInTabSearch property
+      marksToSearch = allRawMarks.filter(
+        (mark) => mark.searchableInTabSearch === true,
+      );
     } else {
-      allMarks = []; // Clear marks if feature is disabled
+      allMarks = []; // Clear marks if global feature is disabled
     }
 
     const filteredTabsRaw = fuzzySearchItems(query, tabsToSearch, "title").map(
