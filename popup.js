@@ -426,7 +426,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         // If tabManager.js has an init function for content, call it here
         if (typeof window.initTabManagerFeature === "function") {
-            window.initTabManagerFeature();
+            // Pass the actual DOM container element
+            window.initTabManagerFeature(tabManagementSection);
         }
       }
       else {
@@ -798,13 +799,14 @@ document.addEventListener("DOMContentLoaded", () => {
           const html = await response.text();
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, "text/html");
-          const tabManagerHtmlContent =
-            doc.querySelector(".tab-manager-content").innerHTML;
+          // Extract content from the <body>, not a specific wrapper div
+          const tabManagerHtmlContent = doc.body.innerHTML;
           tabManagementSection.innerHTML = tabManagerHtmlContent;
           tabManagementContentLoaded = true;
 
           if (typeof window.initTabManagerFeature === "function") {
-            await window.initTabManagerFeature();
+            // Pass the actual DOM container element to the init function
+            await window.initTabManagerFeature(tabManagementSection);
           } else {
             console.error(
               "window.initTabManagerFeature is not defined. Ensure tabManager/tabManager.js is loaded and defines window.initTabManagerFeature globally.",

@@ -2,19 +2,20 @@
 
 // Define a global initialization function that popup.js can call
 // AFTER the tabManager.html content is loaded into the DOM.
-window.initTabManagerFeature = async () => {
-  // DOM Element References (add more as UI elements are added)
-  const tabManagerContent = document.querySelector(".tab-manager-content");
+// It now accepts the container element directly.
+window.initTabManagerFeature = async (containerElement) => {
+  // Use the passed containerElement directly
+  const tabManagerContent = containerElement;
 
   if (!tabManagerContent) {
     console.error(
-      "Tab Management feature: Essential DOM elements not found after initTabManagerFeature call.",
+      "Tab Management feature: Container element not provided to initTabManagerFeature.",
     );
     return;
   }
 
   // Example: You might load initial data or set up specific UI elements here later
-  console.log("Tab Management feature initialized.");
+  console.log("Tab Management feature initialized with container:", containerElement);
 
   /**
    * Handles keyboard events specific to the Tab Management view.
@@ -53,4 +54,3 @@ window.initTabManagerFeature = async () => {
   // No content to refresh yet, but this is where you'd put it.
   // window.refreshTabManagementContent = () => { /* ... */ };
 };
-
