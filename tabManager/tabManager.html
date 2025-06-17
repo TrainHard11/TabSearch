@@ -1,12 +1,45 @@
 <!-- tabManager/tabManager.html -->
 <div class="tab-manager-main-content">
   <h3 class="tab-manager-title">Tab Management</h3>
-  <p class="settings-hint">
-    Press **1-9** to move the **current active tab** to that specific position in the window.<br />
-    Press **H** to move the current tab one position to the left. (Popup stays open)<br />
-    Press **L** to move the current tab one position to the right. (Popup stays open)<br />
-    Use **Up/Down Arrows (or J/K)** to select a window below. Press **Enter** to move the current tab to the selected window.<br />
-    The list order is: <b>New Empty Window</b>, <b>Other Windows</b>, <b>Current Window</b>.
+  <p class="tab-manager-description">
+    This section provides powerful tools for organizing your tabs and windows.
+  </p>
+
+  <div class="tab-quick-actions">
+    <div class="action-group left">
+      <p>Move tab left: <kbd>H</kbd></p>
+    </div>
+    <div class="action-group center">
+      <p>Move to position: <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> <kbd>5</kbd> <kbd>6</kbd> <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd></p>
+    </div>
+    <div class="action-group right">
+      <p>Move tab right: <kbd>L</kbd></p>
+    </div>
+  </div>
+
+  <hr />
+
+  <h3>Windows Overview</h3>
+  <ul class="keymap-list window-navigation-keys">
+    <li>
+      <p>
+        Use <kbd>&#x2191;</kbd> (Up) / <kbd>K</kbd>: Select a window above.
+      </p>
+    </li>
+    <li>
+      <p>
+        Use <kbd>&#x2193;</kbd> (Down) / <kbd>J</kbd>: Select a window below.
+      </p>
+    </li>
+    <li>
+      <p>
+        Press <kbd>Enter</kbd>: Move the current tab to the selected window.
+      </p>
+    </li>
+  </ul>
+
+  <p class="tab-manager-window-order-note">
+    The window list order is: <span class="emphasis">New Empty Window</span>, <span class="emphasis">Other Windows</span>, then the <span class="emphasis">Current Window</span> where the popup is open.
   </p>
 
   <div class="windows-list-container">
@@ -15,4 +48,10 @@
       <li class="loading-message">Loading windows...</li>
     </ul>
   </div>
+
+  <hr class="bottom-hr" />
+
+  <p class="tab-manager-footer-hint">
+    Press <kbd>F6</kbd> again to return to the <b>Quick Search</b> view.
+  </p>
 </div>
