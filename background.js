@@ -568,6 +568,16 @@ chrome.commands.onCommand.addListener(async (command) => {
       await chrome.storage.session.remove(INITIAL_MARK_URL_KEY); // Clear any specific bookmark focus
       await chrome.action.openPopup(); // Programmatically open the popup
       break;
+    // New case for "open_tab_management_view" command
+    case "open_tab_management_view":
+      await chrome.storage.session.set({
+        [COMMAND_INITIAL_VIEW_KEY]: "tabManagement",
+      });
+      // Clear any lingering initial focus commands
+      await chrome.storage.session.remove(INITIAL_MARK_URL_KEY);
+      await chrome.storage.session.remove(INITIAL_HARPOON_URL_KEY);
+      await chrome.action.openPopup(); // Programmatically open the popup
+      break;
     case "custom_tab_1":
       if (settings.customTab1Url) {
         focusOrCreateTab(
