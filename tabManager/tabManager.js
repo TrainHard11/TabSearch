@@ -14,7 +14,6 @@ window.initTabManagerFeature = async (containerElement) => {
     return;
   }
 
-  // Example: You might load initial data or set up specific UI elements here later
   console.log("Tab Management feature initialized with container:", containerElement);
 
   /**
@@ -23,9 +22,67 @@ window.initTabManagerFeature = async (containerElement) => {
    * @param {KeyboardEvent} e The keyboard event.
    */
   const tabManagerKeydownHandler = (e) => {
-    // For now, this is empty as no specific keyboard actions are defined.
-    // In the future, you'd add logic here for navigating lists, performing actions, etc.
-    console.log("Tab Manager Keydown:", e.key);
+    console.log("tabManager.js: Keydown event detected in Tab Management view:", e.key, "KeyCode:", e.keyCode);
+
+    // For moving the current tab to a specific position (1-9 keys)
+    const keyCode = e.keyCode; // ASCII value of the key pressed
+    // Check if the key is a number from 1 to 9 (Key codes 49-57 for 1-9)
+    if (keyCode >= 49 && keyCode <= 57) {
+      e.preventDefault(); // Prevent default browser action (e.g., typing in a search box if one existed)
+
+      const targetPosition = keyCode - 49; // Convert ASCII to 0-indexed position (0 for '1', 1 for '2', etc.)
+
+      console.log(`tabManager.js: Attempting to move current tab to position ${targetPosition + 1}. Sending message to background.`);
+
+      // Send a message to the background script to move the current tab
+      chrome.runtime.sendMessage({
+        action: "moveCurrentTabToSpecificPosition",
+        targetIndex: targetPosition,
+      })
+      .then(response => {
+        if (response && response.success) {
+          console.log(`tabManager.js: Message sent successfully. Current tab moved to position ${targetPosition + 1}.`);
+          window.close(); // Close the popup after this specific action
+        } else {
+          console.error("tabManager.js: Failed to move tab:", response?.error || "Unknown error");
+          // Optionally, display a transient message to the user in the popup
+        }
+      })
+      .catch(error => {
+        console.error("tabManager.js: Error sending message to move tab:", error);
+      });
+    } else if (e.key === 'h' || e.key === 'H') {
+      e.preventDefault(); // Prevent default browser actions
+      console.log("tabManager.js: 'H' pressed. Sending message to move tab left.");
+      chrome.runtime.sendMessage({ action: "moveCurrentTabLeft" })
+        .then(response => {
+          if (response && response.success) {
+            console.log("tabManager.js: Tab moved left successfully.");
+            // Do NOT close window here
+          } else {
+            console.error("tabManager.js: Failed to move tab left:", response?.error || "Unknown error");
+          }
+        })
+        .catch(error => {
+          console.error("tabManager.js: Error sending message to move tab left:", error);
+        });
+    } else if (e.key === 'l' || e.key === 'L') {
+      e.preventDefault(); // Prevent default browser actions
+      console.log("tabManager.js: 'L' pressed. Sending message to move tab right.");
+      chrome.runtime.sendMessage({ action: "moveCurrentTabRight" })
+        .then(response => {
+          if (response && response.success) {
+            console.log("tabManager.js: Tab moved right successfully.");
+            // Do NOT close window here
+          } else {
+            console.error("tabManager.js: Failed to move tab right:", response?.error || "Unknown error");
+          }
+        })
+        .catch(error => {
+          console.error("tabManager.js: Error sending message to move tab right:", error);
+        });
+    }
+    // Add other tab management specific keybindings here later
   };
 
   /**
@@ -34,7 +91,7 @@ window.initTabManagerFeature = async (containerElement) => {
    */
   const attachTabManagerListeners = () => {
     document.addEventListener("keydown", tabManagerKeydownHandler);
-    console.log("Tab Management listeners attached.");
+    console.log("tabManager.js: Tab Management listeners attached.");
   };
 
   /**
@@ -43,7 +100,7 @@ window.initTabManagerFeature = async (containerElement) => {
    */
   const detachTabManagerListeners = () => {
     document.removeEventListener("keydown", tabManagerKeydownHandler);
-    console.log("Tab Management listeners detached.");
+    console.log("tabManager.js: Tab Management listeners detached.");
   };
 
   // Expose functions to the global window object for popup.js
@@ -52,5 +109,4 @@ window.initTabManagerFeature = async (containerElement) => {
 
   // Initial setup when feature is initialized (e.g., refreshing content)
   // No content to refresh yet, but this is where you'd put it.
-  // window.refreshTabManagementContent = () => { /* ... */ };
 };

@@ -47,9 +47,10 @@ async function focusOrCreateTab(tabUrl, exactMatch = false) {
  * @param {number} targetIndex The 0-indexed position to move the tab to.
  */
 async function moveTabToPosition(tab, targetIndex) {
+  console.log(`background.js: Attempting to move tab ID ${tab?.id} to index ${targetIndex}.`);
   try {
     if (!tab || typeof tab.id === "undefined") {
-      console.warn("Attempted to move an invalid tab:", tab);
+      console.warn("background.js: Attempted to move an invalid tab:", tab);
       return;
     }
 
@@ -60,14 +61,17 @@ async function moveTabToPosition(tab, targetIndex) {
     const actualTargetIndex = Math.max(0, Math.min(targetIndex, maxIndex + 1));
 
     await chrome.tabs.move(tab.id, { index: actualTargetIndex });
+    console.log(`background.js: Successfully moved tab ${tab.id} to position ${actualTargetIndex}.`);
+
     // Optionally, focus the tab after moving it
     await chrome.windows.update(tab.windowId, { focused: true });
     await chrome.tabs.update(tab.id, { active: true });
   } catch (error) {
     console.error(
-      `Error moving tab ${tab?.id} to position ${targetIndex}:`,
+      `background.js: Error moving tab ${tab?.id} to position ${targetIndex}:`,
       error,
     );
+    throw error; // Re-throw to propagate the error back to the sender
   }
 }
 
@@ -79,6 +83,7 @@ async function moveTabToPosition(tab, targetIndex) {
  * @param {number} targetIndex The 0-indexed position to move the tab to.
  */
 async function handleMoveItemToPosition(itemUrl, exactMatch, targetIndex) {
+  console.log(`background.js: handleMoveItemToPosition called for URL: ${itemUrl}, exactMatch: ${exactMatch}, targetIndex: ${targetIndex}`);
   try {
     // First, try to find and focus/create the tab
     const tabToMove = await focusOrCreateTab(itemUrl, exactMatch);
@@ -94,7 +99,7 @@ async function handleMoveItemToPosition(itemUrl, exactMatch, targetIndex) {
     }
   } catch (error) {
     console.error(
-      `Error in handleMoveItemToPosition for URL ${itemUrl} to index ${targetIndex}:`,
+      `background.js: Error in handleMoveItemToPosition for URL ${itemUrl} to index ${targetIndex}:`,
       error,
     );
     return { success: false, error: error.message };
@@ -199,34 +204,61 @@ async function cycleYoutubeTabs() {
 
 /**
  * Moves the current active tab one position to the left.
+ * @returns {Promise<boolean>} True if successful, false otherwise.
  */
 async function moveCurrentTabLeft() {
-  const [currentTab] = await chrome.tabs.query({
-    active: true,
-    currentWindow: true,
-  });
-  if (currentTab && currentTab.index > 0) {
-    await chrome.tabs.move(currentTab.id, { index: currentTab.index - 1 });
+  console.log("background.js: Attempting to move current tab left.");
+  try {
+    const [currentTab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (currentTab && currentTab.index > 0) {
+      await chrome.tabs.move(currentTab.id, { index: currentTab.index - 1 });
+      console.log(`background.js: Tab ${currentTab.id} moved left to index ${currentTab.index - 1}.`);
+      return true;
+    } else {
+      console.log("background.js: Cannot move tab left (either no active tab or already at first position).");
+      return false;
+    }
+  } catch (error) {
+    console.error("background.js: Error moving current tab left:", error);
+    throw error; // Re-throw to propagate the error
   }
 }
 
 /**
  * Moves the current active tab one position to the right.
+ * @returns {Promise<boolean>} True if successful, false otherwise.
  */
 async function moveCurrentTabRight() {
-  const [currentTab] = await chrome.tabs.query({
-    active: true,
-    currentWindow: true,
-  });
-  if (currentTab) {
-    const tabsInWindow = await chrome.tabs.query({
-      windowId: currentTab.windowId,
+  console.log("background.js: Attempting to move current tab right.");
+  try {
+    const [currentTab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
     });
-    const maxIndex = tabsInWindow.length - 1;
+    if (currentTab) {
+      const tabsInWindow = await chrome.tabs.query({
+        windowId: currentTab.windowId,
+      });
+      const maxIndex = tabsInWindow.length - 1;
 
-    if (currentTab.index < maxIndex) {
-      await chrome.tabs.move(currentTab.id, { index: currentTab.index + 1 });
+      if (currentTab.index < maxIndex) {
+        await chrome.tabs.move(currentTab.id, { index: currentTab.index + 1 });
+        console.log(`background.js: Tab ${currentTab.id} moved right to index ${currentTab.index + 1}.`);
+        return true;
+      } else {
+        console.log("background.js: Cannot move tab right (already at last position).");
+        return false;
+      }
+    } else {
+      console.log("background.js: No active tab found to move right.");
+      return false;
     }
+  } catch (error) {
+    console.error("background.js: Error moving current tab right:", error);
+    throw error; // Re-throw to propagate the error
   }
 }
 
@@ -767,5 +799,46 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
       return true; // Asynchronous response
     }
+  } else if (request.action === "moveCurrentTabToSpecificPosition") {
+    (async () => {
+      try {
+        const [currentTab] = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        if (currentTab) {
+          await moveTabToPosition(currentTab, request.targetIndex);
+          sendResponse({ success: true });
+        } else {
+          sendResponse({ success: false, error: "No active tab found." });
+        }
+      } catch (error) {
+        console.error("Error moving current tab to specific position:", error);
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Indicate that sendResponse will be called asynchronously
+  } else if (request.action === "moveCurrentTabLeft") { // New: Handle 'H' press
+    (async () => {
+      try {
+        const success = await moveCurrentTabLeft();
+        sendResponse({ success: success });
+      } catch (error) {
+        console.error("Error moving current tab left from popup:", error);
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Asynchronous response
+  } else if (request.action === "moveCurrentTabRight") { // New: Handle 'L' press
+    (async () => {
+      try {
+        const success = await moveCurrentTabRight();
+        sendResponse({ success: success });
+      } catch (error) {
+        console.error("Error moving current tab right from popup:", error);
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Asynchronous response
   }
 });
