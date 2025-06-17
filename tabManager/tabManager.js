@@ -28,6 +28,7 @@ window.initTabManagerFeature = async (containerElement) => {
   /**
    * Fetches all Chrome windows with their populated tabs.
    * Also identifies the active tab/window where the popup was opened.
+   * Appends a "New Empty Window" option to the list.
    */
   const fetchWindowsData = async () => {
     windowsListElement.innerHTML = '<li class="loading-message">Loading windows...</li>';
@@ -35,6 +36,14 @@ window.initTabManagerFeature = async (containerElement) => {
       // Get all windows and populate them with their tabs
       const windows = await chrome.windows.getAll({ populate: true });
       allWindowsData = windows;
+
+      // Add the "New Empty Window" option as a special item at the end
+      allWindowsData.push({
+        id: "new-window-option", // Unique ID for this special entry
+        type: "newWindow",       // Custom type to identify it
+        title: "New Empty Window",
+        tabs: [] // No tabs initially
+      });
 
       // Identify the active tab/window where the popup itself is running
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -69,20 +78,31 @@ window.initTabManagerFeature = async (containerElement) => {
       const windowItem = document.createElement('li');
       windowItem.classList.add('window-item');
       windowItem.dataset.windowId = win.id; // Store window ID for later use
+      windowItem.dataset.windowType = win.type || 'standard'; // Store window type
 
       const windowHeader = document.createElement('div');
       windowHeader.classList.add('window-header');
-      windowHeader.innerHTML = `
-        <img src="${chrome.runtime.getURL('img/window_icon.png')}" alt="Window" class="window-icon">
-        <span>Window #${index + 1} (${win.tabs.length} tabs)</span>
-        ${win.id === currentActiveWindowId ? '<span style="font-size:0.8em; color: var(--color-accent-blue);">(Current Window)</span>' : ''}
-      `;
+
+      if (win.type === "newWindow") {
+        windowHeader.innerHTML = `
+          <img src="${chrome.runtime.getURL('img/add_window_icon.png')}" alt="New Window" class="window-icon">
+          <span>${win.title}</span>
+        `;
+        windowItem.classList.add('new-window-option'); // Add a specific class for styling
+      } else {
+        windowHeader.innerHTML = `
+          <img src="${chrome.runtime.getURL('img/window_icon.png')}" alt="Window" class="window-icon">
+          <span>Window #${index + 1} (${win.tabs.length} tabs)</span>
+          ${win.id === currentActiveWindowId ? '<span style="font-size:0.8em; color: var(--color-accent-blue);">(Current Window)</span>' : ''}
+        `;
+      }
       windowItem.appendChild(windowHeader);
 
       const tabListHorizontal = document.createElement('ul');
       tabListHorizontal.classList.add('tab-list-horizontal');
 
-      if (win.tabs && win.tabs.length > 0) {
+      // Only render tabs for actual windows, not the "New Empty Window" option
+      if (win.tabs && win.tabs.length > 0 && win.type !== "newWindow") {
         win.tabs.forEach(tab => {
           const tabItem = document.createElement('li');
           tabItem.classList.add('tab-item-horizontal');
@@ -103,11 +123,16 @@ window.initTabManagerFeature = async (containerElement) => {
           tabItem.appendChild(tabTitle);
           tabListHorizontal.appendChild(tabItem);
         });
-      } else {
+      } else if (win.type !== "newWindow") { // For empty existing windows
         const noTabsItem = document.createElement('li');
         noTabsItem.classList.add('tab-item-horizontal');
         noTabsItem.textContent = 'No tabs in this window.';
         tabListHorizontal.appendChild(noTabsItem);
+      } else { // For the "New Empty Window" option itself
+        const hintItem = document.createElement('li');
+        hintItem.classList.add('tab-item-horizontal');
+        hintItem.textContent = 'Move active tab here to create a new window.';
+        tabListHorizontal.appendChild(hintItem);
       }
 
       windowItem.appendChild(tabListHorizontal);
@@ -151,8 +176,7 @@ window.initTabManagerFeature = async (containerElement) => {
   const tabManagerKeydownHandler = (e) => {
     console.log("tabManager.js: Keydown event detected in Tab Management view:", e.key, "KeyCode:", e.keyCode);
 
-    // For moving the current tab to a specific position (1-9 keys)
-    const keyCode = e.keyCode; // ASCII value of the key pressed
+    const targetWindow = allWindowsData[selectedWindowIndex];
 
     if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -164,27 +188,44 @@ window.initTabManagerFeature = async (containerElement) => {
       return;
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (currentActiveTabId !== null && selectedWindowIndex !== -1 && allWindowsData[selectedWindowIndex]) {
-        const targetWindow = allWindowsData[selectedWindowIndex];
-        console.log(`Tab Manager: Moving current tab ID ${currentActiveTabId} to window ID ${targetWindow.id}`);
+      if (currentActiveTabId !== null && selectedWindowIndex !== -1 && targetWindow) {
+        if (targetWindow.type === "newWindow") {
+            console.log(`Tab Manager: Moving current tab ID ${currentActiveTabId} to a NEW window.`);
+            chrome.runtime.sendMessage({
+                action: "createWindowAndMoveTab", // New action
+                tabId: currentActiveTabId
+            })
+            .then(response => {
+                if (response && response.success) {
+                    console.log("Tab Manager: Tab successfully moved to new window. Popup remains open.");
+                    fetchWindowsData(); // Re-fetch to show the new window in the list
+                } else {
+                    console.error("Tab Manager: Failed to move tab to new window:", response?.error || "Unknown error");
+                }
+            })
+            .catch(error => {
+                console.error("Tab Manager: Error sending message to create new window and move tab:", error);
+            });
+        } else { // Existing window
+            console.log(`Tab Manager: Moving current tab ID ${currentActiveTabId} to window ID ${targetWindow.id}`);
 
-        chrome.runtime.sendMessage({
-          action: "moveActiveTabToWindow",
-          tabId: currentActiveTabId,
-          targetWindowId: targetWindow.id
-        })
-        .then(response => {
-          if (response && response.success) {
-            console.log("Tab Manager: Tab successfully moved to selected window. Popup remains open.");
-            // Re-fetch data to update the UI with the tab in its new window
-            fetchWindowsData();
-          } else {
-            console.error("Tab Manager: Failed to move tab to selected window:", response?.error || "Unknown error");
-          }
-        })
-        .catch(error => {
-          console.error("Tab Manager: Error sending message to move tab:", error);
-        });
+            chrome.runtime.sendMessage({
+                action: "moveActiveTabToWindow",
+                tabId: currentActiveTabId,
+                targetWindowId: targetWindow.id
+            })
+            .then(response => {
+                if (response && response.success) {
+                    console.log("Tab Manager: Tab successfully moved to selected window. Popup remains open.");
+                    fetchWindowsData(); // Re-fetch data to update the UI
+                } else {
+                    console.error("Tab Manager: Failed to move tab to selected window:", response?.error || "Unknown error");
+                }
+            })
+            .catch(error => {
+                console.error("Tab Manager: Error sending message to move tab:", error);
+            });
+        }
       } else {
         console.warn("Tab Manager: Cannot move tab. Either no active tab, or no window selected, or selected window data missing.");
       }

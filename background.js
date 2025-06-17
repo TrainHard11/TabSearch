@@ -846,15 +846,66 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     })();
     return true; // Asynchronous response
-  } else if (request.action === "moveActiveTabToWindow") { // New: Handle "teleport" command
+  } else if (request.action === "moveActiveTabToWindow") {
     (async () => {
       try {
-        await chrome.tabs.move(request.tabId, { windowId: request.targetWindowId, index: -1 }); // Move to the end of the target window
+        // Find the tab to move (it might not be the active one anymore if user switched tabs outside the popup)
+        const tabToMove = await chrome.tabs.get(request.tabId);
+        if (!tabToMove) {
+            sendResponse({ success: false, error: "Tab to move not found." });
+            return;
+        }
+
+        await chrome.tabs.move(tabToMove.id, { windowId: request.targetWindowId, index: -1 }); // Move to the end of the target window
         await chrome.windows.update(request.targetWindowId, { focused: true }); // Focus the target window
-        await chrome.tabs.update(request.tabId, { active: true }); // Activate the tab in the new window
+        await chrome.tabs.update(tabToMove.id, { active: true }); // Activate the tab in the new window
         sendResponse({ success: true });
       } catch (error) {
         console.error("background.js: Error moving active tab to another window:", error);
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Asynchronous response
+  } else if (request.action === "createWindowAndMoveTab") { // New: Handle "create empty window and teleport"
+    (async () => {
+      try {
+        // Find the tab to move (it might not be the active one anymore)
+        const tabToMove = await chrome.tabs.get(request.tabId);
+        if (!tabToMove) {
+            sendResponse({ success: false, error: "Tab to move not found." });
+            return;
+        }
+
+        // Create a new window with a new tab page
+        const newWindow = await chrome.windows.create({ url: 'chrome://newtab/' });
+        const newWindowId = newWindow.id;
+        const initialBlankTabId = newWindow.tabs && newWindow.tabs.length > 0 ? newWindow.tabs[0].id : null; // The tab created with the new window
+
+        // Move the current active tab to the new window
+        await chrome.tabs.move(tabToMove.id, { windowId: newWindowId, index: 0 }); // Move to first position
+
+        // Optionally, remove the initial blank tab from the new window if it's still there
+        if (initialBlankTabId && initialBlankTabId !== tabToMove.id) {
+            try {
+                // Verify the initial tab still exists and is not the one we just moved
+                const initialTabCheck = await chrome.tabs.get(initialBlankTabId);
+                if (initialTabCheck && initialTabCheck.windowId === newWindowId && initialTabCheck.id !== tabToMove.id) {
+                     await chrome.tabs.remove(initialBlankTabId);
+                     console.log("Background: Removed initial blank tab from new window.");
+                }
+            } catch (tabError) {
+                // Tab might have already been removed by Chrome if it was the only one
+                console.log("Background: Initial blank tab might have already been removed or does not exist.", tabError.message);
+            }
+        }
+
+        // Focus the new window and activate the tab we just moved
+        await chrome.windows.update(newWindowId, { focused: true });
+        await chrome.tabs.update(tabToMove.id, { active: true });
+
+        sendResponse({ success: true, newWindowId: newWindowId });
+      } catch (error) {
+        console.error("background.js: Error creating new window and moving tab:", error);
         sendResponse({ success: false, error: error.message });
       }
     })();

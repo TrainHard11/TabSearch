@@ -75,6 +75,17 @@
     vertical-align: middle;
 }
 
+/* Style for the new window icon (you'll need to provide img/add_window_icon.png) */
+.window-item.new-window-option .window-header .window-icon {
+    /* You can put specific styles here if its a different icon */
+}
+
+.new-window-option {
+    border-style: dashed; /* Differentiate new window option with dashed border */
+    border-color: var(--color-accent-blue);
+}
+
+
 .tab-list-horizontal {
   list-style: none;
   padding: 0;
