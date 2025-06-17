@@ -24,6 +24,9 @@
     "open_marks_view": {
       "description": "Bookmarks_open"
     },
+    "open_tab_management_view": {
+      "description": "Tab_Management_open"
+    },
     "harpoon_current_tab": {
       "description": "Harpoon_add"
     },

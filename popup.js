@@ -27,6 +27,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const settingsContentContainer = document.getElementById(
     "settingsContentContainer",
   );
+  // New: Tab Management Section reference
+  const tabManagementSection = document.getElementById("tabManagementSection");
 
   // Variables for settings elements, populated after settings.html is loaded
   let enableWebNavigatorCheckbox;
@@ -47,6 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let settingsContentLoaded = false;
   let marksContentLoaded = false;
   let harpoonContentLoaded = false;
+  let tabManagementContentLoaded = false; // New: Flag for Tab Management content
 
   // Flag to indicate if the current searchInput value came from a persistent query
   let isPersistentQueryActive = false;
@@ -303,6 +306,11 @@ document.addEventListener("DOMContentLoaded", () => {
       help: { container: helpContentContainer, content: helpContentContainer },
       marks: { container: marksSection, content: marksSection },
       harpoon: { container: harpoonSection, content: harpoonSection },
+      // New: Tab Management view definition
+      tabManagement: {
+        container: tabManagementSection,
+        content: tabManagementSection,
+      },
     };
 
     const hideAllViews = () => {
@@ -333,6 +341,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // Detach Marks listeners if they were active
       if (typeof window.detachMarksListeners === "function") {
         window.detachMarksListeners();
+      }
+      // Detach Tab Management listeners if they were active
+      if (typeof window.detachTabManagerListeners === "function") {
+        window.detachTabManagerListeners();
       }
     };
 
@@ -407,7 +419,17 @@ document.addEventListener("DOMContentLoaded", () => {
             currentSettings.alwaysShowMarksSearchInput,
           );
         }
-      } else {
+      } else if (viewName === "tabManagement") {
+        // New: Tab Management view actions
+        if (typeof window.attachTabManagerListeners === "function") {
+          window.attachTabManagerListeners();
+        }
+        // If tabManager.js has an init function for content, call it here
+        if (typeof window.initTabManagerFeature === "function") {
+            window.initTabManagerFeature();
+        }
+      }
+      else {
         // Clear search input and visual list when switching away from tabSearch
         searchInput.value = "";
         renderResults([]); // Render an empty list
@@ -547,7 +569,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (ViewManager.getActive() === "tabSearch") {
       performUnifiedSearch(currentQuery);
     }
-
     // If enableMarksAddition changes AND Marks view is active, update its display
     if (
       ViewManager.getActive() === "marks" &&
@@ -763,6 +784,46 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   };
+
+  /**
+   * New: Loads Tab Management content dynamically from tabManager/tabManager.html and initializes its script.
+   */
+  const loadTabManagementContent = async () => {
+    if (!tabManagementContentLoaded) {
+      try {
+        const response = await fetch(
+          chrome.runtime.getURL("tabManager/tabManager.html"),
+        );
+        if (response.ok) {
+          const html = await response.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const tabManagerHtmlContent =
+            doc.querySelector(".tab-manager-content").innerHTML;
+          tabManagementSection.innerHTML = tabManagerHtmlContent;
+          tabManagementContentLoaded = true;
+
+          if (typeof window.initTabManagerFeature === "function") {
+            await window.initTabManagerFeature();
+          } else {
+            console.error(
+              "window.initTabManagerFeature is not defined. Ensure tabManager/tabManager.js is loaded and defines window.initTabManagerFeature globally.",
+            );
+          }
+        } else {
+          console.error(
+            "Failed to load tabManager/tabManager.html:",
+            response.statusText,
+          );
+          tabManagementSection.innerHTML = "<p>Error loading Tab Management content.</p>";
+        }
+      } catch (error) {
+        console.error("Error fetching tabManager/tabManager.html:", error);
+        tabManagementSection.innerHTML = "<p>Error fetching Tab Management content.</p>";
+      }
+    }
+  };
+
 
   // --- Search & UI Rendering ---
 
@@ -1060,7 +1121,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // as harpoon.js and marks.js will handle their own specific keydowns.
     if (
       ViewManager.getActive() !== "harpoon" &&
-      ViewManager.getActive() !== "marks"
+      ViewManager.getActive() !== "marks" &&
+      ViewManager.getActive() !== "tabManagement" // New: Exclude tabManagement view
     ) {
       if (e.ctrlKey) {
         let targetIndex = -1;
@@ -1077,7 +1139,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (targetIndex !== -1) {
           if (isItemHighlighted) {
             // Only attempt to move if an item is highlighted
-            e.preventDefault(); // Prevent default browser action for Alt+F#
+            e.preventDefault(); // Prevent default browser action for Ctrl+#
 
             // Prepare data to send to background script
             const messageData = {
@@ -1111,12 +1173,12 @@ document.addEventListener("DOMContentLoaded", () => {
               );
             }
           } else {
-            // If Alt+F# is pressed without an item highlighted, maybe show a message or do nothing.
+            // If Ctrl+# is pressed without an item highlighted, maybe show a message or do nothing.
             console.log(
-              `Alt+F${e.key.replace("F", "")} pressed, but no item is highlighted to move.`,
+              `Ctrl+${e.key} pressed, but no item is highlighted to move.`,
             );
           }
-          return; // Exit after handling Alt+F#
+          return; // Exit after handling Ctrl+#
         }
       }
     }
@@ -1151,6 +1213,9 @@ document.addEventListener("DOMContentLoaded", () => {
             : "chrome://extensions/shortcuts"; // Assume Chromium for now, Firefox would be "about:addons"
         openUrl(shortcutsUrl);
         clearPersistentLastQuery();
+      } else if (e.key === "F6") { // New: F6 for Tab Management View
+        e.preventDefault();
+        await ViewManager.toggle("tabManagement", loadTabManagementContent);
       }
     }
     // Removed the specific Alt+F2 for shortcuts, as F5 now handles it more generally,
@@ -1160,6 +1225,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Keyboard navigation within the main tab search view
   // Note: Harpoon view keybindings are now handled directly in harpoon.js via attached listeners
   // Note: Marks view keybindings are now handled directly in marks.js via attached listeners
+  // New: Tab Management view keybindings will be handled directly in tabManager.js
   document.addEventListener("keydown", (e) => {
     const activeView = ViewManager.getActive();
 
@@ -1298,6 +1364,8 @@ document.addEventListener("DOMContentLoaded", () => {
       await loadHelpContent();
     } else if (initialView === "harpoon" && !harpoonContentLoaded) {
       await loadHarpoonContent(); // Ensure harpoon content is loaded if starting in harpoon view
+    } else if (initialView === "tabManagement" && !tabManagementContentLoaded) { // New: Load tab management content if starting in this view
+        await loadTabManagementContent();
     }
 
     // Show the initial view (will handle session state restoration if tabSearch)
