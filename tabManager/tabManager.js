@@ -28,23 +28,11 @@ window.initTabManagerFeature = async (containerElement) => {
   /**
    * Fetches all Chrome windows with their populated tabs.
    * Also identifies the active tab/window where the popup was opened.
-   * Appends a "New Empty Window" option to the list.
+   * Reorders the list: [New Empty Window, Other Windows, Current Window].
    */
   const fetchWindowsData = async () => {
     windowsListElement.innerHTML = '<li class="loading-message">Loading windows...</li>';
     try {
-      // Get all windows and populate them with their tabs
-      const windows = await chrome.windows.getAll({ populate: true });
-      allWindowsData = windows;
-
-      // Add the "New Empty Window" option as a special item at the BEGINNING
-      allWindowsData.unshift({
-        id: "new-window-option", // Unique ID for this special entry
-        type: "newWindow",       // Custom type to identify it
-        title: "New Empty Window",
-        tabs: [] // No tabs initially
-      });
-
       // Identify the active tab/window where the popup itself is running
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (activeTab) {
@@ -53,6 +41,41 @@ window.initTabManagerFeature = async (containerElement) => {
         console.log(`Tab Manager: Popup opened on tab ID ${currentActiveTabId} in window ID ${currentActiveWindowId}`);
       } else {
         console.warn("Tab Manager: Could not determine active tab/window.");
+      }
+
+      // Get all windows and populate them with their tabs
+      const allRawWindows = await chrome.windows.getAll({ populate: true });
+
+      let otherWindows = [];
+      let currentWindow = null;
+
+      allRawWindows.forEach(win => {
+        if (win.id === currentActiveWindowId) {
+          currentWindow = win;
+        } else {
+          otherWindows.push(win);
+        }
+      });
+
+      // Construct allWindowsData in the desired order
+      allWindowsData = [];
+      
+      // 1. New Empty Window option
+      allWindowsData.push({
+        id: "new-window-option",
+        type: "newWindow",
+        title: "New Empty Window",
+        tabs: []
+      });
+
+      // 2. Other Windows (not the current one)
+      allWindowsData.push(...otherWindows);
+
+      // 3. Current Window (if found)
+      if (currentWindow) {
+        allWindowsData.push(currentWindow);
+      } else {
+        console.warn("Tab Manager: Current window not found in the list of all windows.");
       }
 
       renderWindowList(); // Render the list after fetching data
@@ -83,6 +106,8 @@ window.initTabManagerFeature = async (containerElement) => {
       const windowHeader = document.createElement('div');
       windowHeader.classList.add('window-header');
 
+      let windowTitleText = `Window #${index + 1}`; // Default numbering
+
       if (win.type === "newWindow") {
         windowHeader.innerHTML = `
           <img src="${chrome.runtime.getURL('img/add_window_icon.png')}" alt="New Window" class="window-icon">
@@ -90,12 +115,22 @@ window.initTabManagerFeature = async (containerElement) => {
         `;
         windowItem.classList.add('new-window-option'); // Add a specific class for styling
       } else {
+        // Adjust numbering for non-new-window items if new window is first
+        const actualWindowIndex = allWindowsData.filter(w => w.type !== 'newWindow').indexOf(win);
+        windowTitleText = `Window #${actualWindowIndex + 1}`;
+
         windowHeader.innerHTML = `
           <img src="${chrome.runtime.getURL('img/window_icon.png')}" alt="Window" class="window-icon">
-          <span>Window #${index} (${win.tabs.length} tabs)</span>
-          ${win.id === currentActiveWindowId ? '<span style="font-size:0.8em; color: var(--color-accent-blue);">(Current Window)</span>' : ''}
+          <span>${windowTitleText} (${win.tabs.length} tabs)</span>
         `;
       }
+      
+      // Add a specific class and label if this is the current active window
+      if (win.id === currentActiveWindowId) {
+        windowItem.classList.add('current-active-window');
+        windowHeader.innerHTML += '<span class="current-window-label">(Current Window)</span>';
+      }
+
       windowItem.appendChild(windowHeader);
 
       const tabListHorizontal = document.createElement('ul');
@@ -175,6 +210,8 @@ window.initTabManagerFeature = async (containerElement) => {
    */
   const tabManagerKeydownHandler = (e) => {
     console.log("tabManager.js: Keydown event detected in Tab Management view:", e.key, "KeyCode:", e.keyCode);
+
+    const keyCode = e.keyCode; // IMPORTANT: Declare keyCode here at the very beginning
 
     const targetWindow = allWindowsData[selectedWindowIndex];
 
@@ -286,6 +323,7 @@ window.initTabManagerFeature = async (containerElement) => {
         });
         return; // Ensure no further processing
     }
+    // If none of the above conditions are met, log it as an unhandled key.
     console.log("tabManager.js: Unhandled key in Tab Management view. Event might bubble:", e.key);
   };
 

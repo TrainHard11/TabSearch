@@ -85,6 +85,19 @@
     border-color: var(--color-accent-blue);
 }
 
+/* New style for the current active window item */
+.window-item.current-active-window {
+    border-color: var(--color-accent-purple); /* Or any distinct color */
+    background-color: var(--color-background-hover); /* A slightly different shade */
+    box-shadow: 0 0 8px rgba(var(--color-accent-purple-rgb), 0.5);
+}
+
+.current-window-label {
+    font-size: 0.8em;
+    color: var(--color-accent-blue); /* Distinct color for the label */
+    margin-left: 5px;
+    font-weight: normal; /* Override bold from header if needed */
+}
 
 .tab-list-horizontal {
   list-style: none;
