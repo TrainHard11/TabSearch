@@ -37,8 +37,8 @@ window.initTabManagerFeature = async (containerElement) => {
       const windows = await chrome.windows.getAll({ populate: true });
       allWindowsData = windows;
 
-      // Add the "New Empty Window" option as a special item at the end
-      allWindowsData.push({
+      // Add the "New Empty Window" option as a special item at the BEGINNING
+      allWindowsData.unshift({
         id: "new-window-option", // Unique ID for this special entry
         type: "newWindow",       // Custom type to identify it
         title: "New Empty Window",
@@ -56,7 +56,7 @@ window.initTabManagerFeature = async (containerElement) => {
       }
 
       renderWindowList(); // Render the list after fetching data
-      selectWindow(0); // Select the first window by default
+      selectWindow(0); // Select the first item (now the "New Empty Window") by default
     } catch (error) {
       console.error("Tab Manager: Error fetching window data:", error);
       windowsListElement.innerHTML = '<li class="loading-message">Failed to load windows. Please check extension permissions.</li>';
@@ -92,7 +92,7 @@ window.initTabManagerFeature = async (containerElement) => {
       } else {
         windowHeader.innerHTML = `
           <img src="${chrome.runtime.getURL('img/window_icon.png')}" alt="Window" class="window-icon">
-          <span>Window #${index + 1} (${win.tabs.length} tabs)</span>
+          <span>Window #${index} (${win.tabs.length} tabs)</span>
           ${win.id === currentActiveWindowId ? '<span style="font-size:0.8em; color: var(--color-accent-blue);">(Current Window)</span>' : ''}
         `;
       }
@@ -178,11 +178,11 @@ window.initTabManagerFeature = async (containerElement) => {
 
     const targetWindow = allWindowsData[selectedWindowIndex];
 
-    if (e.key === 'ArrowUp') {
+    if (e.key === 'ArrowUp' || e.key === 'k' || e.key === 'K') { // Added 'k'
       e.preventDefault();
       selectWindow(selectedWindowIndex - 1);
       return;
-    } else if (e.key === 'ArrowDown') {
+    } else if (e.key === 'ArrowDown' || e.key === 'j' || e.key === 'J') { // Added 'j'
       e.preventDefault();
       selectWindow(selectedWindowIndex + 1);
       return;
