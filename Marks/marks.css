@@ -60,9 +60,6 @@
   width: 100%;
   box-sizing: border-box;
   outline: none;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
 }
 
 .marks-input::placeholder {
@@ -142,12 +139,8 @@
   cursor: pointer;
   font-size: 1.1em;
   font-weight: 700;
-  transition:
-    background-color 0.2s ease,
-    transform 0.1s ease,
-    box-shadow 0.2s ease;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  outline: none; /* Remove default focus outline */
+  outline: none;
 }
 
 .marks-button:hover {
@@ -222,11 +215,7 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   cursor: pointer; /* Indicate clickable */
   border-bottom: 1px solid var(--color-background-tertiary); /* Similar to harpoon */
-  transition:
-    background-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.1s ease;
-  outline: none; /* Remove default focus outline */
+  outline: none;
 }
 
 .marks-list .mark-item:last-child {
@@ -260,7 +249,6 @@
 /* New style for temporary highlight on moved items (matching harpoon) */
 .mark-item.moved-highlight {
   background-color: #f7e0a0; /* Temporary highlight color */
-  transition: background-color 0.4s ease-out; /* Smooth fade-out */
 }
 
 .mark-item:focus {
@@ -330,8 +318,7 @@
   font-size: 0.9em;
   cursor: pointer;
   padding: 0;
-  transition: background-color 0.2s ease;
-  outline: none; /* Remove default focus outline */
+  outline: none;
 }
 
 .marks-move-button:hover {
@@ -355,11 +342,8 @@
   justify-content: center;
   font-size: 1.2em;
   cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    transform 0.1s ease;
   flex-shrink: 0;
-  outline: none; /* Remove default focus outline */
+  outline: none;
 }
 
 .remove-mark-button:hover {
@@ -404,9 +388,8 @@
   text-align: center;
   font-weight: 600;
   opacity: 0; /* Start hidden */
-  transition: opacity 0.3s ease-in-out;
-  visibility: hidden; /* Hide from screen readers when not visible */
-  pointer-events: none; /* Do not block clicks */
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .marks-message.show {
