@@ -23,4 +23,11 @@ in the TabSaerch section , implement c-1 c-2 keymaps to move the tabs from there
 2.  default permanent links dont work unless u set a new link then the old ones work as well
 3. On some browsers the search navigator dont work
 
+//
+
+1. Improve the keymaps for marks view. 
+2. Make it consistent with harpoon, 
+3. Add help indications regarding the available shortcuts
+
+in marks JK dont work to move the tabs if the search input is out ?? , can we make it so it works
 

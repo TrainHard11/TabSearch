@@ -609,9 +609,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadSettingsContent = async () => {
     if (!settingsContentLoaded) {
       try {
-        const response = await fetch(
-          chrome.runtime.getURL("html/settings.html"),
-        );
+        const response = await fetch(chrome.runtime.getURL("settings.html"));
         if (response.ok) {
           const html = await response.text();
           const parser = new DOMParser();
@@ -644,7 +642,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadHelpContent = async () => {
     if (!helpContentLoaded) {
       try {
-        const response = await fetch(chrome.runtime.getURL("html/help.html"));
+        const response = await fetch(chrome.runtime.getURL("help/help.html"));
         if (response.ok) {
           const html = await response.text();
           const parser = new DOMParser();
