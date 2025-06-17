@@ -21,6 +21,9 @@
     "open_harpoon_view": {
       "description": "Harpoon_open"
     },
+    "open_marks_view": {
+      "description": "Bookmarks_open"
+    },
     "harpoon_current_tab": {
       "description": "Harpoon_add"
     },
