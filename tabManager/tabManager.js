@@ -27,10 +27,10 @@ window.initTabManagerFeature = async (containerElement) => {
     // For moving the current tab to a specific position (1-9 keys)
     const keyCode = e.keyCode; // ASCII value of the key pressed
     // Check if the key is a number from 1 to 9 (Key codes 49-57 for 1-9)
-    if (keyCode >= 49 && keyCode <= 57) {
+    if (keyCode >= 49 && keyCode <= 57) { // Keys '1' through '9'
       e.preventDefault(); // Prevent default browser action (e.g., typing in a search box if one existed)
 
-      const targetPosition = keyCode - 49; // Convert ASCII to 0-indexed position (0 for '1', 1 for '2', etc.)
+      const targetPosition = keyCode - 49; // Convert ASCII to 0-indexed position (0 for '1', ..., 8 for '9')
 
       console.log(`tabManager.js: Attempting to move current tab to position ${targetPosition + 1}. Sending message to background.`);
 
@@ -41,8 +41,8 @@ window.initTabManagerFeature = async (containerElement) => {
       })
       .then(response => {
         if (response && response.success) {
-          console.log(`tabManager.js: Message sent successfully. Current tab moved to position ${targetPosition + 1}.`);
-          window.close(); // Close the popup after this specific action
+          console.log(`tabManager.js: Message sent successfully. Current tab moved.`);
+          // IMPORTANT: Removed window.close() here as requested.
         } else {
           console.error("tabManager.js: Failed to move tab:", response?.error || "Unknown error");
           // Optionally, display a transient message to the user in the popup
@@ -58,7 +58,6 @@ window.initTabManagerFeature = async (containerElement) => {
         .then(response => {
           if (response && response.success) {
             console.log("tabManager.js: Tab moved left successfully.");
-            // Do NOT close window here
           } else {
             console.error("tabManager.js: Failed to move tab left:", response?.error || "Unknown error");
           }
@@ -73,7 +72,6 @@ window.initTabManagerFeature = async (containerElement) => {
         .then(response => {
           if (response && response.success) {
             console.log("tabManager.js: Tab moved right successfully.");
-            // Do NOT close window here
           } else {
             console.error("tabManager.js: Failed to move tab right:", response?.error || "Unknown error");
           }

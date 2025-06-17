@@ -54,14 +54,20 @@ async function moveTabToPosition(tab, targetIndex) {
       return;
     }
 
-    const tabsInWindow = await chrome.tabs.query({ windowId: tab.windowId });
-    const maxIndex = tabsInWindow.length - 1;
+    let finalIndex = targetIndex;
 
-    // Ensure targetIndex is within valid bounds (0 to maxIndex + 1 for appending)
-    const actualTargetIndex = Math.max(0, Math.min(targetIndex, maxIndex + 1));
+    // Special handling for -1 index which means 'move to the end' in chrome.tabs.move
+    // If targetIndex is NOT -1, we apply bounds checking.
+    // If targetIndex IS -1, it's passed directly to chrome.tabs.move.
+    if (targetIndex !== -1) {
+      const tabsInWindow = await chrome.tabs.query({ windowId: tab.windowId });
+      const maxIndex = tabsInWindow.length - 1;
+      // Ensure positive targetIndex is within valid bounds (0 to maxIndex + 1 for appending)
+      finalIndex = Math.max(0, Math.min(targetIndex, maxIndex + 1));
+    }
 
-    await chrome.tabs.move(tab.id, { index: actualTargetIndex });
-    console.log(`background.js: Successfully moved tab ${tab.id} to position ${actualTargetIndex}.`);
+    await chrome.tabs.move(tab.id, { index: finalIndex });
+    console.log(`background.js: Successfully moved tab ${tab.id} to position ${finalIndex}.`);
 
     // Optionally, focus the tab after moving it
     await chrome.windows.update(tab.windowId, { focused: true });
@@ -818,7 +824,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     })();
     return true; // Indicate that sendResponse will be called asynchronously
-  } else if (request.action === "moveCurrentTabLeft") { // New: Handle 'H' press
+  } else if (request.action === "moveCurrentTabLeft") {
     (async () => {
       try {
         const success = await moveCurrentTabLeft();
@@ -829,7 +835,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     })();
     return true; // Asynchronous response
-  } else if (request.action === "moveCurrentTabRight") { // New: Handle 'L' press
+  } else if (request.action === "moveCurrentTabRight") {
     (async () => {
       try {
         const success = await moveCurrentTabRight();
