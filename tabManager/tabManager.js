@@ -2,10 +2,8 @@
 
 // Define a global initialization function that popup.js can call
 // AFTER the tabManager.html content is loaded into the DOM.
-// It now accepts the container element directly.
 window.initTabManagerFeature = async (containerElement) => {
-  // Use the passed containerElement directly
-  const tabManagerContent = containerElement;
+  const tabManagerContent = containerElement; // The main container for tab manager view
 
   if (!tabManagerContent) {
     console.error(
@@ -15,6 +13,135 @@ window.initTabManagerFeature = async (containerElement) => {
   }
 
   console.log("Tab Management feature initialized with container:", containerElement);
+
+  // --- DOM Element References ---
+  const windowsListElement = tabManagerContent.querySelector("#windowsList");
+  let currentActiveTabId = null; // Store the ID of the tab where the popup was opened
+  let currentActiveWindowId = null; // Store the ID of the window where the popup was opened
+
+  // --- State Variables ---
+  let allWindowsData = []; // Stores the data for all open Chrome windows and their tabs
+  let selectedWindowIndex = 0; // Index of the currently highlighted window in the list
+
+  // --- Utility Functions ---
+
+  /**
+   * Fetches all Chrome windows with their populated tabs.
+   * Also identifies the active tab/window where the popup was opened.
+   */
+  const fetchWindowsData = async () => {
+    windowsListElement.innerHTML = '<li class="loading-message">Loading windows...</li>';
+    try {
+      // Get all windows and populate them with their tabs
+      const windows = await chrome.windows.getAll({ populate: true });
+      allWindowsData = windows;
+
+      // Identify the active tab/window where the popup itself is running
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (activeTab) {
+        currentActiveTabId = activeTab.id;
+        currentActiveWindowId = activeTab.windowId;
+        console.log(`Tab Manager: Popup opened on tab ID ${currentActiveTabId} in window ID ${currentActiveWindowId}`);
+      } else {
+        console.warn("Tab Manager: Could not determine active tab/window.");
+      }
+
+      renderWindowList(); // Render the list after fetching data
+      selectWindow(0); // Select the first window by default
+    } catch (error) {
+      console.error("Tab Manager: Error fetching window data:", error);
+      windowsListElement.innerHTML = '<li class="loading-message">Failed to load windows. Please check extension permissions.</li>';
+    }
+  };
+
+  /**
+   * Renders the list of windows and their tabs.
+   */
+  const renderWindowList = () => {
+    windowsListElement.innerHTML = ''; // Clear previous content
+
+    if (allWindowsData.length === 0) {
+      windowsListElement.innerHTML = '<li class="loading-message">No active windows found.</li>';
+      return;
+    }
+
+    allWindowsData.forEach((win, index) => {
+      const windowItem = document.createElement('li');
+      windowItem.classList.add('window-item');
+      windowItem.dataset.windowId = win.id; // Store window ID for later use
+
+      const windowHeader = document.createElement('div');
+      windowHeader.classList.add('window-header');
+      windowHeader.innerHTML = `
+        <img src="${chrome.runtime.getURL('img/window_icon.png')}" alt="Window" class="window-icon">
+        <span>Window #${index + 1} (${win.tabs.length} tabs)</span>
+        ${win.id === currentActiveWindowId ? '<span style="font-size:0.8em; color: var(--color-accent-blue);">(Current Window)</span>' : ''}
+      `;
+      windowItem.appendChild(windowHeader);
+
+      const tabListHorizontal = document.createElement('ul');
+      tabListHorizontal.classList.add('tab-list-horizontal');
+
+      if (win.tabs && win.tabs.length > 0) {
+        win.tabs.forEach(tab => {
+          const tabItem = document.createElement('li');
+          tabItem.classList.add('tab-item-horizontal');
+          if (tab.id === currentActiveTabId) {
+            tabItem.classList.add('active-tab-in-window'); // Highlight the active tab if it's in this window
+          }
+
+          const favicon = document.createElement('img');
+          favicon.classList.add('favicon-small');
+          favicon.alt = 'favicon';
+          favicon.src = tab.favIconUrl || (tab.url && (tab.url.startsWith('chrome://') || tab.url.startsWith('about:')) ? chrome.runtime.getURL('img/icon.png') : `chrome://favicon/${tab.url}`);
+
+          const tabTitle = document.createElement('span');
+          tabTitle.classList.add('tab-title-small');
+          tabTitle.textContent = tab.title || tab.url || 'Untitled Tab';
+
+          tabItem.appendChild(favicon);
+          tabItem.appendChild(tabTitle);
+          tabListHorizontal.appendChild(tabItem);
+        });
+      } else {
+        const noTabsItem = document.createElement('li');
+        noTabsItem.classList.add('tab-item-horizontal');
+        noTabsItem.textContent = 'No tabs in this window.';
+        tabListHorizontal.appendChild(noTabsItem);
+      }
+
+      windowItem.appendChild(tabListHorizontal);
+      windowsListElement.appendChild(windowItem);
+    });
+
+    highlightSelectedWindow(); // Apply highlighting after rendering
+  };
+
+  /**
+   * Highlights the currently selected window item in the list.
+   */
+  const highlightSelectedWindow = () => {
+    const windowItems = windowsListElement.querySelectorAll('.window-item');
+    windowItems.forEach((item, index) => {
+      if (index === selectedWindowIndex) {
+        item.classList.add('selected');
+        // Scroll the selected window into view
+        item.scrollIntoView({ block: "nearest", behavior: "auto" });
+      } else {
+        item.classList.remove('selected');
+      }
+    });
+  };
+
+  /**
+   * Selects a window by index. Ensures the index is within bounds.
+   * @param {number} index The index of the window to select.
+   */
+  const selectWindow = (index) => {
+    selectedWindowIndex = Math.max(0, Math.min(index, allWindowsData.length - 1));
+    highlightSelectedWindow();
+  };
+
 
   /**
    * Handles keyboard events specific to the Tab Management view.
@@ -26,8 +153,45 @@ window.initTabManagerFeature = async (containerElement) => {
 
     // For moving the current tab to a specific position (1-9 keys)
     const keyCode = e.keyCode; // ASCII value of the key pressed
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectWindow(selectedWindowIndex - 1);
+      return;
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectWindow(selectedWindowIndex + 1);
+      return;
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (currentActiveTabId !== null && selectedWindowIndex !== -1 && allWindowsData[selectedWindowIndex]) {
+        const targetWindow = allWindowsData[selectedWindowIndex];
+        console.log(`Tab Manager: Moving current tab ID ${currentActiveTabId} to window ID ${targetWindow.id}`);
+
+        chrome.runtime.sendMessage({
+          action: "moveActiveTabToWindow",
+          tabId: currentActiveTabId,
+          targetWindowId: targetWindow.id
+        })
+        .then(response => {
+          if (response && response.success) {
+            console.log("Tab Manager: Tab successfully moved to selected window. Popup remains open.");
+            // Re-fetch data to update the UI with the tab in its new window
+            fetchWindowsData();
+          } else {
+            console.error("Tab Manager: Failed to move tab to selected window:", response?.error || "Unknown error");
+          }
+        })
+        .catch(error => {
+          console.error("Tab Manager: Error sending message to move tab:", error);
+        });
+      } else {
+        console.warn("Tab Manager: Cannot move tab. Either no active tab, or no window selected, or selected window data missing.");
+      }
+      return; // Crucial: Prevent popup close after Enter
+    }
     // Check if the key is a number from 1 to 9 (Key codes 49-57 for 1-9)
-    if (keyCode >= 49 && keyCode <= 57) { // Keys '1' through '9'
+    else if (keyCode >= 49 && keyCode <= 57) { // Keys '1' through '9'
       e.preventDefault(); // Prevent default browser action (e.g., typing in a search box if one existed)
 
       const targetPosition = keyCode - 49; // Convert ASCII to 0-indexed position (0 for '1', ..., 8 for '9')
@@ -41,47 +205,49 @@ window.initTabManagerFeature = async (containerElement) => {
       })
       .then(response => {
         if (response && response.success) {
-          console.log(`tabManager.js: Message sent successfully. Current tab moved.`);
-          // IMPORTANT: Removed window.close() here as requested.
+          console.log(`tabManager.js: Message sent successfully. Current tab moved. Popup should remain open.`);
         } else {
-          console.error("tabManager.js: Failed to move tab:", response?.error || "Unknown error");
-          // Optionally, display a transient message to the user in the popup
+          console.error("tabManager.js: Failed to move tab (response error):", response?.error || "Unknown error");
         }
       })
       .catch(error => {
-        console.error("tabManager.js: Error sending message to move tab:", error);
+        console.error("tabManager.js: Error sending message to move tab (catch block):", error);
       });
+      return; // Crucial: Add return here to ensure no further processing for these specific keys
     } else if (e.key === 'h' || e.key === 'H') {
       e.preventDefault(); // Prevent default browser actions
       console.log("tabManager.js: 'H' pressed. Sending message to move tab left.");
       chrome.runtime.sendMessage({ action: "moveCurrentTabLeft" })
         .then(response => {
           if (response && response.success) {
-            console.log("tabManager.js: Tab moved left successfully.");
+            console.log("tabManager.js: Tab moved left successfully. Popup should remain open.");
           } else {
-            console.error("tabManager.js: Failed to move tab left:", response?.error || "Unknown error");
+            console.error("tabManager.js: Failed to move tab left (response error):", response?.error || "Unknown error");
           }
         })
         .catch(error => {
-          console.error("tabManager.js: Error sending message to move tab left:", error);
+          console.error("tabManager.js: Error sending message to move tab left (catch block):", error);
         });
+        return; // Ensure no further processing
     } else if (e.key === 'l' || e.key === 'L') {
       e.preventDefault(); // Prevent default browser actions
       console.log("tabManager.js: 'L' pressed. Sending message to move tab right.");
       chrome.runtime.sendMessage({ action: "moveCurrentTabRight" })
         .then(response => {
           if (response && response.success) {
-            console.log("tabManager.js: Tab moved right successfully.");
+            console.log("tabManager.js: Tab moved right successfully. Popup should remain open.");
           } else {
-            console.error("tabManager.js: Failed to move tab right:", response?.error || "Unknown error");
+            console.error("tabManager.js: Failed to move tab right (response error):", response?.error || "Unknown error");
           }
         })
         .catch(error => {
-          console.error("tabManager.js: Error sending message to move tab right:", error);
+          console.error("tabManager.js: Error sending message to move tab right (catch block):", error);
         });
+        return; // Ensure no further processing
     }
-    // Add other tab management specific keybindings here later
+    console.log("tabManager.js: Unhandled key in Tab Management view. Event might bubble:", e.key);
   };
+
 
   /**
    * Attaches keyboard event listeners for the Tab Management view.
@@ -105,6 +271,6 @@ window.initTabManagerFeature = async (containerElement) => {
   window.attachTabManagerListeners = attachTabManagerListeners;
   window.detachTabManagerListeners = detachTabManagerListeners;
 
-  // Initial setup when feature is initialized (e.g., refreshing content)
-  // No content to refresh yet, but this is where you'd put it.
+  // Initial data fetch and rendering when the feature is initialized
+  await fetchWindowsData();
 };

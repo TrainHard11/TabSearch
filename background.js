@@ -846,5 +846,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     })();
     return true; // Asynchronous response
+  } else if (request.action === "moveActiveTabToWindow") { // New: Handle "teleport" command
+    (async () => {
+      try {
+        await chrome.tabs.move(request.tabId, { windowId: request.targetWindowId, index: -1 }); // Move to the end of the target window
+        await chrome.windows.update(request.targetWindowId, { focused: true }); // Focus the target window
+        await chrome.tabs.update(request.tabId, { active: true }); // Activate the tab in the new window
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error("background.js: Error moving active tab to another window:", error);
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Asynchronous response
   }
 });
