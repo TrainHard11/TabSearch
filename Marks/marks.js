@@ -17,7 +17,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
   const marksSearchContainer = document.getElementById("marksSearchContainer");
   const marksSearchInput = document.getElementById("marksSearchInput"); // marksMessageDiv is removed - no longer needed
   const addMarkSection = document.getElementById("addMarkSection"); // Add bookmark section container
-  // Exit if essential elements are not found, indicating an issue with HTML injection.
 
   if (
     !urlNameInput ||

@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
     alwaysShowMarksSearchInput: false,
     customTab1Url: "https://web.whatsapp.com/",
     customTab1ExactMatch: false,
-    customTab2Url: "https://gemini.google.com/app",
+    customTab2Url: "",
     customTab2ExactMatch: false,
     customTab3Url: "",
     customTab3ExactMatch: false,
