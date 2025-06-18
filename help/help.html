@@ -1,400 +1,405 @@
 <div class="help-container">
-  <h2>Fuzzy Tab & Search Navigator</h2>
-  <p>
-    This extension makes you faster in your browser! It's designed to help you
-    quickly find tabs, manage your go-to sites, and navigate with ease.
-  </p>
+	<div class="flex">
+	<img src="../img/icon.png" alt="" class="favicon_img">
+	<h2>Fuzzy Tab & Search Navigator</h2>
+	<img src="../img/icon.png" alt="" class="favicon_img">
+	</div>
+	<p>
+		This extension makes you faster in your browser! It's designed to help you
+		quickly find tabs, manage your go-to sites, and navigate with ease.
+	</p>
 
-  <hr />
+	<hr />
 
-  <h3>1. Quick Search (Main View)</h3>
-  <p>
-    This is your starting point. Just type to instantly find any open tab or
-    your saved "Marks."
-  </p>
-  <ul>
-    <li>
-      <strong>Smart Results:</strong> Your personal "Marks" (bookmarks) appear
-      first if they match an open tab, prioritizing your most important sites.
-    </li>
-    <li>
-      <strong>Instant Access:</strong> Hit <kbd>Enter</kbd> to switch to a
-      selected tab or open a Mark. If your search yields no results, pressing
-      <kbd>Enter</kbd> again can perform a quick Google search (you can adjust
-      this in Settings).
-    </li>
-    <li>
-      <strong>Persistent Search:</strong> Your last search stays active. Simply
-      start typing, or hit <kbd>Backspace</kbd> to begin a new search.
-    </li>
-  </ul>
+	<h3>1. Quick Search (Main View)</h3>
+	<p>
+		This is your starting point. Just type to instantly find any open tab or
+		your saved "Marks."
+	</p>
+	<ul>
+		<li>
+			<strong>Smart Results:</strong> Your personal "Marks" (bookmarks) appear
+			first if they match an open tab, prioritizing your most important sites.
+		</li>
+		<li>
+			<strong>Instant Access:</strong> Hit <kbd>Enter</kbd> to switch to a
+			selected tab or open a Mark. If your search yields no results, pressing
+			<kbd>Enter</kbd> again can perform a quick Google search (you can adjust
+			this in Settings).
+		</li>
+		<li>
+			<strong>Persistent Search:</strong> Your last search stays active. Simply
+			start typing, or hit <kbd>Backspace</kbd> to begin a new search.
+		</li>
+	</ul>
 
-  <hr />
+	<hr />
 
-  <h3>2. Extension Views & Navigation</h3>
-  <p>Jump between different tools and sections using the Function (F) keys:</p>
-  <ul>
-    <li>
-      <p>
-        <strong><kbd>F1</kbd>: Settings</strong>
-      </p>
-      <p>Customize how the extension behaves:</p>
-      <ul>
-        <li>
-          <strong>Web Search Navigator:</strong> This activates an arrow cursor
-          for Google search results which allows quicker navigation through
-          them.
-        </li>
-        <li>
-          <strong>Show Marks in Search:</strong> Choose whether your Marks
-          should be searchable in the main Quick Search View.
-        </li>
-        <li>
-          <strong>Custom URL Links:</strong> Set up to 7 custom URLs that you
-          can open instantly with configurable shortcuts (like
-          <kbd>Ctrl + 1</kbd>). These menu is dedicated for link you visit all
-          the time.
-        </li>
-        <li>
-          <strong>Exact Match for Marks:</strong> When checked, only Marks that
-          are an "exact match" for the current tab's URL (ignoring things like
-          "www." or "https://") will show up as a Smart Result. Unchecked, it
-          will match more broadly.
-        </li>
-      </ul>
-    </li>
-    <li>
-      <p>
-        <strong><kbd>F2</kbd>: Bookmarks (Marks)</strong>
-      </p>
-      <p>
-        Your personal, quick-access bookmarks. Use this view to save the current
-        tab as a new Mark, or edit and remove your existing ones.
-      </p>
-      <ul>
-        <li>
-          <strong>Add Bookmarks:</strong> Simply fill in the name and URL fields
-          and click "Add Bookmark." URLs and names must be unique.
-        </li>
-        <li>
-          <strong>Bookmark Search:</strong> Press <kbd>/</kbd> (forward slash)
-          to bring up a search bar. Type to instantly filter your bookmarks by
-          name or URL.
-          <ul>
-            <li>
-              <p>
-                <kbd>&#x2193;</kbd> (Down) / <kbd>J</kbd> / <kbd>Alt + J</kbd>:
-                Navigate search results downwards.
-              </p>
-            </li>
-            <li>
-              <p>
-                <kbd>&#x2191;</kbd> (Up) / <kbd>K</kbd> / <kbd>Alt + K</kbd>:
-                Navigate search results upwards.
-              </p>
-            </li>
-            <li>
-              <p>
-                <kbd>Enter</kbd>: Open the selected bookmark from search
-                results.
-              </p>
-            </li>
-            <li>
-              <p>
-                <kbd>Escape</kbd> / Click outside: Close the search bar and
-                clear results.
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <strong>Include in Tab Search:</strong> Each bookmark now has a
-          checkbox next to it. If checked, that specific bookmark will appear as
-          a searchable item in the main Quick Search View. If unchecked (default
-          for new bookmarks), it will only be visible within the Bookmarks
-          (Marks) view.
-        </li>
-        <li>
-          <strong>Move Bookmarks:</strong> Use the <kbd>&#9650;</kbd> (up) and
-          <kbd>&#9660;</kbd> (down) buttons next to each bookmark, or select an
-          item and press <kbd>Shift + K</kbd> to move it up or
-          <kbd>Shift + J</kbd> to move it down. Note: You cannot reorder
-          bookmarks while the search bar is active.
-        </li>
-        <li>
-          <strong>Remove Bookmarks:</strong> Click the <kbd>✕</kbd> button next
-          to a bookmark, or press <kbd>d</kbd> or <kbd>Ctrl + D</kbd> when a
-          bookmark is selected, to remove it.
-        </li>
-      </ul>
-    </li>
-    <li>
-      <p>
-        <strong><kbd>F3</kbd>: Harpoon</strong>
-      </p>
-      <p>
-        Your essential tabs, always at your fingertips for lightning-fast
-        access. Harpoon holds up to 4 tabs, each tied to a specific global
-        shortcut:
-      </p>
-      <ul>
-        <li>
-          <strong><kbd>Alt + 1</kbd> to <kbd>Alt + 4</kbd>:</strong> Instantly
-          jump to the tab assigned to that Harpoon slot.
-        </li>
-        <li>
-          <strong>Dynamic Links:</strong> If you reorder tabs within the Harpoon
-          list using <kbd>J</kbd>/<kbd>K</kbd>, the shortcut (<kbd>Alt + 1</kbd
-          >, etc.) will automatically follow the new tab in that slot. This
-          means the keymap always accesses the tab *currently at that position*
-          in your Harpoon list, enabling incredible speed.
-        </li>
-      </ul>
-    </li>
-    <li>
-      <p>
-        <strong><kbd>F4</kbd>: Help</strong>
-      </p>
-      <p>
-        You're here! This guide helps you get the most out of the extension.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong><kbd>F5</kbd>: Keyboard Shortcuts (Chrome)</strong>
-      </p>
-      <p>
-        Opens Chrome's internal shortcut page where you can customize global
-        keybindings for this and other extensions. This is useful for assigning
-        your own preferred shortcuts to activate different features of the
-        extension.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong><kbd>F6</kbd>: Tab Management</strong>
-      </p>
-      <p>
-        This view offers advanced control over your tabs and Chrome windows.
-      </p>
-      <ul>
-        <li>
-          <strong>Move Tab Within Current Window:</strong>
-          <ul>
-            <li>
-              <p>
-                Press <kbd>1-9</kbd>: Move the current active tab to that specific 1st through 9th position.
-              </p>
-            </li>
-            <li>
-              <p>
-                Press <kbd>H</kbd>: Move the current tab one position to the left.
-              </p>
-            </li>
-            <li>
-              <p>
-                Press <kbd>L</kbd>: Move the current tab one position to the right.
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <strong>Move Tab Between Windows (Teleport):</strong>
-          <p>This allows you to move the active tab to any other open Chrome window, or a brand new one.</p>
-          <ul>
-            <li>
-              <p>
-                Navigate windows: Use <kbd>&#x2191;</kbd> (Up) / <kbd>K</kbd> or <kbd>&#x2193;</kbd> (Down) / <kbd>J</kbd> to select a window from the list.
-              </p>
-            </li>
-            <li>
-              <p>
-                Execute move: Press <kbd>Enter</kbd> to move the current tab to the selected window. The extension popup will quickly close and re-open on the new target window/tab.
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <strong>Window List Order:</strong> The list of windows is ordered as:
-          <span class="emphasis">New Empty Window</span> (always first),
-          followed by <span class="emphasis">Other Windows</span>, and finally
-          the <span class="emphasis">Current Window</span> where the popup is open (at the bottom).
-        </li>
-      </ul>
-    </li>
-  </ul>
+	<h3>2. Extension Views & Navigation</h3>
+	<p>Jump between different tools and sections using the Function (F) keys:</p>
+	<ul>
+		<li>
+			<p>
+				<strong><kbd>F1</kbd>: Settings</strong>
+			</p>
+			<p>Customize how the extension behaves:</p>
+			<ul>
+				<li>
+					<strong>Web Search Navigator:</strong> This activates an arrow cursor
+					for Google search results which allows quicker navigation through
+					them.
+				</li>
+				<li>
+					<strong>Show Marks in Search:</strong> Choose whether your Marks
+					should be searchable in the main Quick Search View.
+				</li>
+				<li>
+					<strong>Custom URL Links:</strong> Set up to 7 custom URLs that you
+					can open instantly with configurable shortcuts (like
+					<kbd>Ctrl + 1</kbd>). These menu is dedicated for link you visit all
+					the time.
+				</li>
+				<li>
+					<strong>Exact Match for Marks:</strong> When checked, only Marks that
+					are an "exact match" for the current tab's URL (ignoring things like
+					"www." or "https://") will show up as a Smart Result. Unchecked, it
+					will match more broadly.
+				</li>
+			</ul>
+		</li>
+		<li>
+			<p>
+				<strong><kbd>F2</kbd>: Bookmarks (Marks)</strong>
+			</p>
+			<p>
+				Your personal, quick-access bookmarks. Use this view to save the current
+				tab as a new Mark, or edit and remove your existing ones.
+			</p>
+			<ul>
+				<li>
+					<strong>Add Bookmarks:</strong> Simply fill in the name and URL fields
+					and click "Add Bookmark." URLs and names must be unique.
+				</li>
+				<li>
+					<strong>Bookmark Search:</strong> Press <kbd>/</kbd> (forward slash)
+					to bring up a search bar. Type to instantly filter your bookmarks by
+					name or URL.
+					<ul>
+						<li>
+							<p>
+								<kbd>&#x2193;</kbd> (Down) / <kbd>J</kbd> / <kbd>Alt + J</kbd>:
+								Navigate search results downwards.
+							</p>
+						</li>
+						<li>
+							<p>
+								<kbd>&#x2191;</kbd> (Up) / <kbd>K</kbd> / <kbd>Alt + K</kbd>:
+								Navigate search results upwards.
+							</p>
+						</li>
+						<li>
+							<p>
+								<kbd>Enter</kbd>: Open the selected bookmark from search
+								results.
+							</p>
+						</li>
+						<li>
+							<p>
+								<kbd>Escape</kbd> / Click outside: Close the search bar and
+								clear results.
+							</p>
+						</li>
+					</ul>
+				</li>
+				<li>
+					<strong>Include in Tab Search:</strong> Each bookmark now has a
+					checkbox next to it. If checked, that specific bookmark will appear as
+					a searchable item in the main Quick Search View. If unchecked (default
+					for new bookmarks), it will only be visible within the Bookmarks
+					(Marks) view.
+				</li>
+				<li>
+					<strong>Move Bookmarks:</strong> Use the <kbd>&#9650;</kbd> (up) and
+					<kbd>&#9660;</kbd> (down) buttons next to each bookmark, or select an
+					item and press <kbd>Shift + K</kbd> to move it up or
+					<kbd>Shift + J</kbd> to move it down. Note: You cannot reorder
+					bookmarks while the search bar is active.
+				</li>
+				<li>
+					<strong>Remove Bookmarks:</strong> Click the <kbd>✕</kbd> button next
+					to a bookmark, or press <kbd>d</kbd> or <kbd>Ctrl + D</kbd> when a
+					bookmark is selected, to remove it.
+				</li>
+			</ul>
+		</li>
+		<li>
+			<p>
+				<strong><kbd>F3</kbd>: Harpoon</strong>
+			</p>
+			<p>
+				Your essential tabs, always at your fingertips for lightning-fast
+				access. Harpoon holds up to 4 tabs, each tied to a specific global
+				shortcut:
+			</p>
+			<ul>
+				<li>
+					<strong><kbd>Alt + 1</kbd> to <kbd>Alt + 4</kbd>:</strong> Instantly
+					jump to the tab assigned to that Harpoon slot.
+				</li>
+				<li>
+					<strong>Dynamic Links:</strong> If you reorder tabs within the Harpoon
+					list using <kbd>J</kbd>/<kbd>K</kbd>, the shortcut (<kbd>Alt + 1</kbd>, etc.) will automatically
+					follow the new tab in that slot. This
+					means the keymap always accesses the tab *currently at that position*
+					in your Harpoon list, enabling incredible speed.
+				</li>
+			</ul>
+		</li>
+		<li>
+			<p>
+				<strong><kbd>F4</kbd>: Help</strong>
+			</p>
+			<p>
+				You're here! This guide helps you get the most out of the extension.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong><kbd>F5</kbd>: Keyboard Shortcuts (Chrome)</strong>
+			</p>
+			<p>
+				Opens Chrome's internal shortcut page where you can customize global
+				keybindings for this and other extensions. This is useful for assigning
+				your own preferred shortcuts to activate different features of the
+				extension.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong><kbd>F6</kbd>: Tab Management</strong>
+			</p>
+			<p>
+				This view offers advanced control over your tabs and Chrome windows.
+			</p>
+			<ul>
+				<li>
+					<strong>Move Tab Within Current Window:</strong>
+					<ul>
+						<li>
+							<p>
+								Press <kbd>1-9</kbd>: Move the current active tab to that specific 1st through 9th
+								position.
+							</p>
+						</li>
+						<li>
+							<p>
+								Press <kbd>H</kbd>: Move the current tab one position to the left.
+							</p>
+						</li>
+						<li>
+							<p>
+								Press <kbd>L</kbd>: Move the current tab one position to the right.
+							</p>
+						</li>
+					</ul>
+				</li>
+				<li>
+					<strong>Move Tab Between Windows (Teleport):</strong>
+					<p>This allows you to move the active tab to any other open Chrome window, or a brand new one.</p>
+					<ul>
+						<li>
+							<p>
+								Navigate windows: Use <kbd>&#x2191;</kbd> (Up) / <kbd>K</kbd> or <kbd>&#x2193;</kbd>
+								(Down) / <kbd>J</kbd> to select a window from the list.
+							</p>
+						</li>
+						<li>
+							<p>
+								Execute move: Press <kbd>Enter</kbd> to move the current tab to the selected window. The
+								extension popup will quickly close and re-open on the new target window/tab.
+							</p>
+						</li>
+					</ul>
+				</li>
+				<li>
+					<strong>Window List Order:</strong> The list of windows is ordered as:
+					<span class="emphasis">New Empty Window</span> (always first),
+					followed by <span class="emphasis">Other Windows</span>, and finally
+					the <span class="emphasis">Current Window</span> where the popup is open (at the bottom).
+				</li>
+			</ul>
+		</li>
+	</ul>
 
-  <hr />
+	<hr />
 
-  <h3>3. Keyboard Shortcuts</h3>
-  <h4>
-    A. Global Shortcuts (Customizable in Chrome's Extension Shortcuts -
-    <kbd>F5</kbd>):
-  </h4>
-  <p>
-    These shortcuts work even when the extension popup isn't open. You can set
-    your preferred keys for them via the F5 link. Here's what each command does:
-  </p>
-  <ul>
-    <li>
-      <p>
-        <strong>Open_Main_View:</strong> Opens the extension's main popup, ready
-        for you to start searching tabs.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>Harpoon_open:</strong> Opens the Harpoon view directly, letting
-        you quickly manage your essential tabs.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>Harpoon_add:</strong> Adds your current tab to your Harpoon
-        list.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>Bookmark_add:</strong> Adds your current tab as a new bookmark
-        (Mark).
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>Bookmarks_open:</strong> Opens the Bookmarks (Marks) view
-        directly, letting you manage your saved links.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>Harpoon_1, Harpoon_2, Harpoon_3, Harpoon_4:</strong> Instantly
-        switch to the tab currently assigned to Harpoon slots 1 through 4,
-        respectively.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>Custom_Tab_1 through Custom_Tab_7:</strong> Opens the custom URL
-        you've set up in the Settings for that specific slot.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong
-          >Move_tab_to_1st, Move_tab_to_2nd, Move_tab_to_3rd,
-          Move_tab_to_4th:</strong
-        >
-        Moves your current tab to the 1st, 2nd, 3rd, or 4th position in the
-        current browser window's tab bar.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>New_empty_tab:</strong> Opens a brand new, empty tab in your
-        current window.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>Cycle_tabs_playing_audio:</strong> Quickly cycles through all
-        open tabs that are currently playing audio.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>Cycle_YouTube_tabs:</strong> Cycles specifically through all
-        open YouTube tabs.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>Move_tab_left:</strong> Moves your current tab one position to
-        the left in the tab bar.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>Move_tab_right:</strong> Moves your current tab one position to
-        the right in the tab bar.
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>Cycle_media_tabs:</strong> Cycles through all tabs that are
-        playing any kind of media (like videos or music).
-      </p>
-    </li>
-    <li>
-      <p>
-        <strong>Open_Tab_Management_View:</strong> Opens the new Tab Management view directly.
-      </p>
-    </li>
-  </ul>
+	<h3>3. Keyboard Shortcuts</h3>
+	<h4>
+		A. Global Shortcuts (Customizable in Chrome's Extension Shortcuts -
+		<kbd>F5</kbd>):
+	</h4>
+	<p>
+		These shortcuts work even when the extension popup isn't open. You can set
+		your preferred keys for them via the F5 link. Here's what each command does:
+	</p>
+	<ul>
+		<li>
+			<p>
+				<strong>Open_Main_View:</strong> Opens the extension's main popup, ready
+				for you to start searching tabs.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Harpoon_open:</strong> Opens the Harpoon view directly, letting
+				you quickly manage your essential tabs.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Harpoon_add:</strong> Adds your current tab to your Harpoon
+				list.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Bookmark_add:</strong> Adds your current tab as a new bookmark
+				(Mark).
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Bookmarks_open:</strong> Opens the Bookmarks (Marks) view
+				directly, letting you manage your saved links.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Harpoon_1, Harpoon_2, Harpoon_3, Harpoon_4:</strong> Instantly
+				switch to the tab currently assigned to Harpoon slots 1 through 4,
+				respectively.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Custom_Tab_1 through Custom_Tab_7:</strong> Opens the custom URL
+				you've set up in the Settings for that specific slot.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Move_tab_to_1st, Move_tab_to_2nd, Move_tab_to_3rd,
+					Move_tab_to_4th:</strong>
+				Moves your current tab to the 1st, 2nd, 3rd, or 4th position in the
+				current browser window's tab bar.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>New_empty_tab:</strong> Opens a brand new, empty tab in your
+				current window.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Cycle_tabs_playing_audio:</strong> Quickly cycles through all
+				open tabs that are currently playing audio.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Cycle_YouTube_tabs:</strong> Cycles specifically through all
+				open YouTube tabs.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Move_tab_left:</strong> Moves your current tab one position to
+				the left in the tab bar.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Move_tab_right:</strong> Moves your current tab one position to
+				the right in the tab bar.
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Cycle_media_tabs:</strong> Cycles through all tabs that are
+				playing any kind of media (like videos or music).
+			</p>
+		</li>
+		<li>
+			<p>
+				<strong>Open_Tab_Management_View:</strong> Opens the new Tab Management view directly.
+			</p>
+		</li>
+	</ul>
 
-  <h4>B. In Quick Search View:</h4>
-  <ul>
-    <li>
-      <p><kbd>&#x2191;</kbd> (Up) / <kbd>Alt + K</kbd>: Move selection up.</p>
-    </li>
-    <li>
-      <p>
-        <kbd>&#x2193;</kbd> (Down) / <kbd>Alt + J</kbd>: Move selection down.
-      </p>
-    </li>
-    <li>
-      <p><kbd>Enter</kbd>: Activate selected item or Google search.</p>
-    </li>
-    <li>
-      <p><kbd>Delete</kbd> / <kbd>Ctrl + D</kbd>: Close selected **tab**.</p>
-    </li>
-    <li>
-      <p><kbd>Ctrl + Shift + D</kbd>: Close **all** filtered tabs.</p>
-    </li>
-    <li>
-      <p>
-        Typing / <kbd>Backspace</kbd> / <kbd>Delete</kbd>: Clear previous search
-        and start new.
-      </p>
-    </li>
-  </ul>
+	<h4>B. In Quick Search View:</h4>
+	<ul>
+		<li>
+			<p><kbd>&#x2191;</kbd> (Up) / <kbd>Alt + K</kbd>: Move selection up.</p>
+		</li>
+		<li>
+			<p>
+				<kbd>&#x2193;</kbd> (Down) / <kbd>Alt + J</kbd>: Move selection down.
+			</p>
+		</li>
+		<li>
+			<p><kbd>Enter</kbd>: Activate selected item or Google search.</p>
+		</li>
+		<li>
+			<p><kbd>Delete</kbd> / <kbd>Ctrl + D</kbd>: Close selected **tab**.</p>
+		</li>
+		<li>
+			<p><kbd>Ctrl + Shift + D</kbd>: Close **all** filtered tabs.</p>
+		</li>
+		<li>
+			<p>
+				Typing / <kbd>Backspace</kbd> / <kbd>Delete</kbd>: Clear previous search
+				and start new.
+			</p>
+		</li>
+	</ul>
 
-  <h4>C. In Harpoon View (<kbd>F3</kbd>):</h4>
-  <ul>
-    <li>
-      <p>
-        <kbd>&#x2191;</kbd> (Up) / <kbd>K</kbd> / <kbd>Alt + K</kbd>: Move
-        selection up.
-      </p>
-    </li>
-    <li>
-      <p>
-        <kbd>&#x2193;</kbd> (Down) / <kbd>J</kbd> / <kbd>Alt + J</kbd>: Move
-        selection down.
-      </p>
-    </li>
-    <li>
-      <p><kbd>Enter</kbd>: Activate selected Harpoon tab.</p>
-    </li>
-    <li>
-      <p>
-        <kbd>Shift + J</kbd>: Move selected Harpoon item **down** in the list.
-      </p>
-    </li>
-    <li>
-      <p>
-        <kbd>Shift + K</kbd>: Move selected Harpoon item **up** in the list.
-      </p>
-    </li>
-    <li>
-      <p>
-        <kbd>Ctrl + d</kbd> / <kbd>d</kbd> / <kbd>Delete</kbd>: Remove selected
-        item from Harpoon (this *doesn't* close the tab itself).
-      </p>
-    </li>
-  </ul>
+	<h4>C. In Harpoon View (<kbd>F3</kbd>):</h4>
+	<ul>
+		<li>
+			<p>
+				<kbd>&#x2191;</kbd> (Up) / <kbd>K</kbd> / <kbd>Alt + K</kbd>: Move
+				selection up.
+			</p>
+		</li>
+		<li>
+			<p>
+				<kbd>&#x2193;</kbd> (Down) / <kbd>J</kbd> / <kbd>Alt + J</kbd>: Move
+				selection down.
+			</p>
+		</li>
+		<li>
+			<p><kbd>Enter</kbd>: Activate selected Harpoon tab.</p>
+		</li>
+		<li>
+			<p>
+				<kbd>Shift + J</kbd>: Move selected Harpoon item **down** in the list.
+			</p>
+		</li>
+		<li>
+			<p>
+				<kbd>Shift + K</kbd>: Move selected Harpoon item **up** in the list.
+			</p>
+		</li>
+		<li>
+			<p>
+				<kbd>Ctrl + d</kbd> / <kbd>d</kbd> / <kbd>Delete</kbd>: Remove selected
+				item from Harpoon (this *doesn't* close the tab itself).
+			</p>
+		</li>
+	</ul>
 
-  <p class="settings-hint">
-    Press <kbd>F4</kbd> again to close help and return to the Quick Search view.
-  </p>
+	<p class="settings-hint">
+		Press <kbd>F4</kbd> again to close help and return to the Quick Search view.
+	</p>
 </div>

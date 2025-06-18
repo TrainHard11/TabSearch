@@ -208,8 +208,8 @@
 }
 
 .new-window-option {
-    border-style: dashed;
-    border-color: var(--color-accent-blue);
+    /* border-style: dashed; */
+    /* border-color: var(--color-accent-blue); */
 }
 
 .window-item.current-active-window {

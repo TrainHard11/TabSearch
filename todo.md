@@ -15,3 +15,8 @@ in the TabSaerch section , implement c-1 c-2 keymaps to move the tabs from there
 
 in marks JK dont work to move the tabs if the search input is out ?? , can we make it so it works
 
+
+A command which cycles between current and last tab.
+maybe you can make it so i can go  to harpoon using alt+q from alt+a menu?
+
+Implement C-nr -  to move the whichever tab to be moved where you want in the positon /// specifically for harpoon and bookmark

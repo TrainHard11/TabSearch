@@ -787,7 +787,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   /**
-   * New: Loads Tab Management content dynamically from tabManager/tabManager.html and initializes its script.
+   * Loads Tab Management content dynamically from tabManager/tabManager.html and initializes its script.
    */
   const loadTabManagementContent = async () => {
     if (!tabManagementContentLoaded) {
@@ -1215,13 +1215,11 @@ document.addEventListener("DOMContentLoaded", () => {
             : "chrome://extensions/shortcuts"; // Assume Chromium for now, Firefox would be "about:addons"
         openUrl(shortcutsUrl);
         clearPersistentLastQuery();
-      } else if (e.key === "F6") { // New: F6 for Tab Management View
+      } else if (e.key === "F6" ) { // F6 for Tab Management View
         e.preventDefault();
         await ViewManager.toggle("tabManagement", loadTabManagementContent);
       }
     }
-    // Removed the specific Alt+F2 for shortcuts, as F5 now handles it more generally,
-    // and Alt+F# is now dedicated to moving items when one is highlighted.
   });
 
   // Keyboard navigation within the main tab search view
