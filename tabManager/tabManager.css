@@ -203,19 +203,12 @@
     vertical-align: middle;
 }
 
-.window-item.new-window-option .window-header .window-icon {
-    /* You can put specific styles here if its a different icon */
-}
-
 .new-window-option {
-    /* border-style: dashed; */
-    /* border-color: var(--color-accent-blue); */
-}
-
-.window-item.current-active-window {
-    border-color: var(--color-accent-purple);
-    background-color: var(--color-background-hover);
-    box-shadow: 0 0 8px rgba(var(--color-accent-purple-rgb), 0.5);
+	/*    border-style: dashed; */
+	/*    border-color: var(--color-accent-blue); */
+	/* color:red; */
+	text-align:center;
+	display:flex;
 }
 
 .current-window-label {
@@ -286,9 +279,3 @@
   padding: 20px;
 }
 
-.tab-item-horizontal.active-tab-in-window {
-    background-color: var(--color-accent-blue);
-    color: white;
-    border-color: var(--color-accent-blue);
-    font-weight: bold;
-}

@@ -47,7 +47,6 @@ async function focusOrCreateTab(tabUrl, exactMatch = false) {
  * @param {number} targetIndex The 0-indexed position to move the tab to.
  */
 async function moveTabToPosition(tab, targetIndex) {
-  console.log(`background.js: Attempting to move tab ID ${tab?.id} to index ${targetIndex}.`);
   try {
     if (!tab || typeof tab.id === "undefined") {
       console.warn("background.js: Attempted to move an invalid tab:", tab);
@@ -67,7 +66,6 @@ async function moveTabToPosition(tab, targetIndex) {
     }
 
     await chrome.tabs.move(tab.id, { index: finalIndex });
-    console.log(`background.js: Successfully moved tab ${tab.id} to position ${finalIndex}.`);
 
     // Optionally, focus the tab after moving it
     await chrome.windows.update(tab.windowId, { focused: true });
@@ -89,7 +87,6 @@ async function moveTabToPosition(tab, targetIndex) {
  * @param {number} targetIndex The 0-indexed position to move the tab to.
  */
 async function handleMoveItemToPosition(itemUrl, exactMatch, targetIndex) {
-  console.log(`background.js: handleMoveItemToPosition called for URL: ${itemUrl}, exactMatch: ${exactMatch}, targetIndex: ${targetIndex}`);
   try {
     // First, try to find and focus/create the tab
     const tabToMove = await focusOrCreateTab(itemUrl, exactMatch);
@@ -213,7 +210,6 @@ async function cycleYoutubeTabs() {
  * @returns {Promise<boolean>} True if successful, false otherwise.
  */
 async function moveCurrentTabLeft() {
-  console.log("background.js: Attempting to move current tab left.");
   try {
     const [currentTab] = await chrome.tabs.query({
       active: true,
@@ -221,10 +217,8 @@ async function moveCurrentTabLeft() {
     });
     if (currentTab && currentTab.index > 0) {
       await chrome.tabs.move(currentTab.id, { index: currentTab.index - 1 });
-      console.log(`background.js: Tab ${currentTab.id} moved left to index ${currentTab.index - 1}.`);
       return true;
     } else {
-      console.log("background.js: Cannot move tab left (either no active tab or already at first position).");
       return false;
     }
   } catch (error) {
@@ -238,7 +232,6 @@ async function moveCurrentTabLeft() {
  * @returns {Promise<boolean>} True if successful, false otherwise.
  */
 async function moveCurrentTabRight() {
-  console.log("background.js: Attempting to move current tab right.");
   try {
     const [currentTab] = await chrome.tabs.query({
       active: true,
@@ -252,14 +245,11 @@ async function moveCurrentTabRight() {
 
       if (currentTab.index < maxIndex) {
         await chrome.tabs.move(currentTab.id, { index: currentTab.index + 1 });
-        console.log(`background.js: Tab ${currentTab.id} moved right to index ${currentTab.index + 1}.`);
         return true;
       } else {
-        console.log("background.js: Cannot move tab right (already at last position).");
         return false;
       }
     } else {
-      console.log("background.js: No active tab found to move right.");
       return false;
     }
   } catch (error) {
@@ -507,9 +497,6 @@ async function addCurrentTabAsBookmark() {
       (mark) => mark.url === newBookmarkUrl,
     );
     if (urlExists) {
-      console.log(
-        "Bookmark not added: A bookmark with this URL already exists.",
-      );
       return {
         success: false,
         message: "A bookmark with this URL already exists.",
@@ -522,9 +509,6 @@ async function addCurrentTabAsBookmark() {
       (mark) => mark.name.toLowerCase() === newBookmarkName.toLowerCase(),
     );
     if (nameExists) {
-      console.log(
-        "Bookmark not added: A bookmark with this name already exists.",
-      );
       return {
         success: false,
         message:
@@ -542,7 +526,6 @@ async function addCurrentTabAsBookmark() {
 
     existingBookmarks.push(newBookmark);
     await chrome.storage.local.set({ [MARKS_STORAGE_KEY]: existingBookmarks });
-    console.log("Bookmark added successfully:", newBookmark);
     return {
       success: true,
       message: "Bookmark added successfully!",
@@ -891,11 +874,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const initialTabCheck = await chrome.tabs.get(initialBlankTabId);
                 if (initialTabCheck && initialTabCheck.windowId === newWindowId && initialTabCheck.id !== tabToMove.id) {
                      await chrome.tabs.remove(initialBlankTabId);
-                     console.log("Background: Removed initial blank tab from new window.");
                 }
             } catch (tabError) {
                 // Tab might have already been removed by Chrome if it was the only one
-                console.log("Background: Initial blank tab might have already been removed or does not exist.", tabError.message);
             }
         }
 

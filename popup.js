@@ -708,13 +708,6 @@ document.addEventListener("DOMContentLoaded", () => {
           const currentTabUrl = activeTab ? activeTab.url : "";
           const currentTabTitle = activeTab ? activeTab.title : "";
 
-          console.log(
-            "popup.js: Calling initMarksFeature with URL:",
-            currentTabUrl,
-            "and Title:",
-            currentTabTitle,
-          );
-
           // Call the global initialization function from marks.js
           // This function should be defined on the window object by marks.js
           if (typeof window.initMarksFeature === "function") {
@@ -1077,13 +1070,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         renderResults(filteredResults, newSelectedIndex);
         searchInput.focus();
-      } else {
-        // If it's a mark, log that deletion is not supported from this view, or simply do nothing.
-        console.log(
-          "Cannot delete bookmark from search results view. Please manage bookmarks in 'My Bookmarks' (F2) section.",
-        );
-        // Optionally, you could show a temporary message to the user.
-      }
+      } 
     }
   };
 
@@ -1158,9 +1145,6 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
               const response = await chrome.runtime.sendMessage(messageData);
               if (response && response.success) {
-                console.log(
-                  `Successfully moved item to position ${targetIndex}.`,
-                );
                 window.close(); // Close the popup after action
               } else {
                 console.error(
@@ -1174,13 +1158,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 error,
               );
             }
-          } else {
-            // If Ctrl+# is pressed without an item highlighted, maybe show a message or do nothing.
-            console.log(
-              `Ctrl+${e.key} pressed, but no item is highlighted to move.`,
-            );
-          }
-          return; // Exit after handling Ctrl+#
+          } 
+          return; 
         }
       }
     }
