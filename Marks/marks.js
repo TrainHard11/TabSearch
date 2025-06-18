@@ -214,7 +214,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     // We only move items in the *unfiltered* list.
     // If search is active, this action is disabled or has a different effect.
     if (isMarksSearchActive) {
-      console.log("Cannot reorder bookmarks while search is active."); // displayMessage("Cannot reorder bookmarks while search is active.", "error",); // Removed
       return;
     }
 
@@ -529,7 +528,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         items[selectedMarkIndex].focus(); // Programmatically focus the DOM element
       }
     } else {
-      console.log(
+      console.warn(
         "Bookmark to focus not found in the current list:",
         urlToFocus,
       );
@@ -539,7 +538,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
    */
 
   const addBookmark = async () => {
-    console.log("addBookmark called!"); // Debugging log
 
     const name = urlNameInput.value.trim();
     let url = urlInput.value.trim();
@@ -848,7 +846,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         chrome.storage.session.get(INITIAL_MARK_URL_KEY, (sessionResult) => {
           const urlToFocus = sessionResult[INITIAL_MARK_URL_KEY];
           if (urlToFocus) {
-            console.log("Focusing bookmark from session storage:", urlToFocus);
             focusBookmarkByUrl(urlToFocus);
             // Clear the session storage key after using it
             chrome.storage.session.remove(INITIAL_MARK_URL_KEY);

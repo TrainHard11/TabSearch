@@ -379,7 +379,6 @@ function attachContentScriptListeners() {
     }
 
     isExtensionInitialized = true;
-    console.log("WebNavigator content script initialized.");
 }
 
 /**
@@ -401,7 +400,6 @@ function detachContentScriptListeners() {
     allResultLinks = [];
     currentSelectedIndex = -1;
     isExtensionInitialized = false;
-    console.log("WebNavigator content script detached.");
 }
 
 /**
@@ -451,7 +449,6 @@ if (document.readyState === 'loading') {
 // Re-initialize if the tab becomes visible (e.g., user switches back to it)
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-        console.log("Tab became visible. Re-initializing WebNavigator.");
         initializeExtension();
     }
 });
@@ -460,7 +457,6 @@ document.addEventListener('visibilitychange', () => {
 // These pages don't trigger 'DOMContentLoaded' or 'load'.
 window.addEventListener('pageshow', (event) => {
     if (event.persisted) {
-        console.log("Page restored from bfcache. Re-initializing WebNavigator.");
         initializeExtension();
     }
 });

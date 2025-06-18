@@ -256,7 +256,6 @@ window.initTabManagerFeature = async (containerElement) => {
         })
         .then(response => {
           if (response && response.success) {
-            console.log(`tabManager.js: Message sent successfully. Current tab moved. Popup should remain open.`);
           } else {
             console.error("tabManager.js: Failed to move tab (response error):", response?.error || "Unknown error");
           }
@@ -267,13 +266,11 @@ window.initTabManagerFeature = async (containerElement) => {
       return; // Crucial: Add return here to ensure no further processing for these specific keys
     } else if (e.key === 'h' || e.key === 'H') {
       e.preventDefault(); // Prevent default browser actions
-      console.log("tabManager.js: 'H' pressed. Sending message to move tab left.");
       chrome.runtime.sendMessage({
           action: "moveCurrentTabLeft"
         })
         .then(response => {
           if (response && response.success) {
-            console.log("tabManager.js: Tab moved left successfully. Popup should remain open.");
           } else {
             console.error("tabManager.js: Failed to move tab left (response error):", response?.error || "Unknown error");
           }
@@ -284,13 +281,11 @@ window.initTabManagerFeature = async (containerElement) => {
       return; // Ensure no further processing
     } else if (e.key === 'l' || e.key === 'L') {
       e.preventDefault(); // Prevent default browser actions
-      console.log("tabManager.js: 'L' pressed. Sending message to move tab right.");
       chrome.runtime.sendMessage({
           action: "moveCurrentTabRight"
         })
         .then(response => {
           if (response && response.success) {
-            console.log("tabManager.js: Tab moved right successfully. Popup should remain open.");
           } else {
             console.error("tabManager.js: Failed to move tab right (response error):", response?.error || "Unknown error");
           }
@@ -301,7 +296,6 @@ window.initTabManagerFeature = async (containerElement) => {
       return; // Ensure no further processing
     }
     // If none of the above conditions are met, log it as an unhandled key.
-    console.log("tabManager.js: Unhandled key in Tab Management view. Event might bubble:", e.key);
   };
 
 
@@ -311,7 +305,6 @@ window.initTabManagerFeature = async (containerElement) => {
    */
   const attachTabManagerListeners = () => {
     document.addEventListener("keydown", tabManagerKeydownHandler);
-    console.log("tabManager.js: Tab Management listeners attached.");
   };
 
   /**
@@ -320,7 +313,6 @@ window.initTabManagerFeature = async (containerElement) => {
    */
   const detachTabManagerListeners = () => {
     document.removeEventListener("keydown", tabManagerKeydownHandler);
-    console.log("tabManager.js: Tab Management listeners detached.");
   };
 
   // Expose functions to the global window object for popup.js
