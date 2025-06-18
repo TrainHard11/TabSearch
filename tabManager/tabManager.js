@@ -263,9 +263,9 @@ window.initTabManagerFeature = async (containerElement) => {
         .catch(error => {
           console.error("tabManager.js: Error sending message to move tab (catch block):", error);
         });
-      return; // Crucial: Add return here to ensure no further processing for these specific keys
+      return; 
     } else if (e.key === 'h' || e.key === 'H') {
-      e.preventDefault(); // Prevent default browser actions
+      e.preventDefault(); 
       chrome.runtime.sendMessage({
           action: "moveCurrentTabLeft"
         })
@@ -278,9 +278,9 @@ window.initTabManagerFeature = async (containerElement) => {
         .catch(error => {
           console.error("tabManager.js: Error sending message to move tab left (catch block):", error);
         });
-      return; // Ensure no further processing
+      return; 
     } else if (e.key === 'l' || e.key === 'L') {
-      e.preventDefault(); // Prevent default browser actions
+      e.preventDefault(); 
       chrome.runtime.sendMessage({
           action: "moveCurrentTabRight"
         })
@@ -293,9 +293,8 @@ window.initTabManagerFeature = async (containerElement) => {
         .catch(error => {
           console.error("tabManager.js: Error sending message to move tab right (catch block):", error);
         });
-      return; // Ensure no further processing
+      return; 
     }
-    // If none of the above conditions are met, log it as an unhandled key.
   };
 
 

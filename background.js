@@ -223,7 +223,7 @@ async function moveCurrentTabLeft() {
     }
   } catch (error) {
     console.error("background.js: Error moving current tab left:", error);
-    throw error; // Re-throw to propagate the error
+    throw error; 
   }
 }
 
