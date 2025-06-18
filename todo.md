@@ -20,3 +20,5 @@ A command which cycles between current and last tab.
 maybe you can make it so i can go  to harpoon using alt+q from alt+a menu?
 
 Implement C-nr -  to move the whichever tab to be moved where you want in the positon /// specifically for harpoon and bookmark
+
+The youtube links , even if they are the same url i wanna see different instances
