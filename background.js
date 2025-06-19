@@ -1,5 +1,217 @@
 // background.js
 
+// Store the history of active tabs (last two active tab IDs)
+// This will be an array like [previousTabId, currentTabId]
+let lastActiveTabs = []; // Stores [tabId, windowId] for the last two unique active tabs
+const LAST_ACTIVE_TABS_STORAGE_KEY = "fuzzyTabSearch_lastActiveTabs";
+
+// Function to update last active tabs in storage
+async function updateLastActiveTabsStorage() {
+  await chrome.storage.local.set({
+    [LAST_ACTIVE_TABS_STORAGE_KEY]: lastActiveTabs,
+  });
+}
+
+// Function to load last active tabs from storage on startup
+async function loadLastActiveTabsFromStorage() {
+  const result = await chrome.storage.local.get({
+    [LAST_ACTIVE_TABS_STORAGE_KEY]: [],
+  });
+  lastActiveTabs = result[LAST_ACTIVE_TABS_STORAGE_KEY];
+  // Ensure the loaded data is in the correct format or clear if invalid
+  if (
+    !Array.isArray(lastActiveTabs) ||
+    lastActiveTabs.some((item) => !Array.isArray(item) || item.length !== 2)
+  ) {
+    lastActiveTabs = []; // Clear if data is malformed
+  }
+}
+
+// Call this on service worker startup
+loadLastActiveTabsFromStorage();
+
+// Listener for tab activation
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  const currentTabId = activeInfo.tabId;
+  const currentWindowId = activeInfo.windowId;
+
+  // Retrieve the current active tab's full info to check if it's a valid tab (not pre-rendered, etc.)
+  try {
+    const currentTab = await chrome.tabs.get(currentTabId);
+
+    // Filter out tabs that are not "real" or user-navigable, like about:blank in some contexts, or devtools.
+    // We mainly care about user-interacted tabs.
+    const isSpecialUrl =
+      currentTab.url.startsWith("chrome://") ||
+      currentTab.url.startsWith("about:");
+
+    // If the tab ID and window ID are already the very last recorded, do nothing
+    if (
+      lastActiveTabs.length > 0 &&
+      lastActiveTabs[lastActiveTabs.length - 1] &&
+      lastActiveTabs[lastActiveTabs.length - 1][0] === currentTabId &&
+      lastActiveTabs[lastActiveTabs.length - 1][1] === currentWindowId
+    ) {
+      return;
+    }
+
+    // Filter out invalid/special URLs from being recorded as "previous" tabs for toggling
+    // We allow `chrome://newtab` only if it's the current tab, not as a history item for toggle
+    if (
+      currentTab.url === "about:blank" ||
+      (currentTab.url.startsWith("chrome://") &&
+        currentTab.url !== "chrome://newtab/")
+    ) {
+      return; // Do not record these as valid "previous" tabs to toggle back to
+    }
+
+    // Logic to maintain only the last two unique tab IDs and window IDs
+    const newEntry = [currentTabId, currentWindowId];
+
+    // If the new active tab is the same as the previous one, don't add it again
+    if (
+      lastActiveTabs.length > 0 &&
+      lastActiveTabs[lastActiveTabs.length - 1][0] === newEntry[0] &&
+      lastActiveTabs[lastActiveTabs.length - 1][1] === newEntry[1]
+    ) {
+      return;
+    }
+
+    // Remove the current tab from the list if it exists elsewhere (handles re-activating an older tab)
+    lastActiveTabs = lastActiveTabs.filter(
+      ([tabId, windowId]) =>
+        !(tabId === newEntry[0] && windowId === newEntry[1]),
+    );
+
+    // Add the new active tab to the end
+    lastActiveTabs.push(newEntry);
+
+    // Keep only the last two unique tab activations
+    if (lastActiveTabs.length > 2) {
+      lastActiveTabs.shift(); // Remove the oldest entry
+    }
+
+    // Persist to storage
+    await updateLastActiveTabsStorage();
+  } catch (error) {
+    // This can happen if a tab is quickly activated and then closed, or if it's a special internal tab.
+    // console.warn("Error getting tab info on activation:", error);
+  }
+});
+
+// Listener for tab removal (to clean up lastActiveTabs)
+chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
+  lastActiveTabs = lastActiveTabs.filter(
+    ([storedTabId, storedWindowId]) => storedTabId !== tabId,
+  );
+  await updateLastActiveTabsStorage();
+});
+
+// Listener for window focus changes (important for cross-window toggling)
+chrome.windows.onFocusChanged.addListener(async (windowId) => {
+  if (windowId === chrome.windows.WINDOW_ID_NONE) {
+    return; // No window focused
+  }
+  try {
+    const window = await chrome.windows.get(windowId, { populate: true });
+    const activeTabInWindow = window.tabs.find((tab) => tab.active);
+    if (activeTabInWindow) {
+      // Manually trigger the onActivated logic for the active tab in the newly focused window
+      chrome.tabs.onActivated.dispatch({
+        tabId: activeTabInWindow.id,
+        windowId: activeTabInWindow.windowId,
+      });
+    }
+  } catch (error) {
+    console.warn("Error processing window focus change:", error);
+  }
+});
+
+/**
+ * Toggles between the current active tab and the previously active tab.
+ * Uses the stored `lastActiveTabs` array.
+ */
+async function toggleLastTab() {
+  try {
+    if (lastActiveTabs.length < 2) {
+      console.log("Not enough history to toggle (less than 2 tabs recorded).");
+      return { success: false, error: "Not enough tab history." };
+    }
+
+    const [currentActiveTab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (!currentActiveTab) {
+      console.warn("No current active tab found to toggle from.");
+      return { success: false, error: "No current active tab." };
+    }
+
+    // The last entry in lastActiveTabs should be the current active tab.
+    // The second to last entry is the one we want to toggle back to.
+    const [previousTabId, previousWindowId] = lastActiveTabs[0]; // This is the 'older' tab in the list
+
+    // If the current active tab is already the one we want to go back to,
+    // then the "previous" tab is actually the *newest* one in the history list.
+    // This handles the case where you hit the shortcut twice quickly.
+    let targetTabId;
+    let targetWindowId;
+
+    if (
+      currentActiveTab.id === lastActiveTabs[lastActiveTabs.length - 1][0] &&
+      currentActiveTab.windowId === lastActiveTabs[lastActiveTabs.length - 1][1]
+    ) {
+      // Current tab is the most recent one in history, so toggle to the second most recent
+      targetTabId = lastActiveTabs[0][0];
+      targetWindowId = lastActiveTabs[0][1];
+    } else {
+      // Current tab is not the most recent one in history (e.g. user manually switched outside our tracking)
+      // In this case, we need to activate the one that was most recently active *before* the current one.
+      // This scenario is largely covered by the onActivated listener, which keeps the lastActiveTabs
+      // array up-to-date. So, hitting toggle should always attempt to go to the first item in the array.
+      targetTabId = lastActiveTabs[0][0];
+      targetWindowId = lastActiveTabs[0][1];
+    }
+
+    try {
+      // Check if the target tab still exists
+      const targetTab = await chrome.tabs.get(targetTabId);
+
+      // Check if the target tab is in the current window.
+      if (targetTab.windowId === currentActiveTab.windowId) {
+        // Same window, just activate the tab
+        await chrome.tabs.update(targetTabId, { active: true });
+        // Move the target tab to be the last in the history (new current) and the current tab to be the previous
+        // This effectively swaps their positions in the array for the next toggle
+        lastActiveTabs = [
+          [currentActiveTab.id, currentActiveTab.windowId],
+          [targetTabId, targetWindowId],
+        ];
+      } else {
+        // Different window, focus the window and then activate the tab
+        await chrome.windows.update(targetWindowId, { focused: true });
+        await chrome.tabs.update(targetTabId, { active: true });
+        // The onActivated listener will handle updating `lastActiveTabs` after the window focus and tab activation.
+      }
+      await updateLastActiveTabsStorage();
+      return { success: true };
+    } catch (tabError) {
+      console.warn(
+        `Target tab ${targetTabId} (Window ${targetWindowId}) no longer exists. Removing from history.`,
+      );
+      lastActiveTabs = lastActiveTabs.filter(
+        ([id, winId]) => id !== targetTabId || winId !== targetWindowId,
+      );
+      await updateLastActiveTabsStorage();
+      // Try to toggle again, might activate the first available valid tab in history
+      return toggleLastTab(); // Recursive call, be careful with infinite loops if no valid tabs
+    }
+  } catch (error) {
+    console.error("Error toggling last tab:", error);
+    return { success: false, error: error.message };
+  }
+}
+
 // Function to handle focusing an existing tab or creating/updating a new one
 async function focusOrCreateTab(tabUrl, exactMatch = false) {
   // 1. Try to find an existing tab based on the matching criteria.
@@ -576,7 +788,7 @@ async function addCurrentTabAsBookmark() {
 
 // Key for commanding the initial view upon popup opening
 const COMMAND_INITIAL_VIEW_KEY = "fuzzyTabSearch_commandInitialView";
-// Key to store the URL of the bookmark to focus after adding/finding it
+// Key to store the URL of the bookmark to focus after adding/findng it
 const INITIAL_MARK_URL_KEY = "fuzzyTabSearch_initialMarkUrl";
 
 // Listen for commands defined in manifest.json
@@ -781,6 +993,9 @@ chrome.commands.onCommand.addListener(async (command) => {
       // Clear any lingering initial harpoon URL command (only one focus per popup open)
       await chrome.storage.session.remove(INITIAL_HARPOON_URL_KEY);
       await chrome.action.openPopup();
+      break;
+    case "toggle_last_tab":
+      await toggleLastTab(); // Call the new function
       break;
   }
 });
