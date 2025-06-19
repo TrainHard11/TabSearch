@@ -485,7 +485,11 @@ async function moveToSpecificPositionByOffset(targetIndex) {
     const maxIndex = tabsInWindow.length - 1;
 
     // Calculate the actual target index within bounds, considering adding at the end
-    let actualTargetIndex = Math.max(0, Math.min(targetIndex, maxIndex + 1));
+    // If targetIndex is -1, it means move to the end, which is maxIndex + 1 (appending)
+    let actualTargetIndex =
+      targetIndex === -1
+        ? maxIndex + 1
+        : Math.max(0, Math.min(targetIndex, maxIndex + 1));
 
     // Calculate the offset required to move from current index to actualTargetIndex
     const offset = actualTargetIndex - currentTab.index;
@@ -1156,6 +1160,40 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           error,
         );
         sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Asynchronous response
+  } else if (request.action === "closeWindow") {
+    (async () => {
+      try {
+        if (typeof request.windowId !== "number") {
+          sendResponse({ success: false, error: "Invalid windowId provided." });
+          return;
+        }
+
+        const allWindows = await chrome.windows.getAll();
+        if (allWindows.length === 1 && allWindows[0].id === request.windowId) {
+          sendResponse({
+            success: false,
+            error: "Cannot close the last remaining browser window.",
+          });
+          return;
+        }
+
+        await chrome.windows.remove(request.windowId);
+        sendResponse({ success: true });
+      } catch (error) {
+        // Capture Chrome's specific error message and send it back
+        console.error(
+          `background.js: Error closing window ${request.windowId}:`,
+          error,
+        );
+        sendResponse({
+          success: false,
+          error:
+            error.message ||
+            "An unknown error occurred while trying to close the window.",
+        });
       }
     })();
     return true; // Asynchronous response

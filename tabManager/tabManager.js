@@ -282,12 +282,78 @@ window.initTabManagerFeature = async (containerElement) => {
       }
       return;
     }
+    // New: Handle Ctrl+D to close the selected window
+    else if (e.ctrlKey && e.key === "d") {
+      e.preventDefault();
+      if (targetWindow && targetWindow.type !== "newWindow") {
+        // Only close actual browser windows
+        const windowIdToClose = targetWindow.id;
+        chrome.runtime
+          .sendMessage({
+            action: "closeWindow",
+            windowId: windowIdToClose,
+          })
+          .then((response) => {
+            if (response && response.success) {
+              // Successfully closed the window, re-fetch data to update the UI
+              fetchWindowsData();
+            } else {
+              console.error(
+                "tabManager.js: Failed to close window:",
+                response?.error || "Unknown error",
+              );
+            }
+          })
+          .catch((error) => {
+            console.error(
+              "tabManager.js: Error sending message to close window:",
+              error,
+            );
+          });
+      } else {
+        console.warn(
+          "Tab Manager: Cannot close 'New Empty Window' option or no window selected.",
+        );
+      }
+      return;
+    }
+    // New: Handle '0' key for moving to the last position
+    else if (keyCode === 48) {
+      // Key '0'
+      e.preventDefault();
+      // An index of -1 tells chrome.tabs.move to put the tab at the end
+      const targetPosition = -1;
+
+      chrome.runtime
+        .sendMessage({
+          action: "moveCurrentTabToSpecificPosition",
+          targetIndex: targetPosition,
+        })
+        .then((response) => {
+          if (response && response.success) {
+            // Optional: Re-fetch or re-render if you want immediate UI feedback
+            // fetchWindowsData();
+          } else {
+            console.error(
+              "tabManager.js: Failed to move tab to last position (response error):",
+              response?.error || "Unknown error",
+            );
+          }
+        })
+        .catch((error) => {
+          console.error(
+            "tabManager.js: Error sending message to move tab to last position (catch block):",
+            error,
+          );
+        });
+      return;
+    }
     // Check if the key is a number from 1 to 9 (Key codes 49-57 for 1-9)
     else if (keyCode >= 49 && keyCode <= 57) {
       // Keys '1' through '9'
       e.preventDefault();
 
-      const targetPosition = keyCode - 49;
+      const targetPosition = keyCode - 49; // 0-indexed (0 for '1', 1 for '2', etc.)
 
       // Send a message to the background script to move the current tab
       chrome.runtime
