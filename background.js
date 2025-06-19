@@ -250,6 +250,52 @@ async function moveCurrentTabByOffset(offset) {
 }
 
 /**
+ * Moves the current active tab to a specific 0-indexed position by calculating the necessary offset.
+ * This function utilizes moveCurrentTabByOffset.
+ * @param {number} targetIndex The 0-indexed position to move the tab to.
+ * @returns {Promise<boolean>} True if successful, false otherwise.
+ */
+async function moveToSpecificPositionByOffset(targetIndex) {
+  try {
+    const [currentTab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+
+    if (!currentTab) {
+      console.warn("No active tab found to move to specific position.");
+      return false;
+    }
+
+    const tabsInWindow = await chrome.tabs.query({
+      windowId: currentTab.windowId,
+    });
+    const maxIndex = tabsInWindow.length - 1;
+
+    // Calculate the actual target index within bounds, considering adding at the end
+    let actualTargetIndex = Math.max(0, Math.min(targetIndex, maxIndex + 1));
+
+    // Calculate the offset required to move from current index to actualTargetIndex
+    const offset = actualTargetIndex - currentTab.index;
+
+    // If the tab is already at the target index, no move is needed.
+    if (offset === 0) {
+      return true;
+    }
+
+    // Use the existing moveCurrentTabByOffset function
+    const success = await moveCurrentTabByOffset(offset);
+    return success;
+  } catch (error) {
+    console.error(
+      `background.js: Error moving current tab to specific position ${targetIndex} via offset:`,
+      error,
+    );
+    throw error;
+  }
+}
+
+/**
  * Cycles through tabs that are identified as "media content tabs" based on specific URL patterns,
  * AND includes any tabs that are currently playing audio.
  */
@@ -782,16 +828,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "moveCurrentTabToSpecificPosition") {
     (async () => {
       try {
-        const [currentTab] = await chrome.tabs.query({
-          active: true,
-          currentWindow: true,
-        });
-        if (currentTab) {
-          await moveTabToPosition(currentTab, request.targetIndex);
-          sendResponse({ success: true });
-        } else {
-          sendResponse({ success: false, error: "No active tab found." });
-        }
+        const success = await moveToSpecificPositionByOffset(
+          request.targetIndex,
+        ); // Changed to use the new function
+        sendResponse({ success: success });
       } catch (error) {
         console.error("Error moving current tab to specific position:", error);
         sendResponse({ success: false, error: error.message });
@@ -830,17 +870,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           return;
         }
 
-        await chrome.tabs.move(tabToMove.id, { windowId: request.targetWindowId, index: -1 }); // Move to the end of the target window
+        await chrome.tabs.move(tabToMove.id, {
+          windowId: request.targetWindowId,
+          index: -1,
+        }); // Move to the end of the target window
         await chrome.windows.update(request.targetWindowId, { focused: true }); // Focus the target window
         await chrome.tabs.update(tabToMove.id, { active: true }); // Activate the tab in the new window
         sendResponse({ success: true });
       } catch (error) {
-        console.error("background.js: Error moving active tab to another window:", error);
+        console.error(
+          "background.js: Error moving active tab to another window:",
+          error,
+        );
         sendResponse({ success: false, error: error.message });
       }
     })();
     return true; // Asynchronous response
-  } else if (request.action === "createWindowAndMoveTab") { // New: Handle "create empty window and teleport"
+  } else if (request.action === "createWindowAndMoveTab") {
+    // New: Handle "create empty window and teleport"
     (async () => {
       try {
         // Find the tab to move (it might not be the active one anymore)
@@ -851,24 +898,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
 
         // Create a new window with a new tab page
-        const newWindow = await chrome.windows.create({ url: 'chrome://newtab/' });
+        const newWindow = await chrome.windows.create({
+          url: "chrome://newtab/",
+        });
         const newWindowId = newWindow.id;
-        const initialBlankTabId = newWindow.tabs && newWindow.tabs.length > 0 ? newWindow.tabs[0].id : null; // The tab created with the new window
+        const initialBlankTabId =
+          newWindow.tabs && newWindow.tabs.length > 0
+            ? newWindow.tabs[0].id
+            : null; // The tab created with the new window
 
         // Move the current active tab to the new window
-        await chrome.tabs.move(tabToMove.id, { windowId: newWindowId, index: 0 }); // Move to first position
+        await chrome.tabs.move(tabToMove.id, {
+          windowId: newWindowId,
+          index: 0,
+        }); // Move to first position
 
         // Optionally, remove the initial blank tab from the new window if it's still there
         if (initialBlankTabId && initialBlankTabId !== tabToMove.id) {
-            try {
-              // Verify the initial tab still exists and is not the one we just moved
-              const initialTabCheck = await chrome.tabs.get(initialBlankTabId);
-              if (initialTabCheck && initialTabCheck.windowId === newWindowId && initialTabCheck.id !== tabToMove.id) {
-                      await chrome.tabs.remove(initialBlankTabId);
-              }
-            } catch (tabError) {
-              // Tab might have already been removed by Chrome if it was the only one
+          try {
+            // Verify the initial tab still exists and is not the one we just moved
+            const initialTabCheck = await chrome.tabs.get(initialBlankTabId);
+            if (
+              initialTabCheck &&
+              initialTabCheck.windowId === newWindowId &&
+              initialTabCheck.id !== tabToMove.id
+            ) {
+              await chrome.tabs.remove(initialBlankTabId);
             }
+          } catch (tabError) {
+            // Tab might have already been removed by Chrome if it was the only one
+          }
         }
 
         // Focus the new window and activate the tab we just moved
@@ -877,7 +936,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         sendResponse({ success: true, newWindowId: newWindowId });
       } catch (error) {
-        console.error("background.js: Error creating new window and moving tab:", error);
+        console.error(
+          "background.js: Error creating new window and moving tab:",
+          error,
+        );
         sendResponse({ success: false, error: error.message });
       }
     })();
