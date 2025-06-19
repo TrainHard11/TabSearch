@@ -38,6 +38,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let alwaysShowMarksSearchInputCheckbox;
   let customTabInputs = [];
   let customTabExactMatchCheckboxes = [];
+  // NEW: Reference for the new checkbox
+  let closePopupAfterMoveTabManagerCheckbox;
 
   // --- State Variables ---
   let allTabs = []; // Holds all active browser tabs
@@ -61,6 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
     searchMarksEnabled: true,
     enableMarksAddition: true,
     alwaysShowMarksSearchInput: false,
+    closePopupAfterMoveTabManager: false, // NEW: Default to false (do not close popup)
     customTab1Url: "https://web.whatsapp.com/",
     customTab1ExactMatch: false,
     customTab2Url: "",
@@ -426,8 +429,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         // If tabManager.js has an init function for content, call it here
         if (typeof window.initTabManagerFeature === "function") {
-          // Pass the actual DOM container element
-          window.initTabManagerFeature(tabManagementSection);
+          // Pass the actual DOM container element AND currentSettings
+          window.initTabManagerFeature(
+            tabManagementSection,
+            currentSettings, // Pass all current settings
+          );
         }
       } else {
         // Clear search input and visual list when switching away from tabSearch
@@ -483,6 +489,10 @@ document.addEventListener("DOMContentLoaded", () => {
     alwaysShowMarksSearchInputCheckbox = settingsContentContainer.querySelector(
       "#alwaysShowMarksSearchInput",
     );
+    // NEW: Get reference for the new checkbox
+    closePopupAfterMoveTabManagerCheckbox =
+      settingsContentContainer.querySelector("#closePopupAfterMoveTabManager");
+
     customTabInputs = [];
     customTabExactMatchCheckboxes = [];
     for (let i = 1; i <= 7; i++) {
@@ -518,6 +528,11 @@ document.addEventListener("DOMContentLoaded", () => {
       alwaysShowMarksSearchInputCheckbox.checked =
         currentSettings.alwaysShowMarksSearchInput;
     }
+    // NEW: Load the new setting
+    if (closePopupAfterMoveTabManagerCheckbox) {
+      closePopupAfterMoveTabManagerCheckbox.checked =
+        currentSettings.closePopupAfterMoveTabManager;
+    }
 
     for (let i = 0; i < 7; i++) {
       if (customTabInputs[i]) {
@@ -549,6 +564,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (alwaysShowMarksSearchInputCheckbox) {
       currentSettings.alwaysShowMarksSearchInput =
         alwaysShowMarksSearchInputCheckbox.checked;
+    }
+    // NEW: Save the new setting
+    if (closePopupAfterMoveTabManagerCheckbox) {
+      currentSettings.closePopupAfterMoveTabManager =
+        closePopupAfterMoveTabManagerCheckbox.checked;
     }
 
     // FIX: Capture values from custom URL input fields before saving
@@ -586,6 +606,14 @@ document.addEventListener("DOMContentLoaded", () => {
         currentSettings.alwaysShowMarksSearchInput,
       );
     }
+    // NEW: If the new setting for Tab Management changes, update the variable in tabManager.js
+    if (ViewManager.getActive() === "tabManagement") {
+      if (typeof window.setTabManagerClosePopupSetting === "function") {
+        window.setTabManagerClosePopupSetting(
+          currentSettings.closePopupAfterMoveTabManager,
+        );
+      }
+    }
   };
 
   /**
@@ -606,6 +634,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (alwaysShowMarksSearchInputCheckbox) {
       alwaysShowMarksSearchInputCheckbox.addEventListener(
+        "change",
+        saveSettings,
+      );
+    }
+    // NEW: Attach listener for the new checkbox
+    if (closePopupAfterMoveTabManagerCheckbox) {
+      closePopupAfterMoveTabManagerCheckbox.addEventListener(
         "change",
         saveSettings,
       );
@@ -635,6 +670,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const html = await response.text();
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, "text/html");
+          // Assuming settings.html uses a top-level .options-container
           const settingsHtmlContent =
             doc.querySelector(".options-container").innerHTML;
           settingsContentContainer.innerHTML = settingsHtmlContent;
@@ -797,8 +833,11 @@ document.addEventListener("DOMContentLoaded", () => {
           tabManagementContentLoaded = true;
 
           if (typeof window.initTabManagerFeature === "function") {
-            // Pass the actual DOM container element to the init function
-            await window.initTabManagerFeature(tabManagementSection);
+            // Pass the actual DOM container element AND currentSettings
+            await window.initTabManagerFeature(
+              tabManagementSection,
+              currentSettings,
+            );
           } else {
             console.error(
               "window.initTabManagerFeature is not defined. Ensure tabManager/tabManager.js is loaded and defines window.initTabManagerFeature globally.",
@@ -809,15 +848,16 @@ document.addEventListener("DOMContentLoaded", () => {
             "Failed to load tabManager/tabManager.html:",
             response.statusText,
           );
-          tabManagementSection.innerHTML = "<p>Error loading Tab Management content.</p>";
+          tabManagementSection.innerHTML =
+            "<p>Error loading Tab Management content.</p>";
         }
       } catch (error) {
         console.error("Error fetching tabManager/tabManager.html:", error);
-        tabManagementSection.innerHTML = "<p>Error fetching Tab Management content.</p>";
+        tabManagementSection.innerHTML =
+          "<p>Error fetching Tab Management content.</p>";
       }
     }
   };
-
 
   // --- Search & UI Rendering ---
 
@@ -999,7 +1039,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
           favicon.src = chrome.runtime.getURL("img/icon.png");
         } else {
-          favicon.src = `chrome://favicon/${item.url}`;
+          favicon.src = `chrome://favicon/${new URL(item.url).hostname}`;
         }
 
         titleSpan.innerHTML = highlightText(item.title || "", currentQuery);
@@ -1191,13 +1231,14 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         const shortcutsUrl =
           typeof chrome !== "undefined" &&
-            chrome.runtime &&
-            chrome.runtime.getURL
+          chrome.runtime &&
+          chrome.runtime.getURL
             ? "chrome://extensions/shortcuts" // Chromium
             : "chrome://extensions/shortcuts"; // Assume Chromium for now, Firefox would be "about:addons"
         openUrl(shortcutsUrl);
         clearPersistentLastQuery();
-      } else if (e.key === "F6") { // F6 for Tab Management View
+      } else if (e.key === "F6") {
+        // F6 for Tab Management View
         e.preventDefault();
         await ViewManager.toggle("tabManagement", loadTabManagementContent);
       }
@@ -1346,7 +1387,11 @@ document.addEventListener("DOMContentLoaded", () => {
       await loadHelpContent();
     } else if (initialView === "harpoon" && !harpoonContentLoaded) {
       await loadHarpoonContent(); // Ensure harpoon content is loaded if starting in harpoon view
-    } else if (initialView === "tabManagement" && !tabManagementContentLoaded) { // New: Load tab management content if starting in this view
+    } else if (
+      initialView === "tabManagement" &&
+      !tabManagementContentLoaded
+    ) {
+      // New: Load tab management content if starting in this view
       await loadTabManagementContent();
     }
 

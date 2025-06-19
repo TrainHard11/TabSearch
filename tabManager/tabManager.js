@@ -1,5 +1,5 @@
 // Define a global initialization function that popup.js can call
-window.initTabManagerFeature = async (containerElement) => {
+window.initTabManagerFeature = async (containerElement, settings) => {
   const tabManagerMainContainer = containerElement; // The main container for tab manager view
 
   if (!tabManagerMainContainer) {
@@ -8,6 +8,22 @@ window.initTabManagerFeature = async (containerElement) => {
     );
     return;
   }
+
+  // Store the setting locally for use in event handlers
+  // Default to false if settings or the specific property is undefined
+  let closePopupAfterMove = settings?.closePopupAfterMoveTabManager || false;
+
+  /**
+   * Exposes a setter for popup.js to update the closePopupAfterMove setting dynamically.
+   * This allows the Tab Manager view to react to changes made in the Settings view
+   * without requiring a full re-initialization.
+   * @param {boolean} newValue The new boolean value for the setting.
+   */
+  window.setTabManagerClosePopupSetting = (newValue) => {
+    closePopupAfterMove = newValue;
+    console.log("Tab Manager: closePopupAfterMove setting updated to", closePopupAfterMove);
+  };
+
 
   // --- DOM Element References ---
   const windowsListElement =
@@ -270,7 +286,9 @@ window.initTabManagerFeature = async (containerElement) => {
             })
             .then((response) => {
               if (response && response.success) {
-                fetchWindowsData(); // Re-fetch to show the new window in the list
+                // When moving to a new window, it's generally expected to close the popup.
+                // This behavior is kept consistent regardless of the new setting for numbers.
+                window.close();
               } else {
                 console.error(
                   "Tab Manager: Failed to move tab to new window:",
@@ -294,7 +312,9 @@ window.initTabManagerFeature = async (containerElement) => {
             })
             .then((response) => {
               if (response && response.success) {
-                fetchWindowsData(); // Re-fetch data to update the UI
+                // When moving to an existing window, it's generally expected to close the popup.
+                // This behavior is kept consistent regardless of the new setting for numbers.
+                window.close();
               } else {
                 console.error(
                   "Tab Manager: Failed to move tab to selected window:",
@@ -372,43 +392,11 @@ window.initTabManagerFeature = async (containerElement) => {
       }
       return;
     }
-    // New: Handle '0' key for moving to the last position
-    else if (keyCode === 48) {
-      // Key '0'
-      e.preventDefault();
-      // An index of -1 tells chrome.tabs.move to put the tab at the end
-      const targetPosition = -1;
-
-      chrome.runtime
-        .sendMessage({
-          action: "moveCurrentTabToSpecificPosition",
-          targetIndex: targetPosition,
-        })
-        .then((response) => {
-          if (response && response.success) {
-            // Optional: Re-fetch or re-render if you want immediate UI feedback
-            // fetchWindowsData();
-          } else {
-            console.error(
-              "tabManager.js: Failed to move tab to last position (response error):",
-              response?.error || "Unknown error",
-            );
-          }
-        })
-        .catch((error) => {
-          console.error(
-            "tabManager.js: Error sending message to move tab to last position (catch block):",
-            error,
-          );
-        });
-      return;
-    }
-    // Check if the key is a number from 1 to 9 (Key codes 49-57 for 1-9)
-    else if (keyCode >= 49 && keyCode <= 57) {
-      // Keys '1' through '9'
+    // Handle '0' key for moving to the last position and '1' through '9'
+    else if (keyCode >= 48 && keyCode <= 57) { // Includes '0' (keyCode 48) and '1'-'9' (keyCodes 49-57)
       e.preventDefault();
 
-      const targetPosition = keyCode - 49; // 0-indexed (0 for '1', 1 for '2', etc.)
+      const targetPosition = (keyCode === 48) ? -1 : keyCode - 49; // -1 for '0' (end), 0-indexed for '1'-'9'
 
       // Send a message to the background script to move the current tab
       chrome.runtime
@@ -418,9 +406,10 @@ window.initTabManagerFeature = async (containerElement) => {
         })
         .then((response) => {
           if (response && response.success) {
-            // Optionally, re-fetch window data if you want to see the tab move in the UI
-            // However, for frequent moves, this might cause flicker.
-            // fetchWindowsData();
+            // NEW: Conditionally close popup based on the setting
+            if (closePopupAfterMove) {
+              window.close(); // Close the popup
+            }
           } else {
             console.error(
               "tabManager.js: Failed to move tab (response error):",
@@ -443,6 +432,7 @@ window.initTabManagerFeature = async (containerElement) => {
         })
         .then((response) => {
           if (response && response.success) {
+            // No automatic close for left/right moves as per original behavior
           } else {
             console.error(
               "tabManager.js: Failed to move tab left (response error):",
@@ -465,6 +455,7 @@ window.initTabManagerFeature = async (containerElement) => {
         })
         .then((response) => {
           if (response && response.success) {
+            // No automatic close for left/right moves as per original behavior
           } else {
             console.error(
               "tabManager.js: Failed to move tab right (response error):",
