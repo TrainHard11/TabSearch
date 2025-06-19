@@ -47,7 +47,7 @@ window.initTabManagerFeature = async (containerElement) => {
       const allRawWindows = await chrome.windows.getAll({ populate: true });
 
       let otherWindows = [];
-      let currentWindow = null;
+      let currentWindow = null; // This variable will store the current active window if found
 
       allRawWindows.forEach((win) => {
         if (win.id === currentActiveWindowId) {
@@ -67,15 +67,26 @@ window.initTabManagerFeature = async (containerElement) => {
           id: "new-window-option",
           type: "newWindow",
           title: "New Empty Window",
-          tabs: [],
+          tabs: [], // No tabs for this virtual option
         });
       }
 
       // 2. Other Windows (not the current one)
       allWindowsData.push(...otherWindows);
 
+      // 3. Current Window - Add it at the end of the list if it exists and wasn't filtered out
+      //    (This ensures the current window is visible in the list if needed for e.g., re-ordering tabs within it)
+      if (currentWindow) {
+        allWindowsData.push(currentWindow);
+      }
+
       renderWindowList(); // Render the list after fetching data
-      selectWindow(0);
+      // Ensure selectedWindowIndex is still valid after data changes
+      selectedWindowIndex = Math.min(
+        selectedWindowIndex,
+        allWindowsData.length - 1,
+      );
+      selectWindow(selectedWindowIndex); // Re-select to ensure highlight and scroll are correct
     } catch (error) {
       console.error("Tab Manager: Error fetching window data:", error);
       windowsListElement.innerHTML =
@@ -104,7 +115,7 @@ window.initTabManagerFeature = async (containerElement) => {
       const windowHeader = document.createElement("div");
       windowHeader.classList.add("window-header");
 
-      let windowTitleText = `Window #${index + 1}`;
+      let windowTitleText = `Window #${index + 1}`; // Default numbering
 
       if (win.type === "newWindow") {
         windowHeader.innerHTML = `
@@ -115,14 +126,23 @@ window.initTabManagerFeature = async (containerElement) => {
       } else {
         // Adjust numbering for non-new-window items if new window is first
         const actualWindowIndex = allWindowsData
-          .filter((w) => w.type !== "newWindow")
-          .indexOf(win);
-        windowTitleText = `Window #${actualWindowIndex + 1}`;
+          .filter((w) => w.type !== "newWindow") // Filter out the "New Empty Window" option
+          .indexOf(win); // Find the index of the current window in the filtered list
+
+        // Only show "Current Window" if it's the active one and it's explicitly placed last
+        const isCurrentActive = win.id === currentActiveWindowId;
+        windowTitleText = isCurrentActive
+          ? "Current Window"
+          : `Window #${actualWindowIndex + 1}`;
 
         windowHeader.innerHTML = `
           <img src="${chrome.runtime.getURL("img/browser.png")}" alt="Window" class="window-icon">
           <span>${windowTitleText} (${win.tabs.length} tabs)</span>
         `;
+
+        if (isCurrentActive) {
+          windowItem.classList.add("current-active-window");
+        }
       }
 
       windowItem.appendChild(windowHeader);
@@ -135,6 +155,12 @@ window.initTabManagerFeature = async (containerElement) => {
         win.tabs.forEach((tab) => {
           const tabItem = document.createElement("li");
           tabItem.classList.add("tab-item-horizontal");
+          if (
+            tab.id === currentActiveTabId &&
+            tab.windowId === currentActiveWindowId
+          ) {
+            tabItem.classList.add("current-active-tab");
+          }
 
           const favicon = document.createElement("img");
           favicon.classList.add("favicon-small");
@@ -144,11 +170,19 @@ window.initTabManagerFeature = async (containerElement) => {
             (tab.url &&
             (tab.url.startsWith("chrome://") || tab.url.startsWith("about:"))
               ? chrome.runtime.getURL("img/icon.png")
-              : `chrome://favicon/${tab.url}`);
+              : `chrome://favicon/${new URL(tab.url).hostname}`); // Improved favicon fallback for standard URLs
+
+          // Handle potentially privileged URLs for display
+          let displayUrl = tab.url;
+          if (displayUrl.startsWith("chrome://")) {
+            displayUrl = "Chrome Internal Page";
+          } else if (displayUrl.startsWith("about:")) {
+            displayUrl = "About Page";
+          }
 
           const tabTitle = document.createElement("span");
           tabTitle.classList.add("tab-title-small");
-          tabTitle.textContent = tab.title || tab.url || "Untitled Tab";
+          tabTitle.textContent = tab.title || displayUrl || "Untitled Tab"; // Prioritize title, then URL, then default
 
           tabItem.appendChild(favicon);
           tabItem.appendChild(tabTitle);
@@ -164,7 +198,7 @@ window.initTabManagerFeature = async (containerElement) => {
         // For the "New Empty Window" option itself
         const hintItem = document.createElement("li");
         hintItem.classList.add("tab-item-horizontal");
-        // hintItem.textContent = 'Move active tab here to create a new window.';
+        // hintItem.textContent = 'Move active tab here to create a new window.'; // Commented out as per original
         tabListHorizontal.appendChild(hintItem);
       }
 
@@ -282,12 +316,25 @@ window.initTabManagerFeature = async (containerElement) => {
       }
       return;
     }
-    // New: Handle Ctrl+D to close the selected window
+    // MODIFIED: Handle Ctrl+D to hide selected window immediately, then try to close it permanently
     else if (e.ctrlKey && e.key === "d") {
       e.preventDefault();
       if (targetWindow && targetWindow.type !== "newWindow") {
-        // Only close actual browser windows
         const windowIdToClose = targetWindow.id;
+
+        // 1. Optimistically remove the window from the local data and re-render
+        // This gives immediate visual feedback.
+        allWindowsData = allWindowsData.filter(
+          (win) => win.id !== windowIdToClose,
+        );
+        // Adjust selected index if the removed item was before it
+        if (selectedWindowIndex >= allWindowsData.length) {
+          selectedWindowIndex = Math.max(0, allWindowsData.length - 1);
+        }
+        renderWindowList();
+        selectWindow(selectedWindowIndex); // Re-highlight and scroll
+
+        // 2. Send message to background script to close the actual Chrome window
         chrome.runtime
           .sendMessage({
             action: "closeWindow",
@@ -295,20 +342,28 @@ window.initTabManagerFeature = async (containerElement) => {
           })
           .then((response) => {
             if (response && response.success) {
-              // Successfully closed the window, re-fetch data to update the UI
-              fetchWindowsData();
+              console.log(
+                `Tab Manager: Successfully requested closure of window ${windowIdToClose}.`,
+              );
+              // No need to re-fetch here if the optimistic update worked and we trust the response.
+              // If you ever find a discrepancy, uncomment fetchWindowsData() for a hard refresh.
+              // fetchWindowsData();
             } else {
               console.error(
-                "tabManager.js: Failed to close window:",
+                "tabManager.js: Failed to close window (response error):",
                 response?.error || "Unknown error",
               );
+              // If actual closure failed, re-fetch to revert the UI state
+              fetchWindowsData();
             }
           })
           .catch((error) => {
             console.error(
-              "tabManager.js: Error sending message to close window:",
+              "tabManager.js: Error sending message to close window (catch block):",
               error,
             );
+            // If message sending failed, re-fetch to revert the UI state
+            fetchWindowsData();
           });
       } else {
         console.warn(
