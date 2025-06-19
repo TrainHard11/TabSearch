@@ -1,5 +1,3 @@
-/* tabManager/tabManager.css */
-
 .tab-manager-container {
   display: flex;
   flex-direction: column;
@@ -110,9 +108,7 @@
   display: inline-block;
   padding: 3px 8px;
   font-family: "Consolas", "Menlo", monospace;
-  background-color: var(
-    --color-background-tertiary
-  ); /* Used tertiary for kbd in help.css */
+  background-color: var( --color-background-tertiary); /* Used tertiary for kbd in help.css */
   border: 1px solid var(--color-border-medium);
   border-radius: 4px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);

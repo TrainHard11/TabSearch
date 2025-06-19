@@ -783,14 +783,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!tabManagementContentLoaded) {
       try {
         const response = await fetch(
-          chrome.runtime.getURL("TabManagement/tabManager.html"),
+          chrome.runtime.getURL("tabManager/tabManager.html"),
         );
         if (response.ok) {
           const html = await response.text();
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, "text/html");
           const tabManagerHtmlContent = doc.querySelector(
-            ".tab-manager-content",
+            ".tab-manager-main-content",
           ).innerHTML;
           tabManagementSection.innerHTML = tabManagerHtmlContent;
           tabManagementContentLoaded = true;
@@ -800,16 +800,16 @@ document.addEventListener("DOMContentLoaded", () => {
           // It's also called again in showView to ensure fresh data/state on re-entry.
         } else {
           console.error(
-            "Failed to load TabManagement/tabManager.html:",
+            "Failed to load tabManager/tabManager.html:",
             response.statusText,
           );
           tabManagementSection.innerHTML =
-            "<p>Error loading Tab Management content.</p>";
+            "<p>Error loading Tab Manager content.</p>";
         }
       } catch (error) {
-        console.error("Error fetching TabManagement/tabManager.html:", error);
+        console.error("Error fetching tabManager/tabManager.html:", error);
         tabManagementSection.innerHTML =
-          "<p>Error fetching Tab Management content.</p>";
+          "<p>Error fetching Tab Manager content.</p>";
       }
     }
   };
