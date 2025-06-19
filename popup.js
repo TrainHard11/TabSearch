@@ -1,4 +1,3 @@
-
 // popup.js
 document.addEventListener("DOMContentLoaded", () => {
   // --- Constants and DOM Element References ---
@@ -427,11 +426,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         // If tabManager.js has an init function for content, call it here
         if (typeof window.initTabManagerFeature === "function") {
-            // Pass the actual DOM container element
-            window.initTabManagerFeature(tabManagementSection);
+          // Pass the actual DOM container element
+          window.initTabManagerFeature(tabManagementSection);
         }
-      }
-      else {
+      } else {
         // Clear search input and visual list when switching away from tabSearch
         searchInput.value = "";
         renderResults([]); // Render an empty list
@@ -856,24 +854,28 @@ document.addEventListener("DOMContentLoaded", () => {
       (mark) => ({ ...mark, type: "mark" }),
     );
 
-    const combinedResultsMap = new Map(); // Map to store items by URL, prioritizing marks
+    // FIX: Modified logic to allow duplicate tabs but deduplicate marks by URL,
+    // and prioritize marks when a tab has the same URL as a mark.
+    const combinedResults = [];
+    const markUrlsAdded = new Set(); // To track URLs of marks already added
 
-    // Add filtered marks first.
+    // Add filtered marks first and track their URLs
     filteredMarksRaw.forEach((mark) => {
-      // Use the raw URL as the key for de-duplication
-      if (mark.url) {
-        combinedResultsMap.set(mark.url, mark);
+      if (mark.url && !markUrlsAdded.has(mark.url)) {
+        combinedResults.push(mark);
+        markUrlsAdded.add(mark.url);
       }
     });
 
-    // Add filtered tabs. If a URL from a tab already exists in the map (meaning a mark with that URL was added), skip the tab.
+    // Add filtered tabs. Only add a tab if its URL is NOT present in the markUrlsAdded set.
+    // This prioritizes marks over tabs if they have the same URL, but allows all unique tabs.
     filteredTabsRaw.forEach((tab) => {
-      if (tab.url && !combinedResultsMap.has(tab.url)) {
-        combinedResultsMap.set(tab.url, tab);
+      if (!tab.url || !markUrlsAdded.has(tab.url)) {
+        combinedResults.push(tab);
       }
     });
 
-    filteredResults = Array.from(combinedResultsMap.values());
+    filteredResults = combinedResults;
 
     // Re-render the list with the updated filtered results
     renderResults(filteredResults);
@@ -1071,7 +1073,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         renderResults(filteredResults, newSelectedIndex);
         searchInput.focus();
-      } 
+      }
     }
   };
 
@@ -1159,8 +1161,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 error,
               );
             }
-          } 
-          return; 
+          }
+          return;
         }
       }
     }
@@ -1189,13 +1191,13 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         const shortcutsUrl =
           typeof chrome !== "undefined" &&
-          chrome.runtime &&
-          chrome.runtime.getURL
+            chrome.runtime &&
+            chrome.runtime.getURL
             ? "chrome://extensions/shortcuts" // Chromium
             : "chrome://extensions/shortcuts"; // Assume Chromium for now, Firefox would be "about:addons"
         openUrl(shortcutsUrl);
         clearPersistentLastQuery();
-      } else if (e.key === "F6" ) { // F6 for Tab Management View
+      } else if (e.key === "F6") { // F6 for Tab Management View
         e.preventDefault();
         await ViewManager.toggle("tabManagement", loadTabManagementContent);
       }
@@ -1345,7 +1347,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (initialView === "harpoon" && !harpoonContentLoaded) {
       await loadHarpoonContent(); // Ensure harpoon content is loaded if starting in harpoon view
     } else if (initialView === "tabManagement" && !tabManagementContentLoaded) { // New: Load tab management content if starting in this view
-        await loadTabManagementContent();
+      await loadTabManagementContent();
     }
 
     // Show the initial view (will handle session state restoration if tabSearch)
@@ -1358,4 +1360,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-
