@@ -91,10 +91,9 @@ window.initTabManagerFeature = async (containerElement, settings) => {
       allWindowsData.push(...otherWindows);
 
       // 3. Current Window - Add it at the end of the list if it exists and wasn't filtered out
-      //    (This ensures the current window is visible in the list if needed for e.g., re-ordering tabs within it)
-      if (currentWindow) {
-        allWindowsData.push(currentWindow);
-      }
+      // if (currentWindow) {
+      //   allWindowsData.push(currentWindow);
+      // }
 
       renderWindowList(); // Render the list after fetching data
       // Ensure selectedWindowIndex is still valid after data changes
