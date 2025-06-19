@@ -1,3 +1,4 @@
+
 // popup.js
 document.addEventListener("DOMContentLoaded", () => {
   // --- Constants and DOM Element References ---
@@ -118,18 +119,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const titleMatches = [];
     const urlMatches = [];
+    const processedIds = new Set(); // To prevent duplicates when an item matches both title and URL
 
     items.forEach((item) => {
       const itemTitle = (item[titleKey] || "").toLowerCase();
       const itemUrl = (item.url || "").toLowerCase();
+      const itemId = item.id || item.url; // Use URL as ID for marks, or actual tab ID
 
       const matchesTitle = queryWords.every((word) => itemTitle.includes(word));
       const matchesUrl = queryWords.every((word) => itemUrl.includes(word));
 
       if (matchesTitle) {
         titleMatches.push(item);
-      } else if (matchesUrl) {
+        processedIds.add(itemId);
+      } else if (matchesUrl && !processedIds.has(itemId)) {
         urlMatches.push(item);
+        processedIds.add(itemId);
       }
     });
     return [...titleMatches, ...urlMatches];
@@ -422,10 +427,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         // If tabManager.js has an init function for content, call it here
         if (typeof window.initTabManagerFeature === "function") {
-          // Pass the actual DOM container element
-          window.initTabManagerFeature(tabManagementSection);
+            // Pass the actual DOM container element
+            window.initTabManagerFeature(tabManagementSection);
         }
-      } else {
+      }
+      else {
         // Clear search input and visual list when switching away from tabSearch
         searchInput.value = "";
         renderResults([]); // Render an empty list
@@ -753,9 +759,8 @@ document.addEventListener("DOMContentLoaded", () => {
           harpoonSection.innerHTML = harpoonHtmlContent;
           harpoonContentLoaded = true;
 
-          // Call the global initialization function from harpoon.js
           if (typeof window.initHarpoonFeature === "function") {
-            await window.initHarpoonFeature(); // Initialize harpoon.js logic
+            await window.initHarpoonFeature();
           } else {
             console.error(
               "window.initHarpoonFeature is not defined. Ensure Harpoon/harpoon.js is loaded and defines window.initHarpoonFeature globally.",
@@ -776,8 +781,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   /**
-   * Loads Tab Management content dynamically from TabManagement/tabManager.html and initializes its script.
-   * New function for Tab Management view.
+   * Loads Tab Management content dynamically from tabManager/tabManager.html and initializes its script.
    */
   const loadTabManagementContent = async () => {
     if (!tabManagementContentLoaded) {
@@ -789,32 +793,35 @@ document.addEventListener("DOMContentLoaded", () => {
           const html = await response.text();
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, "text/html");
-          const tabManagerHtmlContent = doc.querySelector(
-            ".tab-manager-main-content",
-          ).innerHTML;
+          // Extract content from the <body>, not a specific wrapper div
+          const tabManagerHtmlContent = doc.body.innerHTML;
           tabManagementSection.innerHTML = tabManagerHtmlContent;
           tabManagementContentLoaded = true;
 
-          // The initTabManagerFeature is now called when showView("tabManagement") is triggered
-          // as it needs the DOM element to initialize its internal logic.
-          // It's also called again in showView to ensure fresh data/state on re-entry.
+          if (typeof window.initTabManagerFeature === "function") {
+            // Pass the actual DOM container element to the init function
+            await window.initTabManagerFeature(tabManagementSection);
+          } else {
+            console.error(
+              "window.initTabManagerFeature is not defined. Ensure tabManager/tabManager.js is loaded and defines window.initTabManagerFeature globally.",
+            );
+          }
         } else {
           console.error(
             "Failed to load tabManager/tabManager.html:",
             response.statusText,
           );
-          tabManagementSection.innerHTML =
-            "<p>Error loading Tab Manager content.</p>";
+          tabManagementSection.innerHTML = "<p>Error loading Tab Management content.</p>";
         }
       } catch (error) {
         console.error("Error fetching tabManager/tabManager.html:", error);
-        tabManagementSection.innerHTML =
-          "<p>Error fetching Tab Manager content.</p>";
+        tabManagementSection.innerHTML = "<p>Error fetching Tab Management content.</p>";
       }
     }
   };
 
-  // --- Main Search & Render Logic ---
+
+  // --- Search & UI Rendering ---
 
   /**
    * Performs a unified search across tabs and (optionally) bookmarks.
@@ -849,26 +856,24 @@ document.addEventListener("DOMContentLoaded", () => {
       (mark) => ({ ...mark, type: "mark" }),
     );
 
-    // MODIFIED: Combine results without de-duplication for tabs, but still de-duplicate marks
-    // Create a new array for combined results.
-    const combinedResults = [];
-    const markUrlsAdded = new Set(); // To track mark URLs already added
+    const combinedResultsMap = new Map(); // Map to store items by URL, prioritizing marks
 
-    // Add filtered marks, de-duplicating marks by URL
+    // Add filtered marks first.
     filteredMarksRaw.forEach((mark) => {
-      if (mark.url && !markUrlsAdded.has(mark.url)) {
-        combinedResults.push(mark);
-        markUrlsAdded.add(mark.url);
+      // Use the raw URL as the key for de-duplication
+      if (mark.url) {
+        combinedResultsMap.set(mark.url, mark);
       }
     });
 
-    // Add filtered tabs. Do NOT de-duplicate tabs by URL.
-    // If a tab has the same URL as a mark, the mark will appear higher in the list due to order of addition.
+    // Add filtered tabs. If a URL from a tab already exists in the map (meaning a mark with that URL was added), skip the tab.
     filteredTabsRaw.forEach((tab) => {
-      combinedResults.push(tab);
+      if (tab.url && !combinedResultsMap.has(tab.url)) {
+        combinedResultsMap.set(tab.url, tab);
+      }
     });
 
-    filteredResults = combinedResults; // Update the global filteredResults
+    filteredResults = Array.from(combinedResultsMap.values());
 
     // Re-render the list with the updated filtered results
     renderResults(filteredResults);
@@ -959,33 +964,6 @@ document.addEventListener("DOMContentLoaded", () => {
       tabList.appendChild(noResults);
       selectedIndex = -1;
       tabList.classList.remove("scrollable-content");
-
-      // If no results, offer to search the web based on setting
-      if (
-        currentSettings.webNavigatorEnabled &&
-        currentSettings.searchOnNoResults &&
-        currentQuery.trim() !== ""
-      ) {
-        const webSearchItem = document.createElement("li");
-        webSearchItem.classList.add("tab-item", "web-search-suggestion");
-        webSearchItem.innerHTML = `
-          <img src="${chrome.runtime.getURL("img/search.png")}" alt="Search Web" class="favicon">
-          <span>Search the web for "<span class="highlight">${currentQuery}</span>"</span>
-        `;
-        webSearchItem.addEventListener("click", () =>
-          openUrl(
-            `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`,
-          ),
-        );
-        tabList.appendChild(webSearchItem);
-        // Note: Adding web-search item to filteredResults is for navigation (selectedIndex)
-        // It's not a real tab/mark object, so be careful with its properties.
-        filteredResults.push({
-          type: "web-search",
-          url: `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`,
-        });
-      }
-
       return;
     } else if (resultsToRender.length > 0) {
       tabList.classList.add("scrollable-content");
@@ -1019,13 +997,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
           favicon.src = chrome.runtime.getURL("img/icon.png");
         } else {
-          // Fallback for standard URLs using chrome://favicon/
-          try {
-            favicon.src = `chrome://favicon/${new URL(item.url).hostname}`;
-          } catch (e) {
-            // Fallback for invalid URLs or special cases
-            favicon.src = chrome.runtime.getURL("img/icon.png");
-          }
+          favicon.src = `chrome://favicon/${item.url}`;
         }
 
         titleSpan.innerHTML = highlightText(item.title || "", currentQuery);
@@ -1054,17 +1026,6 @@ document.addEventListener("DOMContentLoaded", () => {
           // Pass the exactMatch property when activating the bookmark
           focusOrCreateTabByUrl(item.url, item.exactMatch);
         });
-      } else if (item.type === "web-search") {
-        // Handle web search suggestion
-        listItem.classList.add("web-search-suggestion");
-        favicon.src = chrome.runtime.getURL("img/search.png");
-        titleSpan.innerHTML = `Search the web for "<span class="highlight">${currentQuery}</span>"`;
-        urlSpan.textContent = "Google Search";
-        listItem.addEventListener("click", () =>
-          openUrl(
-            `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`,
-          ),
-        );
       }
 
       listItem.appendChild(favicon);
@@ -1110,7 +1071,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         renderResults(filteredResults, newSelectedIndex);
         searchInput.focus();
-      }
+      } 
     }
   };
 
@@ -1198,8 +1159,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 error,
               );
             }
-          }
-          return;
+          } 
+          return; 
         }
       }
     }
@@ -1234,8 +1195,7 @@ document.addEventListener("DOMContentLoaded", () => {
             : "chrome://extensions/shortcuts"; // Assume Chromium for now, Firefox would be "about:addons"
         openUrl(shortcutsUrl);
         clearPersistentLastQuery();
-      } else if (e.key === "F6") {
-        // F6 for Tab Management View
+      } else if (e.key === "F6" ) { // F6 for Tab Management View
         e.preventDefault();
         await ViewManager.toggle("tabManagement", loadTabManagementContent);
       }
@@ -1298,9 +1258,6 @@ document.addEventListener("DOMContentLoaded", () => {
           } else if (selectedItem.type === "mark") {
             // Bookmarks now use the directly implemented focusOrCreateTabByUrl in popup.js
             focusOrCreateTabByUrl(selectedItem.url, selectedItem.exactMatch);
-          } else if (selectedItem.type === "web-search") {
-            // Handle web search suggestion
-            openUrl(selectedItem.url);
           }
           // Clear both session and persistent state on successful selection activation
           clearSessionSearchState();
@@ -1387,9 +1344,8 @@ document.addEventListener("DOMContentLoaded", () => {
       await loadHelpContent();
     } else if (initialView === "harpoon" && !harpoonContentLoaded) {
       await loadHarpoonContent(); // Ensure harpoon content is loaded if starting in harpoon view
-    } else if (initialView === "tabManagement" && !tabManagementContentLoaded) {
-      // New: Load tab management content if starting in this view
-      await loadTabManagementContent();
+    } else if (initialView === "tabManagement" && !tabManagementContentLoaded) { // New: Load tab management content if starting in this view
+        await loadTabManagementContent();
     }
 
     // Show the initial view (will handle session state restoration if tabSearch)
@@ -1402,3 +1358,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
