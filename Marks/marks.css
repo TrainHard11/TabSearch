@@ -14,6 +14,12 @@
   overflow-y: hidden;
 }
 
+/* NEW: Style for when a bookmark is being edited */
+.marks-container.editing .mark-item:not(.selected) {
+  opacity: 0.5; /* Dim other items when one is being edited */
+  pointer-events: none; /* Disable interaction with non-editing items */
+}
+
 .marks-content {
   display: flex;
   flex-direction: column;
@@ -74,6 +80,25 @@
 .marks-input.input-error {
   border-color: #f44336;
   box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.3);
+}
+
+/* NEW: Styles for the rename input */
+.marks-rename-input {
+  flex-grow: 1;
+  margin-right: 10px; /* Space between input and action buttons */
+  padding: 5px 8px; /* Smaller padding for inline editing */
+  font-size: 1em; /* Keep font size consistent with mark-name */
+  font-weight: 600;
+  border: 1px solid var(--color-accent-blue);
+  background-color: var(--color-background-primary);
+  color: var(--color-text-primary);
+  border-radius: 4px;
+  outline: none;
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+.marks-rename-input:focus {
+  box-shadow: 0 0 0 2px rgba(97, 175, 239, 0.4);
 }
 
 .marks-checkbox {
