@@ -92,14 +92,14 @@
   color: var(--color-background-primary);
   font-weight: bold;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-  outline: none; 
-  border: none; 
+  outline: none;
+  border: none;
 }
 
 .harpoon-item:focus-visible {
-  outline: none; 
-  border: none; 
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); 
+  outline: none;
+  border: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
 .harpoon-item.selected .harpoon-title {
@@ -207,4 +207,14 @@
   margin-top: 1rem;
   padding-top: 5px;
   border-top: 1px solid var(--color-border-dark);
+}
+
+/* New style for margin between harpoon list sections */
+.harpoon-new-list-section {
+  margin-top: 25px;
+}
+
+/* New style to hide list sections */
+.hidden-list-section {
+  display: none !important;
 }
