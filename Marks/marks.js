@@ -12,27 +12,29 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     const urlInput = document.getElementById("urlInput");
     const exactMatchCheckbox = document.getElementById("exactMatchCheckbox");
     const addMarkButton = document.getElementById("addMarkButton");
-    const syncBookmarksButton = document.getElementById("syncBookmarksButton"); // NEW: Sync Bookmarks Button
+    const syncBookmarksButton = document.getElementById("syncBookmarksButton");
     const marksListContainer = document.getElementById("marksList");
     const noMarksMessage = marksListContainer.querySelector(".no-marks-message");
     const marksSearchContainer = document.getElementById("marksSearchContainer");
     const marksSearchInput = document.getElementById("marksSearchInput");
     const addMarkSection = document.getElementById("addMarkSection");
     const marksContainer = document.querySelector(".marks-container");
-    const marksMessageDiv = document.getElementById("marksMessage"); // Get the message div
+    const marksMessageDiv = document.getElementById("marksMessage");
+    const marksCounter = document.getElementById("marksCounter"); // Bookmark Counter element
 
     if (
         !urlNameInput ||
         !urlInput ||
         !exactMatchCheckbox ||
         !addMarkButton ||
-        !syncBookmarksButton || // Ensure new button is found
+        !syncBookmarksButton ||
         !marksListContainer ||
         !marksSearchContainer ||
         !marksSearchInput ||
         !addMarkSection ||
         !marksContainer ||
-        !marksMessageDiv // Ensure message div is found
+        !marksMessageDiv ||
+        !marksCounter
     ) {
         console.error(
             "Marks feature: Essential DOM elements not found after initMarksFeature call.",
@@ -131,8 +133,8 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     };
 
     /**
-     * Navigates the interactive elements in the Marks view (input fields, add button, search input, bookmark list).
-     * This function manages the focus and the `selectedMarkIndex` for the list.
+     * Navigates the interactive elements within the marks list.
+     * This function is responsible for cycling through the list items.
      * @param {string} direction "up" or "down".
      */
     const navigateMarksList = (direction) => {
@@ -141,60 +143,30 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         }
 
         const items = marksListContainer.querySelectorAll(".mark-item");
-        let focusableElements = [];
+        const numItems = items.length;
 
-        if (!addMarkSection.classList.contains("hidden")) {
-            focusableElements.push(urlNameInput, urlInput, exactMatchCheckbox, addMarkButton, syncBookmarksButton); // Include sync button
-        }
-        if (alwaysShowSearchInput || isMarksSearchActive) {
-            focusableElements.push(marksSearchInput);
-        }
-        focusableElements.push(...Array.from(items));
-
-        let currentFocusIndex = -1;
-        const activeElement = document.activeElement;
-
-        for (let i = 0; i < focusableElements.length; i++) {
-            if (activeElement === focusableElements[i]) {
-                currentFocusIndex = i;
-                break;
-            }
+        if (numItems === 0) {
+            selectedMarkIndex = -1;
+            highlightMarkItem();
+            return;
         }
 
-        let newFocusIndex = currentFocusIndex;
+        let newIndex = selectedMarkIndex;
 
         if (direction === "down") {
-            if (
-                currentFocusIndex === -1 ||
-                currentFocusIndex === focusableElements.length - 1
-            ) {
-                newFocusIndex = 0;
-            } else {
-                newFocusIndex++;
-            }
+            newIndex = (selectedMarkIndex + 1) % numItems; // Cycle down
         } else if (direction === "up") {
-            if (currentFocusIndex === -1 || currentFocusIndex === 0) {
-                newFocusIndex = focusableElements.length - 1;
-            } else {
-                newFocusIndex--;
-            }
+            newIndex = (selectedMarkIndex - 1 + numItems) % numItems; // Cycle up
         }
 
-        if (newFocusIndex !== -1 && focusableElements[newFocusIndex]) {
-            focusableElements[newFocusIndex].focus();
-
-            if (focusableElements[newFocusIndex].classList.contains("mark-item")) {
-                selectedMarkIndex = Array.from(items).indexOf(
-                    focusableElements[newFocusIndex],
-                );
-            } else {
-                selectedMarkIndex = -1;
-            }
-        } else {
-            selectedMarkIndex = -1;
-        }
+        selectedMarkIndex = newIndex;
         highlightMarkItem();
+        // Ensure the newly selected item receives focus
+        if (items[selectedMarkIndex] && document.activeElement !== items[selectedMarkIndex]) {
+            items[selectedMarkIndex].focus();
+        }
     };
+
 
     /**
      * Activates (opens URL) the currently selected bookmark item.
@@ -299,11 +271,13 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
             }
 
             renderBookmarks();
+            displayMarksCounter(filteredMarksResults); // Initial count display
         } catch (error) {
             console.error("Error loading bookmarks:", error);
             bookmarks = [];
             filteredMarksResults = [];
             renderBookmarks();
+            displayMarksCounter(filteredMarksResults); // Display 0 if error
         }
     };
 
@@ -347,6 +321,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
                 marksListContainer.appendChild(msg);
             }
             selectedMarkIndex = -1;
+            displayMarksCounter(listToRender); // Update count for no results
             return;
         } else {
             if (noMarksMessage) {
@@ -450,7 +425,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
                     (b) => b.url === mark.url && b.name === mark.name,
                 );
                 if (originalMarkIndex > -1) {
-                    bookmarks[originalMarkIndex].searchableInTabSearch = e.target.checked;
+                    bookmarks[originalIndex].searchableInTabSearch = e.target.checked;
                     await saveBookmarks();
                 }
             });
@@ -542,6 +517,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
                 listToRender.length > 0 ? listToRender.length - 1 : -1;
         }
         highlightMarkItem();
+        displayMarksCounter(listToRender); // Update count after rendering
 
         if (editingMarkIndex !== -1) {
             const renameInput = document.getElementById("markRenameInput");
@@ -636,6 +612,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         urlNameInput.focus();
         selectedMarkIndex = -1;
         highlightMarkItem();
+        displayMarksCounter(bookmarks); // Update count after adding
     };
 
     /**
@@ -668,6 +645,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
                     filteredMarksResults = [...bookmarks];
                     renderBookmarks();
                 }
+                displayMarksCounter(filteredMarksResults); // Update count after removal
             }
         }
     };
@@ -684,16 +662,35 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
             const indexToRemove = selectedMarkIndex;
             await removeBookmark(indexToRemove);
 
+            // Recalculate selectedIndex to stay on the list if possible
             if (filteredMarksResults.length === 0) {
                 selectedMarkIndex = -1;
+                // If no items left, try to focus on search input, then URL name input, then body
+                if (marksSearchInput && !marksSearchInput.classList.contains('hidden')) {
+                    marksSearchInput.focus();
+                } else if (urlNameInput && !urlNameInput.classList.contains('hidden')) {
+                    urlNameInput.focus();
+                } else {
+                    document.body.focus();
+                }
             } else if (indexToRemove < filteredMarksResults.length) {
                 selectedMarkIndex = indexToRemove;
-            } else {
+                // Ensure focus remains on the newly highlighted item
+                const newFocusItem = marksListContainer.querySelector(`[data-index="${selectedMarkIndex}"]`);
+                if (newFocusItem) {
+                    newFocusItem.focus();
+                }
+            } else { // Deleted the last item, move to the new last item
                 selectedMarkIndex = filteredMarksResults.length - 1;
+                const newFocusItem = marksListContainer.querySelector(`[data-index="${selectedMarkIndex}"]`);
+                if (newFocusItem) {
+                    newFocusItem.focus();
+                }
             }
             selectedMarkIndex = Math.max(-1, selectedMarkIndex);
 
             highlightMarkItem();
+            displayMarksCounter(filteredMarksResults); // Update count after removal
         }
     };
 
@@ -715,6 +712,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         selectedMarkIndex = filteredMarksResults.length > 0 ? 0 : -1;
         renderBookmarks();
         highlightMarkItem();
+        displayMarksCounter(filteredMarksResults); // Update count after search
     };
 
     /**
@@ -731,6 +729,24 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         filteredMarksResults = [...bookmarks];
         selectedMarkIndex = -1;
         renderBookmarks();
+        displayMarksCounter(bookmarks); // Update count after clearing search
+    };
+
+    /**
+     * Updates the display of the bookmark counter.
+     * @param {Array<Object>} list The list of bookmarks currently being displayed (or the full list).
+     */
+    const displayMarksCounter = (list) => {
+        if (marksCounter) {
+            const count = list ? list.length : 0;
+            marksCounter.textContent = `(${count} bookmarks)`;
+            // Optionally, add a class for styling if the count is 0
+            if (count === 0) {
+                marksCounter.classList.add("no-bookmarks-count");
+            } else {
+                marksCounter.classList.remove("no-bookmarks-count");
+            }
+        }
     };
 
     /**
@@ -855,6 +871,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
             } else {
                 document.body.focus();
             }
+            displayMarksCounter(filteredMarksResults); // Update count after rename
         }
     };
 
@@ -881,11 +898,12 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
             } else {
                 document.body.focus();
             }
+            displayMarksCounter(filteredMarksResults); // Update count after canceling rename
         }
     };
 
     /**
-     * NEW: Displays a temporary message in the marks view.
+     * Displays a temporary message in the marks view.
      * @param {string} message The message to display.
      * @param {string} type The type of message ("success", "error", or "info").
      */
@@ -909,7 +927,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     };
 
     /**
-     * NEW: Function to recursively process bookmark tree nodes from the browser.
+     * Function to recursively process bookmark tree nodes from the browser.
      * It identifies actual bookmarks and adds unique ones to a collection.
      * @param {chrome.bookmarks.BookmarkTreeNode} node The current bookmark node to process.
      * @param {Set<string>} existingUrls A set of URLs already present in the extension's bookmarks (normalized).
@@ -938,7 +956,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     };
 
     /**
-     * NEW: Fetches all browser bookmarks and adds unique ones to the extension's list.
+     * Fetches all browser bookmarks and adds unique ones to the extension's list.
      */
     const syncBrowserBookmarks = async () => {
         console.log("--- Starting Browser Bookmark Sync ---");
@@ -983,106 +1001,130 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         const activeElement = document.activeElement;
         const items = marksListContainer.querySelectorAll(".mark-item");
 
-        if (editingMarkIndex !== -1) {
-            const renameInput = document.getElementById("markRenameInput");
-            if (activeElement === renameInput) {
-                if (e.key === "Enter" || e.key === "Escape") {
-                    return;
+        // Determine if the active element is a list item
+        const isListItemFocused = activeElement.closest(".mark-item") !== null;
+
+        // Determine if an input field (excluding the rename input which has its own handler) is currently focused
+        const isGeneralInputFocused = activeElement === urlNameInput ||
+                                      activeElement === urlInput;
+        const isSearchInputFocused = activeElement === marksSearchInput;
+        const isRenameInputFocused = activeElement.classList.contains("marks-rename-input");
+
+        // If a rename input is focused, handle Enter/Escape and allow other keys for typing
+        if (isRenameInputFocused) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                finishRenamingMark(activeElement.value);
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                cancelRenamingMark();
+            }
+            return; // Allow other keys to be typed in the rename input
+        }
+
+        // Define all focusable elements in the correct order for Arrow key navigation
+        let allFocusableElements = [];
+        if (!addMarkSection.classList.contains("hidden")) {
+            allFocusableElements.push(urlNameInput, urlInput, exactMatchCheckbox, addMarkButton, syncBookmarksButton);
+        }
+        if (alwaysShowSearchInput || isMarksSearchActive) {
+            allFocusableElements.push(marksSearchInput);
+        }
+        allFocusableElements.push(...Array.from(items));
+
+
+        // --- Arrow Key Navigation (Non-Cycling for Full View Navigation) ---
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault(); // Prevent default browser scroll behavior
+
+            const currentIndex = allFocusableElements.indexOf(activeElement);
+            let newIndex;
+
+            if (e.key === "ArrowDown") {
+                // Move down, but stop at the last element, don't cycle
+                newIndex = currentIndex === -1 || currentIndex >= allFocusableElements.length - 1
+                    ? allFocusableElements.length - 1 // Stay at last or go to last
+                    : currentIndex + 1;
+            } else { // ArrowUp
+                // Move up, but stop at the first element, don't cycle
+                newIndex = currentIndex === -1 || currentIndex <= 0
+                    ? 0 // Stay at first or go to first
+                    : currentIndex - 1;
+            }
+
+            // Explicitly set focus to the new element
+            if (allFocusableElements[newIndex]) {
+                allFocusableElements[newIndex].focus();
+
+                // Update selectedMarkIndex only if the newly focused element is a mark-item
+                if (allFocusableElements[newIndex].classList.contains('mark-item')) {
+                    selectedMarkIndex = Array.from(items).indexOf(allFocusableElements[newIndex]);
+                } else {
+                    selectedMarkIndex = -1; // No mark item selected
                 }
-                return;
+                highlightMarkItem(); // Re-highlight the list to reflect new selection
             }
+            return; // Consume the event
         }
 
-        if (
-            !e.altKey &&
-            (activeElement === urlNameInput ||
-                activeElement === urlInput ||
-                activeElement === marksSearchInput)
-        ) {
-            if (e.key === "j" || e.key === "k") {
-                return;
+        // --- J/K Key Navigation (Cycling within List) ---
+        // 'j' and 'k' should only navigate if a list item is focused.
+        // If any input is focused, they should be typable characters.
+        if ((e.key === "j" || e.key === "k") && !e.ctrlKey && !e.altKey) {
+            if (isListItemFocused) {
+                e.preventDefault(); // Prevent typing 'j' or 'k'
+                navigateMarksList(e.key === "j" ? "down" : "up"); // This function handles cycling
+                return; // Consume the event
             }
-        }
-
-        if (editingMarkIndex !== -1 && e.key !== "Escape") {
-            e.preventDefault();
+            // If not a list item, allow 'j' or 'k' to be typed in any input
             return;
         }
 
-
-        if (e.key === "ArrowDown" || e.key === "j" || (e.altKey && e.key === "j")) {
+        // --- Other Actions ---
+        if (e.key === "Enter") {
             e.preventDefault();
-            navigateMarksList("down");
-        } else if (
-            e.key === "ArrowUp" ||
-            e.key === "k" ||
-            (e.altKey && e.key === "k")
-        ) {
-            e.preventDefault();
-            navigateMarksList("up");
-        } else if (e.key === "Enter") {
-            e.preventDefault();
-
-            if (
-                document.activeElement === addMarkButton &&
-                !addMarkSection.classList.contains("hidden")
-            ) {
+            if (activeElement === addMarkButton) {
                 addBookmark();
-            } else if (document.activeElement === syncBookmarksButton) { // NEW: Handle Enter on Sync Button
+            } else if (activeElement === syncBookmarksButton) {
                 syncBrowserBookmarks();
-            }
-            else if (
-                (document.activeElement === urlNameInput ||
-                    document.activeElement === urlInput) &&
-                !addMarkSection.classList.contains("hidden")
-            ) {
-                addBookmark();
-            } else if (activeElement === marksSearchInput) {
-                if (filteredMarksResults.length > 0) {
-                    selectedMarkIndex = 0;
-                    activateSelectedMarkItem();
-                } else {
-                    clearMarksSearchState();
-                }
-            } else if (
-                selectedMarkIndex !== -1 &&
-                document.activeElement.closest(".mark-item")
-            ) {
+            } else if (isListItemFocused && selectedMarkIndex !== -1) { // Only activate if a list item is focused AND selected
                 activateSelectedMarkItem();
             }
-        } else if (e.key === "/" && !alwaysShowSearchInput) {
+        } else if (e.key === "d" || e.key === "D") {
+            // 'd' or 'D' should only delete if NOT in any input field AND (Ctrl is pressed OR a list item is focused).
+            if (!isGeneralInputFocused && !isSearchInputFocused && !isRenameInputFocused && (e.ctrlKey || isListItemFocused)) {
+                e.preventDefault();
+                removeSelectedMarkItem();
+            }
+        } else if (e.key === "r" || e.key === "R") {
+            // 'r' or 'R' should only rename if NOT in any input field AND a list item is focused.
+            if (!isGeneralInputFocused && !isSearchInputFocused && !isRenameInputFocused && isListItemFocused) {
+                e.preventDefault();
+                startRenamingMark();
+            }
+        } else if (e.key === "/") { // '/' should still toggle or focus search input
             e.preventDefault();
-            if (!isMarksSearchActive) {
+            if (!alwaysShowSearchInput) {
                 isMarksSearchActive = true;
                 marksSearchContainer.classList.remove("hidden");
             }
             marksSearchInput.focus();
-            selectedMarkIndex = -1;
+            selectedMarkIndex = -1; // Reset selection when moving focus to search
             highlightMarkItem();
             performMarksSearch(currentMarksSearchQuery);
-        } else if (
-            e.key === "/" &&
-            alwaysShowSearchInput &&
-            activeElement !== marksSearchInput
-        ) {
-            e.preventDefault();
-            marksSearchInput.focus();
-        } else if (e.key === "K") {
-            e.preventDefault();
-            moveMarkItem("up");
-        } else if (e.key === "J") {
-            e.preventDefault();
-            moveMarkItem("down");
-        } else if ((e.ctrlKey && e.key === "d") || e.key === "d") {
-            e.preventDefault();
-            removeSelectedMarkItem();
-        } else if (e.key === "r" || e.key === "R") {
-            e.preventDefault();
-            if (selectedMarkIndex !== -1 && filteredMarksResults.length > 0) {
-                startRenamingMark();
+        } else if (e.key === "K" && e.shiftKey) { // Shift+K for move up (original behavior)
+            if (!isGeneralInputFocused && !isSearchInputFocused && !isRenameInputFocused) {
+                e.preventDefault();
+                moveMarkItem("up");
+            }
+        } else if (e.key === "J" && e.shiftKey) { // Shift+J for move down (original behavior)
+            if (!isGeneralInputFocused && !isSearchInputFocused && !isRenameInputFocused) {
+                e.preventDefault();
+                moveMarkItem("down");
             }
         }
     };
+
 
     /**
      * Attaches keyboard event listeners for the Marks view.
@@ -1111,31 +1153,37 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
                         focusBookmarkByUrl(urlToFocus);
                         chrome.storage.session.remove(INITIAL_MARK_URL_KEY);
                     } else {
-                        if (initialAlwaysShowSearchInput) {
+                        // Initial focus logic improved for clarity and consistency
+                        if (alwaysShowSearchInput) {
                             marksSearchInput.focus();
-                        } else if (initialEnableMarksAddition) {
-                            addMarkButton.focus();
+                        } else if (initialEnableMarksAddition && !addMarkSection.classList.contains('hidden')) {
+                            urlNameInput.focus(); // Focus the first input if section visible
                         } else if (bookmarks.length > 0) {
-                            const firstMarkItem =
-                                marksListContainer.querySelector(".mark-item");
+                            selectedMarkIndex = 0;
+                            const firstMarkItem = marksListContainer.querySelector(".mark-item");
                             if (firstMarkItem) {
-                                selectedMarkIndex = 0;
                                 firstMarkItem.focus();
-                                highlightMarkItem();
+                            }
+                        } else {
+                            // If nothing else to focus, maybe focus the add button or body
+                            if (addMarkButton && !addMarkSection.classList.contains('hidden')) {
+                                addMarkButton.focus();
                             } else {
                                 document.body.focus();
                             }
-                        } else {
-                            document.body.focus();
                         }
+                        highlightMarkItem(); // Ensure initial selection is highlighted
                     }
                 });
             },
         );
 
+        // Reset selectedIndex and editingIndex when attaching listeners
         selectedMarkIndex = -1;
         editingMarkIndex = -1;
         highlightMarkItem();
+        // Initial call to display the count when listeners are attached (view becomes active)
+        displayMarksCounter(bookmarks);
     };
 
     /**
@@ -1157,6 +1205,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
 
     document.addEventListener("click", (e) => {
         const marksContent = document.querySelector(".marks-content");
+        // Clear search state only if marksSearchInput is active (not always visible) and click is outside content
         if (
             isMarksSearchActive &&
             marksContent &&
@@ -1168,7 +1217,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         }
     });
 
-    // NEW: Attach click listener for the Sync Bookmarks button
+    // Attach click listener for the Sync Bookmarks button
     syncBookmarksButton.addEventListener("click", syncBrowserBookmarks);
 
     window.refreshMarks = loadBookmarks;

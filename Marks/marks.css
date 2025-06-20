@@ -26,15 +26,44 @@
   gap: 15px;
 }
 
-.marks-container h2 {
+/* NEW: Header for the bookmark list, containing title and counter */
+.marks-list-header {
+  display: flex;
+  align-items: baseline; /* Align text baselines */
+  gap: 10px; /* Space between title and counter */
+  margin-bottom: 10px; /* Space below the header */
+}
+
+
+.marks-container h3.Title { /* Modified to specifically target h3 with Title class */
   color: var(--color-accent-blue);
   margin-top: 0;
-  margin-bottom: 10px;
+  margin-bottom: 0; /* Remove bottom margin to align with counter */
   font-size: 1.8em;
-  text-align: center;
-  border-bottom: 1px solid var(--color-border-medium);
-  padding-bottom: 10px;
+  /* Removed text-align: center; as it will be part of a flex row now */
+  border-bottom: none; /* Remove border from here, if desired, to style the container instead */
+  padding-bottom: 0;
+  flex-shrink: 0; /* Prevent title from shrinking */
 }
+
+/* NEW: Style for the bookmark counter */
+.marks-counter {
+  font-size: 1em;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  background-color: var(--color-background-secondary);
+  padding: 4px 8px;
+  border-radius: 5px;
+  flex-shrink: 0; /* Prevent counter from shrinking */
+}
+
+/* Optional: Style for when there are no bookmarks */
+.marks-counter.no-bookmarks-count {
+  color: var(--color-text-muted);
+  font-style: italic;
+  background-color: transparent;
+}
+
 
 .input-group {
   display: flex;
