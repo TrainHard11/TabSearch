@@ -515,3 +515,81 @@
   padding-top: 5px;
   border-top: 1px dotted var(--color-border-dashed); /* subtle separator */
 }
+
+/* Styles for the confirmation dialog (append these to your existing marks.css) */
+.confirmation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.confirmation-box {
+    background-color: var(--color-background-tertiary); /* Using your variable */
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    color: var(--color-text-primary); /* Using your variable */
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    max-width: 350px;
+    text-align: center;
+    border: 1px solid var(--color-border-dark); /* Using your variable */
+}
+
+.confirmation-message {
+    margin-bottom: 20px;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.confirmation-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.confirm-button {
+    border: none;
+    padding: 10px 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    min-width: 100px;
+}
+
+.confirm-yes {
+    background-color: #f04747; /* Red for destructive action */
+    color: white;
+}
+
+.confirm-yes:hover {
+    background-color: #cc3a3a;
+    transform: scale(0.98);
+}
+
+.confirm-yes:active { /* Added active state */
+    transform: scale(0.95);
+}
+
+.confirm-no {
+    background-color: #72767d; /* Grey for cancel */
+    color: white;
+}
+
+.confirm-no:hover {
+    background-color: #626569;
+    transform: scale(0.98);
+}
+
+.confirm-no:active { /* Added active state */
+    transform: scale(0.95);
+}

@@ -259,10 +259,13 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
             bookmarks = Array.isArray(result[STORAGE_KEY])
                 ? result[STORAGE_KEY].map((mark) => ({
                     ...mark,
-                    exactMatch: mark.exactMatch ?? false,
+                    // Ensure searchableInTabSearch defaults to false if not present in stored data
                     searchableInTabSearch: mark.searchableInTabSearch ?? false,
+                    exactMatch: mark.exactMatch ?? false, // Also ensure exactMatch defaults if missing
                 }))
                 : [];
+
+            console.log("DEBUG: Bookmarks loaded from storage:", JSON.parse(JSON.stringify(bookmarks))); // Deep copy for logging state
 
             if (!isMarksSearchActive || currentMarksSearchQuery === "") {
                 filteredMarksResults = [...bookmarks];
@@ -287,6 +290,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     const saveBookmarks = async () => {
         try {
             await chrome.storage.local.set({ [STORAGE_KEY]: bookmarks });
+            console.log("DEBUG: Bookmarks saved to storage:", JSON.parse(JSON.stringify(bookmarks))); // Deep copy for logging state
         } catch (error) {
             console.error("Error saving bookmarks:", error);
         }
@@ -430,8 +434,9 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
 
                 const currentMarkToUpdate = mark; // 'mark' is from the forEach loop, captured in closure
                 console.log("DEBUG: Checkbox change event fired for:", currentMarkToUpdate.name, currentMarkToUpdate.url);
-                console.log("DEBUG: Current state of 'filteredMarksResults' (snapshot):", filteredMarksResults);
-                console.log("DEBUG: Current state of 'bookmarks' (main array snapshot):", bookmarks);
+                console.log("DEBUG: Event target checked state:", e.target.checked);
+                console.log("DEBUG: Current state of 'filteredMarksResults' (snapshot):", JSON.parse(JSON.stringify(filteredMarksResults)));
+                console.log("DEBUG: Current state of 'bookmarks' (main array snapshot before findIndex):", JSON.parse(JSON.stringify(bookmarks)));
 
 
                 // Find the original index in the main 'bookmarks' array
@@ -444,9 +449,8 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
                 console.log("DEBUG: Found original index:", originalMarkIndex);
 
                 if (originalMarkIndex > -1) {
-                    // This is the line that supposedly threw ReferenceError
                     bookmarks[originalMarkIndex].searchableInTabSearch = e.target.checked;
-                    await saveBookmarks();
+                    await saveBookmarks(); // This explicitly calls the saveBookmarks function
                     console.log(`DEBUG: Bookmark updated and saved: ${currentMarkToUpdate.name}, new searchable: ${e.target.checked}`);
                     displayMarksMessage(`Bookmark "${currentMarkToUpdate.name}" visibility updated.`, "success");
                 } else {
@@ -952,6 +956,55 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     };
 
     /**
+     * Dynamically shows a confirmation dialog.
+     * @param {string} message The message to display in the confirmation dialog.
+     * @returns {Promise<boolean>} A promise that resolves to true if confirmed, false if cancelled.
+     */
+    const showConfirmation = (message) => {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.classList.add('confirmation-overlay');
+
+            const confirmBox = document.createElement('div');
+            confirmBox.classList.add('confirmation-box');
+
+            const msgText = document.createElement('p');
+            msgText.classList.add('confirmation-message');
+            msgText.textContent = message;
+
+            const buttonContainer = document.createElement('div');
+            buttonContainer.classList.add('confirmation-buttons');
+
+            const yesBtn = document.createElement('button');
+            yesBtn.classList.add('confirm-button', 'confirm-yes');
+            yesBtn.textContent = 'Yes, Delete All';
+
+            const noBtn = document.createElement('button');
+            noBtn.classList.add('confirm-button', 'confirm-no');
+            noBtn.textContent = 'Cancel';
+
+            yesBtn.onclick = () => {
+                overlay.remove();
+                resolve(true);
+            };
+            noBtn.onclick = () => {
+                overlay.remove();
+                resolve(false);
+            };
+
+            buttonContainer.appendChild(yesBtn);
+            buttonContainer.appendChild(noBtn);
+            confirmBox.appendChild(msgText);
+            confirmBox.appendChild(buttonContainer);
+            overlay.appendChild(confirmBox);
+
+            document.body.appendChild(overlay);
+            yesBtn.focus(); // Focus on the "Yes" button for quick confirmation via Enter
+        });
+    };
+
+
+    /**
      * Function to recursively process bookmark tree nodes from the browser.
      * It identifies actual bookmarks and adds unique ones to a collection.
      * @param {chrome.bookmarks.BookmarkTreeNode} node The current bookmark node to process.
@@ -1016,6 +1069,34 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         }
     };
 
+    /**
+     * Deletes all bookmarks after user confirmation.
+     */
+    const deleteAllBookmarks = async () => {
+        const confirmed = await showConfirmation("Are you sure you want to delete ALL bookmarks? This action cannot be undone.");
+
+        if (confirmed) {
+            bookmarks = []; // Clear the array
+            await saveBookmarks();
+            selectedMarkIndex = -1;
+            editingMarkIndex = -1;
+            clearMarksSearchState(); // Clear search if active
+            renderBookmarks(); // Re-render the empty list
+            displayMarksCounter(bookmarks); // Update count to 0
+            displayMarksMessage("All bookmarks deleted successfully.", "success");
+            // After deletion, put focus on a sensible default, e.g., URL name input
+            if (urlNameInput && !addMarkSection.classList.contains('hidden')) {
+                urlNameInput.focus();
+            } else if (marksSearchInput && !marksSearchInput.classList.contains('hidden')) {
+                marksSearchInput.focus();
+            } else {
+                document.body.focus();
+            }
+        } else {
+            displayMarksMessage("Deletion cancelled.", "info");
+        }
+    };
+
 
     /**
      * Handles keyboard events specific to the Marks view.
@@ -1059,6 +1140,16 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
             return; // Allow other keys to be typed in the rename input
         }
 
+        // --- Global Shortcut: Ctrl+Shift+D to Delete All Bookmarks ---
+        // This shortcut should work regardless of focus, but only if not in an input field
+        if (e.ctrlKey && e.shiftKey && (e.key === "d" || e.key === "D")) {
+            if (!isAnyInputFocused) {
+                e.preventDefault();
+                deleteAllBookmarks();
+                return; // Consume the event
+            }
+        }
+
         // --- Arrow Key Navigation (Non-Cycling for Full View Navigation) ---
         if (e.key === "ArrowDown" || e.key === "ArrowUp") {
             e.preventDefault(); // Prevent default browser scroll behavior
@@ -1068,12 +1159,12 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
 
             if (e.key === "ArrowDown") {
                 // Move down, but stop at the last element, don't cycle
-                newIndex = currentIndex === -1 || currentIndex >= allFocusableElements.length - 1
+                newIndex = (currentIndex === -1 || currentIndex >= allFocusableElements.length - 1)
                     ? allFocusableElements.length - 1 // Stay at last or go to last
                     : currentIndex + 1;
             } else { // ArrowUp
                 // Move up, but stop at the first element, don't cycle
-                newIndex = currentIndex === -1 || currentIndex <= 0
+                newIndex = (currentIndex === -1 || currentIndex <= 0)
                     ? 0 // Stay at first or go to first
                     : currentIndex - 1;
             }
@@ -1223,7 +1314,7 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         renderBookmarks();
     };
 
-    await loadBookmarks();
+    await loadBookmarks(); // Initial load when feature initializes
 
     marksSearchInput.addEventListener("input", () => {
         performMarksSearch(marksSearchInput.value);
