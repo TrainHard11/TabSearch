@@ -708,7 +708,6 @@ window.initHarpoonFeature = async () => {
 
   /**
    * Overwrites the main harpoon list with items from a source list (Work or Fun).
-   * The source list remains intact.
    * @param {Array<Object>} sourceList The list to copy items from (workTabs or funTabs).
    * @param {string} sourceListKey The storage key for the source list (used for saving).
    */
@@ -732,9 +731,57 @@ window.initHarpoonFeature = async () => {
   };
 
   /**
+   * Overwrites a target list (Work or Fun) with items from the Harpoon list.
+   * @param {string} targetListType 'work' or 'fun'.
+   */
+  const overwriteTargetListWithHarpoon = async (targetListType) => {
+    let targetListArray;
+    let targetSaveFunction;
+    let targetRenderFunction;
+    let maxCapacity;
+
+    if (targetListType === 'work') {
+        targetListArray = workTabs;
+        targetSaveFunction = saveWorkTabs;
+        targetRenderFunction = renderWorkTabs;
+        maxCapacity = MAX_WORK_LINKS;
+    } else if (targetListType === 'fun') {
+        targetListArray = funTabs;
+        targetSaveFunction = saveFunTabs;
+        targetRenderFunction = renderFunTabs;
+        maxCapacity = MAX_FUN_LINKS;
+    } else {
+        console.warn("Invalid targetListType provided to overwriteTargetListWithHarpoon:", targetListType);
+        return;
+    }
+
+    // Clear the target list
+    targetListArray.length = 0; // Efficiently clears the array while keeping reference
+
+    // Copy items from harpoonedTabs to targetListArray, respecting max capacity
+    for (let i = 0; i < harpoonedTabs.length && i < maxCapacity; i++) {
+        targetListArray.push({ ...harpoonedTabs[i] }); // Create shallow copy of item
+    }
+
+    await targetSaveFunction();
+    targetRenderFunction();
+
+    // Reset all selections
+    selectedHarpoonIndex = -1;
+    selectedWorkIndex = -1;
+    selectedFunIndex = -1;
+
+    // Set selection on the first item of the now updated target list
+    if (targetListArray.length > 0) {
+        if (targetListType === 'work') selectedWorkIndex = 0;
+        else if (targetListType === 'fun') selectedFunIndex = 0;
+    }
+    highlightAllLists();
+  };
+
+  /**
    * Adds the currently selected Harpooned tab to the specified target list (Work or Fun).
-   * Note: This function is still here but no longer bound to Ctrl+1/Ctrl+2.
-   * If you need to re-enable adding to work/fun lists, you'd need to bind it to new keys.
+   * Note: This function is still here but no longer bound to any keybindings in harpoonKeydownHandler.
    * @param {Array<Object>} targetList The array representing the target list (workTabs or funTabs).
    * @param {string} targetListKey The storage key for the target list (LS_WORK_TABS_KEY or LS_FUN_TABS_KEY).
    * @param {number} maxCapacity The maximum number of items allowed in the target list.
@@ -975,15 +1022,25 @@ window.initHarpoonFeature = async () => {
       e.preventDefault();
       removeSelectedItem(); // This now removes from any selected list
     }
-    // Overwrite Harpoon with Work List (Ctrl+1) - now Ctrl+1 (was Ctrl+Alt+1)
-    else if (e.ctrlKey && e.key === "1") {
+    // Overwrite Harpoon with Work List (Ctrl+1) - Work -> Harpoon
+    else if (e.ctrlKey && e.key === "1" && !e.altKey) {
         e.preventDefault();
         overwriteHarpoonList(workTabs, LS_WORK_TABS_KEY);
     }
-    // Overwrite Harpoon with Fun List (Ctrl+2) - now Ctrl+2 (was Ctrl+Alt+2)
-    else if (e.ctrlKey && e.key === "2") {
+    // Overwrite Harpoon with Fun List (Ctrl+2) - Fun -> Harpoon
+    else if (e.ctrlKey && e.key === "2" && !e.altKey) {
         e.preventDefault();
         overwriteHarpoonList(funTabs, LS_FUN_TABS_KEY);
+    }
+    // NEW: Overwrite Work List with Harpoon List (Ctrl+Alt+1) - Harpoon -> Work
+    else if (e.ctrlKey && e.altKey && e.key === "1") {
+        e.preventDefault();
+        overwriteTargetListWithHarpoon('work');
+    }
+    // NEW: Overwrite Fun List with Harpoon List (Ctrl+Alt+2) - Harpoon -> Fun
+    else if (e.ctrlKey && e.altKey && e.key === "2") {
+        e.preventDefault();
+        overwriteTargetListWithHarpoon('fun');
     }
     // Toggle Work/Fun Lists Visibility (Ctrl+T)
     else if (e.ctrlKey && e.key === "t") {
