@@ -74,7 +74,7 @@ window.initHarpoonFeature = async () => {
   };
 
   /**
-   * Navigates within a single list.
+   * Navigates selection/focus within a single list.
    * @param {string} direction "up" or "down".
    * @param {Array<Object>} list The array representing the list.
    * @param {number} currentIndex The current selected index for that list.
@@ -107,7 +107,7 @@ window.initHarpoonFeature = async () => {
   };
 
   /**
-   * Cycles through all visible lists continuously.
+   * Cycles selection/focus through all visible lists continuously.
    * @param {string} direction "up" or "down".
    * @returns {void} Updates the global selected indices.
    */
@@ -213,59 +213,393 @@ window.initHarpoonFeature = async () => {
   };
 
   /**
-   * Moves the currently highlighted harpooned tab up or down in the list (non-cycling).
-   * This function is specific to the main harpoon list.
-   * @param {string} direction "up" or "down".
+   * Renders the list of harpooned tabs in the UI.
+   * Internal function, not exposed globally.
    */
-  const moveHarpoonItem = async (direction) => {
-    if (selectedHarpoonIndex === -1 || harpoonedTabs.length <= 1) {
-      return; // Nothing to move or only one item
+  const renderHarpoonedTabs = () => {
+    harpoonListContainer.innerHTML = ""; // Clear existing list
+
+    if (harpoonedTabs.length === 0) {
+      noHarpoonedMessage.classList.remove("hidden");
+      harpoonListContainer.appendChild(noHarpoonedMessage);
+      return;
+    } else {
+      noHarpoonedMessage.classList.add("hidden");
     }
 
-    let newIndex = selectedHarpoonIndex;
+    harpoonedTabs.forEach((harpoonedTab, index) => {
+      const itemElement = createHarpoonItemElement(
+        harpoonedTab,
+        index,
+        "harpoon",
+      );
+      harpoonListContainer.appendChild(itemElement);
+    });
+  };
+
+  /**
+   * Renders the list of work tabs in the UI.
+   * Internal function, not exposed globally.
+   */
+  const renderWorkTabs = () => {
+    workListContainer.innerHTML = ""; // Clear existing list
+
+    if (workTabs.length === 0) {
+      noWorkMessage.classList.remove("hidden");
+      workListContainer.appendChild(noWorkMessage);
+      return;
+    } else {
+      noWorkMessage.classList.add("hidden");
+    }
+
+    workTabs.forEach((workItem, index) => {
+      const itemElement = createHarpoonItemElement(workItem, index, "work");
+      workListContainer.appendChild(itemElement);
+    });
+  };
+
+  /**
+   * Renders the list of fun tabs in the UI.
+   * Internal function, not exposed globally.
+   */
+  const renderFunTabs = () => {
+    funListContainer.innerHTML = ""; // Clear existing list
+
+    if (funTabs.length === 0) {
+      noFunMessage.classList.remove("hidden");
+      funListContainer.appendChild(noFunMessage);
+      return;
+    } else {
+      noFunMessage.classList.add("hidden");
+    }
+
+    funTabs.forEach((funItem, index) => {
+      const itemElement = createHarpoonItemElement(funItem, index, "fun");
+      funListContainer.appendChild(itemElement);
+    });
+  };
+
+  /**
+   * Creates a single harpoon-like list item element.
+   * @param {Object} item The item data (url, title, favIconUrl).
+   * @param {number} index The index of the item in its list.
+   * @param {string} listType 'harpoon', 'work', or 'fun'.
+   * @returns {HTMLElement} The created list item div.
+   */
+  const createHarpoonItemElement = (item, index, listType) => {
+    const harpoonItem = document.createElement("div");
+    harpoonItem.classList.add("harpoon-item");
+    harpoonItem.dataset.index = index; // Store index for direct access
+    harpoonItem.dataset.url = item.url; // Store URL for identifying after re-render
+    harpoonItem.dataset.listType = listType; // Store list type for removal
+    harpoonItem.tabIndex = 0; // Make item focusable for keyboard navigation
+
+    const favicon = document.createElement("img");
+    favicon.classList.add("favicon");
+    favicon.alt = "icon";
+    favicon.src = item.favIconUrl || chrome.runtime.getURL("img/icon.png"); // Fallback icon
+
+    const harpoonInfo = document.createElement("div");
+    harpoonInfo.classList.add("harpoon-info");
+
+    const harpoonTitle = document.createElement("span");
+    harpoonTitle.classList.add("harpoon-title");
+    harpoonTitle.textContent = item.title;
+
+    const harpoonUrl = document.createElement("a");
+    harpoonUrl.classList.add("harpoon-url");
+    harpoonUrl.href = item.url;
+    harpoonUrl.textContent = item.url;
+    harpoonUrl.target = "_blank"; // Open in a new tab
+    // Prevent default navigation for the URL link within the item
+    harpoonUrl.addEventListener("click", (e) => {
+      e.preventDefault(); // Stop default browser action (opening URL)
+      e.stopPropagation(); // Stop event from bubbling up to the harpoonItem click listener
+    });
+
+    harpoonInfo.appendChild(harpoonTitle);
+    harpoonInfo.appendChild(harpoonUrl);
+
+    const actionButtonsContainer = document.createElement("div");
+    actionButtonsContainer.classList.add("harpoon-action-buttons");
+
+    // Add specific buttons based on list type
+    if (listType === "harpoon") {
+      // Up button (only for main harpoon list) - kept for click functionality if user doesn't use keyboard
+      const upButton = document.createElement("button");
+      upButton.classList.add("harpoon-move-button", "harpoon-move-up");
+      upButton.innerHTML = "▲"; // Up arrow character
+      upButton.title = "Move Up";
+      upButton.setAttribute("aria-label", "Move Harpooned Tab Up"); // Accessibility
+      upButton.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        selectedHarpoonIndex = index; // Set index before moving
+        highlightItem(harpoonListContainer, selectedHarpoonIndex); // Highlight immediately
+        await moveItemWithinList("harpoon", "up"); // Use the generalized function
+      });
+      actionButtonsContainer.appendChild(upButton);
+
+      // Down button (only for main harpoon list) - kept for click functionality
+      const downButton = document.createElement("button");
+      downButton.classList.add("harpoon-move-button", "harpoon-move-down");
+      downButton.innerHTML = "▼"; // Down arrow character
+      downButton.title = "Move Down";
+      downButton.setAttribute("aria-label", "Move Harpooned Tab Down"); // Accessibility
+      downButton.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        selectedHarpoonIndex = index; // Set index before moving
+        highlightItem(harpoonListContainer, selectedHarpoonIndex); // Highlight immediately
+        await moveItemWithinList("harpoon", "down"); // Use the generalized function
+      });
+      actionButtonsContainer.appendChild(downButton);
+    }
+
+    // Remove button (for all list types)
+    const removeButton = document.createElement("button");
+    removeButton.classList.add("remove-harpoon-button");
+    removeButton.innerHTML = "✕"; // X icon
+    removeButton.title = `Remove ${listType} Link`;
+    removeButton.setAttribute("aria-label", `Remove ${listType} Link`); // Accessibility
+    removeButton.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (listType === "harpoon") {
+        await removeHarpoonedTabFromList(item.url);
+        // After removal, adjust selected index if necessary
+        if (selectedHarpoonIndex >= harpoonedTabs.length) {
+          selectedHarpoonIndex =
+            harpoonedTabs.length > 0 ? harpoonedTabs.length - 1 : -1;
+        }
+        highlightItem(harpoonListContainer, selectedHarpoonIndex);
+      } else if (listType === "work") {
+        await removeWorkItem(item.url);
+        if (selectedWorkIndex >= workTabs.length) {
+          selectedWorkIndex = workTabs.length > 0 ? workTabs.length - 1 : -1;
+        }
+        highlightItem(workListContainer, selectedWorkIndex);
+      } else if (listType === "fun") {
+        await removeFunItem(item.url);
+        if (selectedFunIndex >= funTabs.length) {
+          selectedFunIndex = funTabs.length > 0 ? funTabs.length - 1 : -1;
+        }
+        highlightItem(funListContainer, selectedFunIndex);
+      }
+    });
+    actionButtonsContainer.appendChild(removeButton);
+
+    harpoonItem.appendChild(favicon);
+    harpoonItem.appendChild(harpoonInfo);
+    harpoonItem.appendChild(actionButtonsContainer);
+
+    harpoonItem.addEventListener("click", () => {
+      // Set the appropriate selected index based on the list type
+      if (listType === "harpoon") {
+        selectedHarpoonIndex = index;
+        selectedWorkIndex = -1; // Deselect other lists
+        selectedFunIndex = -1;
+      } else if (listType === "work") {
+        selectedWorkIndex = index;
+        selectedHarpoonIndex = -1; // Deselect other lists
+        selectedFunIndex = -1;
+      } else if (listType === "fun") {
+        selectedFunIndex = index;
+        selectedHarpoonIndex = -1; // Deselect other lists
+        selectedWorkIndex = -1;
+      }
+      // Highlight all lists (this will correctly highlight only the newly selected one)
+      highlightAllLists();
+
+      activateItem(item);
+    });
+
+    return harpoonItem;
+  };
+
+  /**
+   * Moves the currently highlighted item up or down within its current list.
+   * @param {string} listType 'harpoon', 'work', or 'fun'.
+   * @param {string} direction "up" or "down".
+   * @returns {boolean} True if the item was successfully moved within the list, false if at a boundary or invalid state.
+   */
+  const moveItemWithinList = async (listType, direction) => {
+    let listArray, currentSelectedIdx, saveFunction, renderFunction, listContainer;
+
+    if (listType === 'harpoon') {
+      listArray = harpoonedTabs;
+      currentSelectedIdx = selectedHarpoonIndex;
+      saveFunction = saveHarpoonedTabs;
+      renderFunction = renderHarpoonedTabs;
+      listContainer = harpoonListContainer;
+    } else if (listType === 'work') {
+      listArray = workTabs;
+      currentSelectedIdx = selectedWorkIndex;
+      saveFunction = saveWorkTabs;
+      renderFunction = renderWorkTabs;
+      listContainer = workListContainer;
+    } else if (listType === 'fun') {
+      listArray = funTabs;
+      currentSelectedIdx = selectedFunIndex;
+      saveFunction = saveFunTabs;
+      renderFunction = renderFunTabs;
+      listContainer = funListContainer;
+    } else {
+      console.warn("Invalid listType provided to moveItemWithinList:", listType);
+      return false;
+    }
+
+    if (currentSelectedIdx === -1 || listArray.length <= 1) {
+      return false; // Nothing selected, or only one item, so no within-list move is possible
+    }
+
+    let newIndex = currentSelectedIdx;
     if (direction === "up") {
-      if (selectedHarpoonIndex === 0) {
-        return; // Cannot move up from the first position
+      if (currentSelectedIdx === 0) {
+        return false; // Cannot move up from the first position within this list
       }
       newIndex--;
     } else if (direction === "down") {
-      if (selectedHarpoonIndex === harpoonedTabs.length - 1) {
-        return; // Cannot move down from the last position
+      if (currentSelectedIdx === listArray.length - 1) {
+        return false; // Cannot move down from the last position within this list
       }
       newIndex++;
     }
 
-    // Only perform move if the index actually changes
-    if (newIndex !== selectedHarpoonIndex) {
-      // Store the URL of the item being moved to identify it after re-render
-      const movedItemUrl = harpoonedTabs[selectedHarpoonIndex].url;
-
-      // Perform the swap using array destructuring for cleaner code
-      [harpoonedTabs[selectedHarpoonIndex], harpoonedTabs[newIndex]] = [
-        harpoonedTabs[newIndex],
-        harpoonedTabs[selectedHarpoonIndex],
-      ];
-
-      selectedHarpoonIndex = newIndex; // Update the selected index to the new position
-
-      await saveHarpoonedTabs();
-      renderHarpoonedTabs(); // Re-render the entire list
-
-      // Find the moved item's new DOM element and apply the highlight class
-      const movedElement = harpoonListContainer.querySelector(
-        `.harpoon-item[data-url="${movedItemUrl}"]`,
-      );
-      if (movedElement) {
-        movedElement.classList.add("moved-highlight");
-        // Remove the 'moved-highlight' class after a short delay
-        setTimeout(() => {
-          movedElement.classList.remove("moved-highlight");
-        }, 400); // Duration matches CSS transition for smooth fade-out
-      }
-
-      highlightItem(harpoonListContainer, selectedHarpoonIndex); // Re-highlight the item in its new position
+    // If newIndex is the same, no move occurred.
+    if (newIndex === currentSelectedIdx) {
+      return false;
     }
+
+    const movedItem = listArray[currentSelectedIdx];
+    const movedItemUrl = movedItem.url; // Store URL for highlighting later
+
+    // Perform the swap
+    [listArray[currentSelectedIdx], listArray[newIndex]] = [
+      listArray[newIndex],
+      listArray[currentSelectedIdx],
+    ];
+
+    // Update the correct global selected index
+    if (listType === 'harpoon') selectedHarpoonIndex = newIndex;
+    else if (listType === 'work') selectedWorkIndex = newIndex;
+    else if (listType === 'fun') selectedFunIndex = newIndex;
+
+    await saveFunction();
+    renderFunction(); // Re-render the specific list
+
+    // Apply the highlight to the moved item in its new position
+    const movedElement = listContainer.querySelector(
+        `.harpoon-item[data-url="${movedItemUrl}"]`,
+    );
+    if (movedElement) {
+        movedElement.classList.add("moved-highlight");
+        setTimeout(() => {
+            movedElement.classList.remove("moved-highlight");
+        }, 400); // Duration matches CSS transition
+    }
+    highlightAllLists(); // Re-highlight the item in its new position (and deselect others)
+    return true; // Move successfully occurred within list
   };
+
+
+  /**
+   * Moves the currently selected item between visible lists.
+   * @param {string} direction "up" or "down".
+   * @returns {boolean} True if the item was successfully moved between lists, false otherwise.
+   */
+  const moveItemBetweenLists = async (direction) => {
+    let currentListType = null;
+    let currentListArray = null;
+    let currentSelectedIndex = -1;
+
+    if (selectedHarpoonIndex !== -1) {
+      currentListType = 'harpoon';
+      currentListArray = harpoonedTabs;
+      currentSelectedIndex = selectedHarpoonIndex;
+    } else if (selectedWorkIndex !== -1 && workListVisible) {
+      currentListType = 'work';
+      currentListArray = workTabs;
+      currentSelectedIndex = selectedWorkIndex;
+    } else if (selectedFunIndex !== -1 && funListVisible) {
+      currentListType = 'fun';
+      currentListArray = funTabs;
+      currentSelectedIndex = selectedFunIndex;
+    }
+
+    if (!currentListType || currentSelectedIndex === -1 || currentListArray.length === 0) {
+      return false; // No item selected, or selected list is empty/hidden
+    }
+
+    const itemToMove = currentListArray[currentSelectedIndex];
+    if (!itemToMove) return false;
+
+    // Build a list of all *currently visible* lists that can be targets (including current list)
+    const allVisibleLists = [];
+    if (harpoonedTabs.length > 0 || currentListType === 'harpoon') allVisibleLists.push({ type: 'harpoon', data: harpoonedTabs, save: saveHarpoonedTabs, render: renderHarpoonedTabs, maxCapacity: MAX_HARPOON_LINKS, container: harpoonListContainer });
+    if (workListVisible) allVisibleLists.push({ type: 'work', data: workTabs, save: saveWorkTabs, render: renderWorkTabs, maxCapacity: MAX_WORK_LINKS, container: workListContainer });
+    if (funListVisible) allVisibleLists.push({ type: 'fun', data: funTabs, save: saveFunTabs, render: renderFunTabs, maxCapacity: MAX_FUN_LINKS, container: funListContainer });
+
+    // Filter out lists that are full and are not the current list (which is about to lose an item)
+    const eligibleLists = allVisibleLists.filter(list =>
+        list.type === currentListType || list.data.length < list.maxCapacity
+    );
+
+    const currentListIndexInEligible = eligibleLists.findIndex(l => l.type === currentListType);
+
+    if (eligibleLists.length <= 1 || currentListIndexInEligible === -1) {
+      return false; // Only one eligible list (or none), or current list not found. Cannot move between lists.
+    }
+
+    let targetListIndexInEligible;
+    if (direction === "down") {
+      targetListIndexInEligible = (currentListIndexInEligible + 1) % eligibleLists.length;
+    } else { // "up"
+      targetListIndexInEligible = (currentListIndexInEligible - 1 + eligibleLists.length) % eligibleLists.length;
+    }
+
+    const targetListConfig = eligibleLists[targetListIndexInEligible];
+
+    // If the target list is the same as the current list, it means we cycled back.
+    if (targetListConfig.type === currentListType) {
+        return false; // Cannot move between lists if the target is the source.
+    }
+
+    // Double check if the target list is full (it should have been filtered out, but a safety check)
+    if (targetListConfig.data.length >= targetListConfig.maxCapacity) {
+        console.log("Target list is full. Cannot move item.");
+        return false;
+    }
+
+    // Perform the move:
+    // 1. Remove from source list
+    currentListArray.splice(currentSelectedIndex, 1);
+    await allVisibleLists.find(l => l.type === currentListType).save(); // Save source list
+
+    // 2. Add to target list
+    const newIndexInTarget = direction === "down" ? 0 : targetListConfig.data.length; // Add to beginning or end
+    targetListConfig.data.splice(newIndexInTarget, 0, itemToMove);
+    await targetListConfig.save(); // Save target list
+
+    // 3. Update selections
+    updateSelectedIndices(targetListConfig.type, newIndexInTarget);
+    highlightAllLists();
+
+    // 4. Re-render both lists to reflect changes
+    allVisibleLists.find(l => l.type === currentListType).render();
+    targetListConfig.render();
+
+    // Apply highlight to the moved item in the target list
+    const movedElement = targetListConfig.container.querySelector(
+        `.harpoon-item[data-url="${itemToMove.url}"]`,
+    );
+    if (movedElement) {
+        movedElement.classList.add("moved-highlight");
+        setTimeout(() => {
+            movedElement.classList.remove("moved-highlight");
+        }, 400);
+    }
+
+    return true; // Successfully moved between lists
+  };
+
 
   /**
    * Saves the current list of harpooned tabs to chrome.storage.local.
@@ -368,305 +702,6 @@ window.initHarpoonFeature = async () => {
   };
 
   /**
-   * Creates a single harpoon-like list item element.
-   * @param {Object} item The item data (url, title, favIconUrl).
-   * @param {number} index The index of the item in its list.
-   * @param {string} listType 'harpoon', 'work', or 'fun'.
-   * @returns {HTMLElement} The created list item div.
-   */
-  const createHarpoonItemElement = (item, index, listType) => {
-    const harpoonItem = document.createElement("div");
-    harpoonItem.classList.add("harpoon-item");
-    harpoonItem.dataset.index = index; // Store index for direct access
-    harpoonItem.dataset.url = item.url; // Store URL for identifying after re-render
-    harpoonItem.dataset.listType = listType; // Store list type for removal
-    harpoonItem.tabIndex = 0; // Make item focusable for keyboard navigation
-
-    const favicon = document.createElement("img");
-    favicon.classList.add("favicon");
-    favicon.alt = "icon";
-    favicon.src = item.favIconUrl || chrome.runtime.getURL("img/icon.png"); // Fallback icon
-
-    const harpoonInfo = document.createElement("div");
-    harpoonInfo.classList.add("harpoon-info");
-
-    const harpoonTitle = document.createElement("span");
-    harpoonTitle.classList.add("harpoon-title");
-    harpoonTitle.textContent = item.title;
-
-    const harpoonUrl = document.createElement("a");
-    harpoonUrl.classList.add("harpoon-url");
-    harpoonUrl.href = item.url;
-    harpoonUrl.textContent = item.url;
-    harpoonUrl.target = "_blank"; // Open in a new tab
-    // Prevent default navigation for the URL link within the item
-    harpoonUrl.addEventListener("click", (e) => {
-      e.preventDefault(); // Stop default browser action (opening URL)
-      e.stopPropagation(); // Stop event from bubbling up to the harpoonItem click listener
-    });
-
-    harpoonInfo.appendChild(harpoonTitle);
-    harpoonInfo.appendChild(harpoonUrl);
-
-    const actionButtonsContainer = document.createElement("div");
-    actionButtonsContainer.classList.add("harpoon-action-buttons");
-
-    // Add specific buttons based on list type
-    if (listType === "harpoon") {
-      // Up button (only for main harpoon list)
-      const upButton = document.createElement("button");
-      upButton.classList.add("harpoon-move-button", "harpoon-move-up");
-      upButton.innerHTML = "▲"; // Up arrow character
-      upButton.title = "Move Up";
-      upButton.setAttribute("aria-label", "Move Harpooned Tab Up"); // Accessibility
-      upButton.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        selectedHarpoonIndex = index; // Set index before moving
-        highlightItem(harpoonListContainer, selectedHarpoonIndex); // Highlight immediately
-        await moveHarpoonItem("up");
-      });
-      actionButtonsContainer.appendChild(upButton);
-
-      // Down button (only for main harpoon list)
-      const downButton = document.createElement("button");
-      downButton.classList.add("harpoon-move-button", "harpoon-move-down");
-      downButton.innerHTML = "▼"; // Down arrow character
-      downButton.title = "Move Down";
-      downButton.setAttribute("aria-label", "Move Harpooned Tab Down"); // Accessibility
-      downButton.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        selectedHarpoonIndex = index; // Set index before moving
-        highlightItem(harpoonListContainer, selectedHarpoonIndex); // Highlight immediately
-        await moveHarpoonItem("down");
-      });
-      actionButtonsContainer.appendChild(downButton);
-    }
-
-    // Remove button (for all list types)
-    const removeButton = document.createElement("button");
-    removeButton.classList.add("remove-harpoon-button");
-    removeButton.innerHTML = "✕"; // X icon
-    removeButton.title = `Remove ${listType} Link`;
-    removeButton.setAttribute("aria-label", `Remove ${listType} Link`); // Accessibility
-    removeButton.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      if (listType === "harpoon") {
-        await removeHarpoonedTabFromList(item.url);
-        // After removal, adjust selected index if necessary
-        if (selectedHarpoonIndex >= harpoonedTabs.length) {
-          selectedHarpoonIndex =
-            harpoonedTabs.length > 0 ? harpoonedTabs.length - 1 : -1;
-        }
-        highlightItem(harpoonListContainer, selectedHarpoonIndex);
-      } else if (listType === "work") {
-        await removeWorkItem(item.url);
-        if (selectedWorkIndex >= workTabs.length) {
-          selectedWorkIndex = workTabs.length > 0 ? workTabs.length - 1 : -1;
-        }
-        highlightItem(workListContainer, selectedWorkIndex);
-      } else if (listType === "fun") {
-        await removeFunItem(item.url);
-        if (selectedFunIndex >= funTabs.length) {
-          selectedFunIndex = funTabs.length > 0 ? funTabs.length - 1 : -1;
-        }
-        highlightItem(funListContainer, selectedFunIndex);
-      }
-    });
-    actionButtonsContainer.appendChild(removeButton);
-
-    harpoonItem.appendChild(favicon);
-    harpoonItem.appendChild(harpoonInfo);
-    harpoonItem.appendChild(actionButtonsContainer);
-
-    harpoonItem.addEventListener("click", () => {
-      // Set the appropriate selected index based on the list type
-      if (listType === "harpoon") {
-        selectedHarpoonIndex = index;
-        selectedWorkIndex = -1; // Deselect other lists
-        selectedFunIndex = -1;
-      } else if (listType === "work") {
-        selectedWorkIndex = index;
-        selectedHarpoonIndex = -1; // Deselect other lists
-        selectedFunIndex = -1;
-      } else if (listType === "fun") {
-        selectedFunIndex = index;
-        selectedHarpoonIndex = -1; // Deselect other lists
-        selectedWorkIndex = -1;
-      }
-      // Highlight all lists (this will correctly highlight only the newly selected one)
-      highlightAllLists();
-
-      activateItem(item);
-    });
-
-    return harpoonItem;
-  };
-
-  /**
-   * Renders the list of harpooned tabs in the UI.
-   */
-  const renderHarpoonedTabs = () => {
-    harpoonListContainer.innerHTML = ""; // Clear existing list
-
-    if (harpoonedTabs.length === 0) {
-      noHarpoonedMessage.classList.remove("hidden");
-      harpoonListContainer.appendChild(noHarpoonedMessage);
-      return;
-    } else {
-      noHarpoonedMessage.classList.add("hidden");
-    }
-
-    harpoonedTabs.forEach((harpoonedTab, index) => {
-      const itemElement = createHarpoonItemElement(
-        harpoonedTab,
-        index,
-        "harpoon",
-      );
-      harpoonListContainer.appendChild(itemElement);
-    });
-  };
-
-  // --- New: Render Functions for Work/Fun Lists ---
-  const renderWorkTabs = () => {
-    workListContainer.innerHTML = ""; // Clear existing list
-
-    if (workTabs.length === 0) {
-      noWorkMessage.classList.remove("hidden");
-      workListContainer.appendChild(noWorkMessage);
-      return;
-    } else {
-      noWorkMessage.classList.add("hidden");
-    }
-
-    workTabs.forEach((workItem, index) => {
-      const itemElement = createHarpoonItemElement(workItem, index, "work");
-      workListContainer.appendChild(itemElement);
-    });
-  };
-
-  const renderFunTabs = () => {
-    funListContainer.innerHTML = ""; // Clear existing list
-
-    if (funTabs.length === 0) {
-      noFunMessage.classList.remove("hidden");
-      funListContainer.appendChild(noFunMessage);
-      return;
-    } else {
-      noFunMessage.classList.add("hidden");
-    }
-
-    funTabs.forEach((funItem, index) => {
-      const itemElement = createHarpoonItemElement(funItem, index, "fun");
-      funListContainer.appendChild(itemElement);
-    });
-  };
-
-  /**
-   * Removes a harpooned tab from the list by updating chrome.storage.local directly.
-   * This will also trigger a re-render.
-   * @param {string} urlToRemove The URL of the tab to remove.
-   */
-  const removeHarpoonedTabFromList = async (urlToRemove) => {
-    harpoonedTabs = harpoonedTabs.filter((tab) => tab.url !== urlToRemove);
-    await saveHarpoonedTabs();
-    renderHarpoonedTabs();
-  };
-
-  // --- New: Remove Functions for Work/Fun Lists ---
-  const removeWorkItem = async (urlToRemove) => {
-    workTabs = workTabs.filter((item) => item.url !== urlToRemove);
-    await saveWorkTabs();
-    renderWorkTabs();
-  };
-
-  const removeFunItem = async (urlToRemove) => {
-    funTabs = funTabs.filter((item) => item.url !== urlToRemove);
-    await saveFunTabs();
-    renderFunTabs();
-  };
-
-  /**
-   * Removes the currently selected item from ANY of the harpoon lists.
-   * It determines which list is active based on the selectedIndex variable for each list.
-   */
-  const removeSelectedItem = async () => {
-    if (selectedHarpoonIndex !== -1 && harpoonedTabs[selectedHarpoonIndex]) {
-      const urlToRemove = harpoonedTabs[selectedHarpoonIndex].url;
-      await removeHarpoonedTabFromList(urlToRemove);
-      if (harpoonedTabs.length === 0) {
-        selectedHarpoonIndex = -1;
-      } else if (selectedHarpoonIndex >= harpoonedTabs.length) {
-        selectedHarpoonIndex = harpoonedTabs.length - 1;
-      }
-      highlightItem(harpoonListContainer, selectedHarpoonIndex);
-    } else if (selectedWorkIndex !== -1 && workTabs[selectedWorkIndex]) {
-      const urlToRemove = workTabs[selectedWorkIndex].url;
-      await removeWorkItem(urlToRemove);
-      if (workTabs.length === 0) {
-        selectedWorkIndex = -1;
-      } else if (selectedWorkIndex >= workTabs.length) {
-        selectedWorkIndex = workTabs.length - 1;
-      }
-      highlightItem(workListContainer, selectedWorkIndex);
-    } else if (selectedFunIndex !== -1 && funTabs[selectedFunIndex]) {
-      const urlToRemove = funTabs[selectedFunIndex].url;
-      await removeFunItem(urlToRemove);
-      if (funTabs.length === 0) {
-        selectedFunIndex = -1;
-      } else if (selectedFunIndex >= funTabs.length) {
-        selectedFunIndex = funTabs.length - 1;
-      }
-      highlightItem(funListContainer, selectedFunIndex);
-    }
-  };
-
-  // --- New: Add Selected Harpoon Item to Work/Fun List ---
-
-  const addItemToTargetList = async (targetList, targetListKey, maxCapacity) => {
-    if (selectedHarpoonIndex === -1 || !harpoonedTabs[selectedHarpoonIndex]) {
-      console.warn("No harpoon item selected to add to list.");
-      return;
-    }
-
-    const itemToAdd = harpoonedTabs[selectedHarpoonIndex];
-
-    // Check for duplicates
-    const isDuplicate = targetList.some((item) => item.url === itemToAdd.url);
-    if (isDuplicate) {
-      console.log("Item already exists in target list.");
-      return;
-    }
-
-    const newItem = {
-      url: itemToAdd.url,
-      title: itemToAdd.title,
-      favIconUrl: itemToAdd.favIconUrl,
-    };
-
-    if (targetList.length >= maxCapacity) {
-      targetList.shift(); // Remove the oldest item if capacity is reached
-    }
-    targetList.push(newItem); // Add new item to the end
-
-    // Save and re-render the target list
-    if (targetListKey === LS_WORK_TABS_KEY) {
-      await saveWorkTabs();
-      renderWorkTabs();
-      selectedWorkIndex = targetList.length - 1; // Select the newly added item
-      highlightItem(workListContainer, selectedWorkIndex);
-      selectedHarpoonIndex = -1; // Deselect from harpoon list
-      highlightItem(harpoonListContainer, selectedHarpoonIndex); // Ensure main harpoon list is de-highlighted
-    } else if (targetListKey === LS_FUN_TABS_KEY) {
-      await saveFunTabs();
-      renderFunTabs();
-      selectedFunIndex = targetList.length - 1; // Select the newly added item
-      highlightItem(funListContainer, selectedFunIndex);
-      selectedHarpoonIndex = -1; // Deselect from harpoon list
-      highlightItem(harpoonListContainer, selectedHarpoonIndex); // Ensure main harpoon list is de-highlighted
-    }
-  };
-
-  /**
    * Overwrites the main harpoon list with items from a source list (Work or Fun).
    * The source list remains intact.
    * @param {Array<Object>} sourceList The list to copy items from (workTabs or funTabs).
@@ -676,16 +711,8 @@ window.initHarpoonFeature = async () => {
     // Copy items from sourceList to harpoonedTabs
     harpoonedTabs = [...sourceList]; // Create a shallow copy
 
-    // Do NOT clear the source list as per new requirement
-
     // Save the updated harpoonedTabs to storage
     await saveHarpoonedTabs();
-    // No need to save sourceList here as it wasn't modified, but if it were, save it too:
-    // if (sourceListKey === LS_WORK_TABS_KEY) {
-    //   await saveWorkTabs();
-    // } else if (sourceListKey === LS_FUN_TABS_KEY) {
-    //   await saveFunTabs();
-    // }
 
     // Re-render all lists to update the UI
     renderHarpoonedTabs();
@@ -699,6 +726,133 @@ window.initHarpoonFeature = async () => {
     highlightAllLists();
   };
 
+  /**
+   * Adds the currently selected Harpooned tab to the specified target list (Work or Fun).
+   * @param {Array<Object>} targetList The array representing the target list (workTabs or funTabs).
+   * @param {string} targetListKey The storage key for the target list (LS_WORK_TABS_KEY or LS_FUN_TABS_KEY).
+   * @param {number} maxCapacity The maximum number of items allowed in the target list.
+   */
+  const addItemToTargetList = async (targetList, targetListKey, maxCapacity) => {
+    if (selectedHarpoonIndex === -1 || !harpoonedTabs[selectedHarpoonIndex]) {
+      console.warn("No harpooned tab selected to add to list.");
+      return;
+    }
+
+    const itemToAdd = harpoonedTabs[selectedHarpoonIndex];
+
+    // Prevent duplicates
+    if (targetList.some(item => item.url === itemToAdd.url)) {
+      console.log("Item already exists in target list.");
+      // Optionally, highlight the existing item
+      const existingIndex = targetList.findIndex(item => item.url === itemToAdd.url);
+      if (targetListKey === LS_WORK_TABS_KEY) {
+          selectedWorkIndex = existingIndex;
+          renderWorkTabs();
+          highlightAllLists();
+      } else if (targetListKey === LS_FUN_TABS_KEY) {
+          selectedFunIndex = existingIndex;
+          renderFunTabs();
+          highlightAllLists();
+      }
+      return;
+    }
+
+    // Check capacity
+    if (targetList.length >= maxCapacity) {
+      // Remove the oldest item if list is full
+      targetList.shift();
+    }
+
+    targetList.push(itemToAdd);
+
+    if (targetListKey === LS_WORK_TABS_KEY) {
+      await saveWorkTabs();
+      renderWorkTabs();
+      selectedWorkIndex = targetList.length - 1; // Select the newly added item
+      selectedHarpoonIndex = -1; // Deselect from main harpoon list
+      selectedFunIndex = -1; // Deselect from fun list
+    } else if (targetListKey === LS_FUN_TABS_KEY) {
+      await saveFunTabs();
+      renderFunTabs();
+      selectedFunIndex = targetList.length - 1; // Select the newly added item
+      selectedHarpoonIndex = -1; // Deselect from main harpoon list
+      selectedWorkIndex = -1; // Deselect from work list
+    }
+    highlightAllLists(); // Re-apply highlight
+  };
+
+
+  /**
+   * Removes a tab from the main harpooned list based on its URL.
+   * @param {string} url The URL of the tab to remove.
+   */
+  const removeHarpoonedTabFromList = async (url) => {
+    const initialLength = harpoonedTabs.length;
+    harpoonedTabs = harpoonedTabs.filter((tab) => tab.url !== url);
+    if (harpoonedTabs.length < initialLength) {
+      await saveHarpoonedTabs();
+      renderHarpoonedTabs(); // Re-render only the main list
+      highlightAllLists(); // Re-apply highlights after state change
+    }
+  };
+
+  /**
+   * Removes an item from the Work list based on its URL.
+   * @param {string} url The URL of the item to remove.
+   */
+  const removeWorkItem = async (url) => {
+    const initialLength = workTabs.length;
+    workTabs = workTabs.filter(item => item.url !== url);
+    if (workTabs.length < initialLength) {
+      await saveWorkTabs();
+      renderWorkTabs();
+      highlightAllLists();
+    }
+  };
+
+  /**
+   * Removes an item from the Fun list based on its URL.
+   * @param {string} url The URL of the item to remove.
+   */
+  const removeFunItem = async (url) => {
+    const initialLength = funTabs.length;
+    funTabs = funTabs.filter(item => item.url !== url);
+    if (funTabs.length < initialLength) {
+      await saveFunTabs();
+      renderFunTabs();
+      highlightAllLists();
+    }
+  };
+
+  /**
+   * Removes the currently selected item from whichever list it belongs to.
+   */
+  const removeSelectedItem = async () => {
+    if (selectedHarpoonIndex !== -1 && harpoonedTabs[selectedHarpoonIndex]) {
+      const urlToRemove = harpoonedTabs[selectedHarpoonIndex].url;
+      await removeHarpoonedTabFromList(urlToRemove);
+      // Adjust selected index for main harpoon list
+      if (selectedHarpoonIndex >= harpoonedTabs.length) {
+          selectedHarpoonIndex = harpoonedTabs.length > 0 ? harpoonedTabs.length - 1 : -1;
+      }
+    } else if (selectedWorkIndex !== -1 && workTabs[selectedWorkIndex]) {
+      const urlToRemove = workTabs[selectedWorkIndex].url;
+      await removeWorkItem(urlToRemove);
+      // Adjust selected index for work list
+      if (selectedWorkIndex >= workTabs.length) {
+          selectedWorkIndex = workTabs.length > 0 ? workTabs.length - 1 : -1;
+      }
+    } else if (selectedFunIndex !== -1 && funTabs[selectedFunIndex]) {
+      const urlToRemove = funTabs[selectedFunIndex].url;
+      await removeFunItem(urlToRemove);
+      // Adjust selected index for fun list
+      if (selectedFunIndex >= funTabs.length) {
+          selectedFunIndex = funTabs.length > 0 ? funTabs.length - 1 : -1;
+      }
+    }
+    highlightAllLists(); // Re-apply highlights after potential index change
+  };
+
 
   /**
    * Toggles the visibility of a specified list section (Work or Fun) and persists the state.
@@ -707,23 +861,17 @@ window.initHarpoonFeature = async () => {
   const toggleListVisibility = async (listType) => {
     let sectionElement;
     let isVisible;
-    let selectedIndexToClear;
-    let listContainer;
 
     if (listType === 'work') {
       sectionElement = workListSection;
       workListVisible = !workListVisible;
       isVisible = workListVisible;
       await saveWorkListVisibility(isVisible);
-      selectedIndexToClear = selectedWorkIndex;
-      listContainer = workListContainer;
     } else if (listType === 'fun') {
       sectionElement = funListSection;
       funListVisible = !funListVisible;
       isVisible = funListVisible;
       await saveFunListVisibility(isVisible);
-      selectedIndexToClear = selectedFunIndex;
-      listContainer = funListContainer;
     } else {
       console.warn('Invalid list type for toggleVisibility:', listType);
       return;
@@ -769,14 +917,35 @@ window.initHarpoonFeature = async () => {
    * This function is attached/detached by popup.js when switching views.
    * @param {KeyboardEvent} e The keyboard event.
    */
-  const harpoonKeydownHandler = (e) => {
-    // Universal navigation for j/k (and arrow keys, Alt+j/k)
-    if (e.key === "ArrowDown" || e.key === "j" || (e.altKey && e.key === "j")) {
+  const harpoonKeydownHandler = async (e) => { // Made async as move functions are now async
+    // Navigation (j, k, ArrowDown, ArrowUp, Alt+j, Alt+k) - Changes selection/focus only
+    if ((e.key === "ArrowDown" || e.key === "j" || (e.altKey && e.key === "j")) && !e.shiftKey) {
         e.preventDefault();
         cycleThroughAllVisibleLists("down");
-    } else if (e.key === "ArrowUp" || e.key === "k" || (e.altKey && e.key === "k")) {
+    } else if ((e.key === "ArrowUp" || e.key === "k" || (e.altKey && e.key === "k")) && !e.shiftKey) {
         e.preventDefault();
         cycleThroughAllVisibleLists("up");
+    }
+    // Item Movement (Shift+J, Shift+K)
+    else if (e.shiftKey && (e.key === "J" || e.key === "K")) {
+        e.preventDefault();
+        const direction = (e.key === "J") ? "down" : "up"; // J for down, K for up
+
+        // Determine which list the item is currently in
+        let currentListType = null;
+        if (selectedHarpoonIndex !== -1) currentListType = 'harpoon';
+        else if (selectedWorkIndex !== -1) currentListType = 'work';
+        else if (selectedFunIndex !== -1) currentListType = 'fun';
+
+        if (currentListType) { // Only try to move if an item is currently selected
+            // First, try to move within the current list
+            const movedWithin = await moveItemWithinList(currentListType, direction);
+
+            // If not moved within the list (i.e., at a boundary), try to move between lists
+            if (!movedWithin) {
+                await moveItemBetweenLists(direction);
+            }
+        }
     }
     // Activation (Enter key)
     else if (e.key === "Enter") {
@@ -789,14 +958,6 @@ window.initHarpoonFeature = async () => {
         activateItem(funTabs[selectedFunIndex]);
       }
     }
-    // Moving items within the main Harpoon list (Shift+K/J) - Only applies to main Harpoon
-    else if (e.shiftKey && e.key === "K" && selectedHarpoonIndex !== -1) {
-      e.preventDefault();
-      moveHarpoonItem("up");
-    } else if (e.shiftKey && e.key === "J" && selectedHarpoonIndex !== -1) {
-      e.preventDefault();
-      moveHarpoonItem("down");
-    }
     // Delete item from currently selected list (Ctrl+D, Delete, or d)
     else if (
       (e.ctrlKey && e.key === "d") ||
@@ -806,31 +967,31 @@ window.initHarpoonFeature = async () => {
       e.preventDefault();
       removeSelectedItem(); // This now removes from any selected list
     }
-    // Changed: Add to Work List (Ctrl+1) - ONLY if a main harpoon item is selected and not Ctrl+Alt+1
+    // Add to Work List (Ctrl+1) - ONLY if a main harpoon item is selected and not Ctrl+Alt+1
     else if (e.ctrlKey && e.key === "1" && !e.altKey) {
       e.preventDefault();
       if (selectedHarpoonIndex !== -1) {
         addItemToTargetList(workTabs, LS_WORK_TABS_KEY, MAX_WORK_LINKS);
       }
     }
-    // Changed: Add to Fun List (Ctrl+2) - ONLY if a main harpoon item is selected and not Ctrl+Alt+2
+    // Add to Fun List (Ctrl+2) - ONLY if a main harpoon item is selected and not Ctrl+Alt+2
     else if (e.ctrlKey && e.key === "2" && !e.altKey) {
       e.preventDefault();
       if (selectedHarpoonIndex !== -1) {
         addItemToTargetList(funTabs, LS_FUN_TABS_KEY, MAX_FUN_LINKS);
       }
     }
-    // Changed: Overwrite Harpoon with Work List (Ctrl+Alt+1)
+    // Overwrite Harpoon with Work List (Ctrl+Alt+1)
     else if (e.ctrlKey && e.altKey && e.key === "1") {
         e.preventDefault();
         overwriteHarpoonList(workTabs, LS_WORK_TABS_KEY);
     }
-    // Changed: Overwrite Harpoon with Fun List (Ctrl+Alt+2)
+    // Overwrite Harpoon with Fun List (Ctrl+Alt+2)
     else if (e.ctrlKey && e.altKey && e.key === "2") {
         e.preventDefault();
         overwriteHarpoonList(funTabs, LS_FUN_TABS_KEY);
     }
-    // New: Toggle Work/Fun Lists Visibility (Ctrl+T)
+    // Toggle Work/Fun Lists Visibility (Ctrl+T)
     else if (e.ctrlKey && e.key === "t") {
         e.preventDefault();
         toggleListVisibility('work');
@@ -960,17 +1121,13 @@ window.initHarpoonFeature = async () => {
   // Initial load of harpooned tabs when the initHarpoonFeature function is called
   await loadAllHarpoonLists();
 
-  // Expose functions to the global window object for popup.js
-  window.refreshHarpoonedTabs = loadAllHarpoonLists; // Renamed to reflect all lists
-  // Keep navigation functions exposed for potential future use or debugging
-  window.navigateHarpoonList = (direction) => {
-    selectedHarpoonIndex = navigateList(direction, harpoonedTabs, selectedHarpoonIndex);
-    highlightItem(harpoonListContainer, selectedHarpoonIndex);
-  };
+  // Expose the main refresh function (which calls the internal renderers)
+  window.refreshHarpoonedTabs = loadAllHarpoonLists;
+
+  // Expose other utility functions as needed (if popup.js or other external scripts call them)
   window.activateSelectedHarpoonItem = () => {
     if (selectedHarpoonIndex !== -1) activateItem(harpoonedTabs[selectedHarpoonIndex]);
   };
-  window.moveHarpoonItem = moveHarpoonItem; // Still specific to main harpoon
   window.removeSelectedHarpoonItem = removeSelectedItem; // Now universal delete
 
   // Expose listener control functions
