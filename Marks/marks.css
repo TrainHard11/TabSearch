@@ -147,12 +147,21 @@
   cursor: pointer;
 }
 
-/* NEW: Styles for the button container to align button right */
+/* NEW: Group container for multiple buttons (Add and Sync) */
+.marks-button-group {
+    display: flex;
+    flex-wrap: wrap; /* Allow buttons to wrap to next line if space is limited */
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: 10px; /* Space between buttons */
+    margin-top: 10px; /* Space above the button group */
+}
+
+/* Existing .marks-button-container already aligns to flex-end by default */
 .marks-button-container {
-  display: flex;
-  justify-content: flex-end; /* Aligns content to the right */
-  width: 100%; /* Ensure it takes full width to allow right alignment */
-  margin-top: 10px; /* Add some space above the button */
+    display: flex;
+    justify-content: flex-end; /* Ensures button within its container is right-aligned */
+    width: auto; /* Allow container to shrink-wrap button */
+    margin-top: 0; /* Remove previous margin-top to avoid double spacing */
 }
 
 .marks-button {
@@ -182,6 +191,15 @@
 .marks-button:focus {
   /* Custom focus style for button */
   box-shadow: 0 0 0 3px rgba(97, 175, 239, 0.7); /* Stronger blue glow for focus */
+}
+
+/* NEW: Specific style for the Sync button, perhaps a different color */
+.marks-button.sync-button {
+    background-color: var(--color-accent-blue); /* Use blue for sync button */
+}
+
+.marks-button.sync-button:hover {
+    background-color: #4b8cd9; /* Darker blue on hover */
 }
 
 .bookmarks-list-title {
@@ -415,6 +433,7 @@
   opacity: 0; /* Start hidden */
   visibility: hidden;
   pointer-events: none;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out; /* Add transition */
 }
 
 .marks-message.show {
@@ -432,6 +451,13 @@
   background-color: #e6ffe6; /* Light green background */
   color: #008000; /* Dark green text */
   border: 1px solid #00cc00;
+}
+
+/* NEW: Style for info message */
+.marks-message.info {
+  background-color: #e0eaff; /* Light blueish background */
+  color: #3f51b5; /* Medium blue text */
+  border: 1px solid #7986cb;
 }
 
 /* Styles for the searchable checkbox */
