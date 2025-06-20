@@ -66,7 +66,8 @@ window.initHarpoonFeature = async () => {
       if (i === index) {
         item.classList.add("selected");
         item.focus(); // Ensure the actual DOM element is focused for keyboard navigation
-        item.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        // Changed block: "nearest" to "center" for improved scrolling
+        item.scrollIntoView({ block: "center", behavior: "smooth" });
       } else {
         item.classList.remove("selected");
       }
@@ -468,7 +469,7 @@ window.initHarpoonFeature = async () => {
       return false;
     }
 
-    const movedItem = listArray[currentSelectedIdx];
+    const movedItem = listArray[currentSelectedIdx]; // Get item before splicing
     const movedItemUrl = movedItem.url; // Store URL for highlighting later
 
     // Perform the swap
@@ -668,7 +669,8 @@ window.initHarpoonFeature = async () => {
   const saveWorkListVisibility = async (isVisible) => {
     try {
       await chrome.storage.local.set({ [LS_WORK_LIST_VISIBLE_KEY]: isVisible });
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error saving work list visibility:", error);
     }
   };
@@ -677,7 +679,8 @@ window.initHarpoonFeature = async () => {
     try {
       const result = await chrome.storage.local.get({ [LS_WORK_LIST_VISIBLE_KEY]: true }); // Default to visible
       return result[LS_WORK_LIST_VISIBLE_KEY];
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error loading work list visibility:", error);
       return true;
     }
@@ -686,7 +689,8 @@ window.initHarpoonFeature = async () => {
   const saveFunListVisibility = async (isVisible) => {
     try {
       await chrome.storage.local.set({ [LS_FUN_LIST_VISIBLE_KEY]: isVisible });
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error saving fun list visibility:", error);
     }
   };
@@ -695,7 +699,8 @@ window.initHarpoonFeature = async () => {
     try {
       const result = await chrome.storage.local.get({ [LS_FUN_LIST_VISIBLE_KEY]: true }); // Default to visible
       return result[LS_FUN_LIST_VISIBLE_KEY];
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error loading fun list visibility:", error);
       return true;
     }
@@ -728,6 +733,8 @@ window.initHarpoonFeature = async () => {
 
   /**
    * Adds the currently selected Harpooned tab to the specified target list (Work or Fun).
+   * Note: This function is still here but no longer bound to Ctrl+1/Ctrl+2.
+   * If you need to re-enable adding to work/fun lists, you'd need to bind it to new keys.
    * @param {Array<Object>} targetList The array representing the target list (workTabs or funTabs).
    * @param {string} targetListKey The storage key for the target list (LS_WORK_TABS_KEY or LS_FUN_TABS_KEY).
    * @param {number} maxCapacity The maximum number of items allowed in the target list.
@@ -919,6 +926,7 @@ window.initHarpoonFeature = async () => {
    */
   const harpoonKeydownHandler = async (e) => { // Made async as move functions are now async
     // Navigation (j, k, ArrowDown, ArrowUp, Alt+j, Alt+k) - Changes selection/focus only
+    // This explicitly checks that SHIFT is NOT pressed for navigation keys.
     if ((e.key === "ArrowDown" || e.key === "j" || (e.altKey && e.key === "j")) && !e.shiftKey) {
         e.preventDefault();
         cycleThroughAllVisibleLists("down");
@@ -967,27 +975,13 @@ window.initHarpoonFeature = async () => {
       e.preventDefault();
       removeSelectedItem(); // This now removes from any selected list
     }
-    // Add to Work List (Ctrl+1) - ONLY if a main harpoon item is selected and not Ctrl+Alt+1
-    else if (e.ctrlKey && e.key === "1" && !e.altKey) {
-      e.preventDefault();
-      if (selectedHarpoonIndex !== -1) {
-        addItemToTargetList(workTabs, LS_WORK_TABS_KEY, MAX_WORK_LINKS);
-      }
-    }
-    // Add to Fun List (Ctrl+2) - ONLY if a main harpoon item is selected and not Ctrl+Alt+2
-    else if (e.ctrlKey && e.key === "2" && !e.altKey) {
-      e.preventDefault();
-      if (selectedHarpoonIndex !== -1) {
-        addItemToTargetList(funTabs, LS_FUN_TABS_KEY, MAX_FUN_LINKS);
-      }
-    }
-    // Overwrite Harpoon with Work List (Ctrl+Alt+1)
-    else if (e.ctrlKey && e.altKey && e.key === "1") {
+    // Overwrite Harpoon with Work List (Ctrl+1) - now Ctrl+1 (was Ctrl+Alt+1)
+    else if (e.ctrlKey && e.key === "1") {
         e.preventDefault();
         overwriteHarpoonList(workTabs, LS_WORK_TABS_KEY);
     }
-    // Overwrite Harpoon with Fun List (Ctrl+Alt+2)
-    else if (e.ctrlKey && e.altKey && e.key === "2") {
+    // Overwrite Harpoon with Fun List (Ctrl+2) - now Ctrl+2 (was Ctrl+Alt+2)
+    else if (e.ctrlKey && e.key === "2") {
         e.preventDefault();
         overwriteHarpoonList(funTabs, LS_FUN_TABS_KEY);
     }
