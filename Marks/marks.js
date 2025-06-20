@@ -421,12 +421,37 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
             searchableCheckbox.setAttribute("aria-label", "Include in Tab Search");
             searchableCheckbox.addEventListener("change", async (e) => {
                 e.stopPropagation();
+                // Ensure 'mark' object is valid, though it should be due to closure
+                if (!mark || typeof mark.url === 'undefined' || typeof mark.name === 'undefined') {
+                    console.error("DEBUG: Invalid mark object in checkbox change listener:", mark);
+                    displayMarksMessage("Error: Bookmark data missing for update.", "error");
+                    return;
+                }
+
+                const currentMarkToUpdate = mark; // 'mark' is from the forEach loop, captured in closure
+                console.log("DEBUG: Checkbox change event fired for:", currentMarkToUpdate.name, currentMarkToUpdate.url);
+                console.log("DEBUG: Current state of 'filteredMarksResults' (snapshot):", filteredMarksResults);
+                console.log("DEBUG: Current state of 'bookmarks' (main array snapshot):", bookmarks);
+
+
+                // Find the original index in the main 'bookmarks' array
+                // We use the unique url and name combination to find the exact bookmark
                 const originalMarkIndex = bookmarks.findIndex(
-                    (b) => b.url === mark.url && b.name === mark.name,
+                    (b) => b.url === currentMarkToUpdate.url && b.name === currentMarkToUpdate.name
                 );
+
+                console.log("DEBUG: Attempting to find original index for:", currentMarkToUpdate);
+                console.log("DEBUG: Found original index:", originalMarkIndex);
+
                 if (originalMarkIndex > -1) {
-                    bookmarks[originalIndex].searchableInTabSearch = e.target.checked;
+                    // This is the line that supposedly threw ReferenceError
+                    bookmarks[originalMarkIndex].searchableInTabSearch = e.target.checked;
                     await saveBookmarks();
+                    console.log(`DEBUG: Bookmark updated and saved: ${currentMarkToUpdate.name}, new searchable: ${e.target.checked}`);
+                    displayMarksMessage(`Bookmark "${currentMarkToUpdate.name}" visibility updated.`, "success");
+                } else {
+                    console.error("DEBUG: Failed to find original bookmark in 'bookmarks' array for update. This usually means the bookmark was deleted or modified externally. Mark:", currentMarkToUpdate);
+                    displayMarksMessage("Failed to update bookmark setting. Bookmark not found.", "error");
                 }
             });
             searchableCheckbox.addEventListener("click", (e) => {
@@ -1001,28 +1026,8 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         const activeElement = document.activeElement;
         const items = marksListContainer.querySelectorAll(".mark-item");
 
-        // Determine if the active element is a list item
-        const isListItemFocused = activeElement.closest(".mark-item") !== null;
-
-        // Determine if an input field (excluding the rename input which has its own handler) is currently focused
-        const isGeneralInputFocused = activeElement === urlNameInput ||
-                                      activeElement === urlInput;
-        const isSearchInputFocused = activeElement === marksSearchInput;
-        const isRenameInputFocused = activeElement.classList.contains("marks-rename-input");
-
-        // If a rename input is focused, handle Enter/Escape and allow other keys for typing
-        if (isRenameInputFocused) {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                finishRenamingMark(activeElement.value);
-            } else if (e.key === "Escape") {
-                e.preventDefault();
-                cancelRenamingMark();
-            }
-            return; // Allow other keys to be typed in the rename input
-        }
-
         // Define all focusable elements in the correct order for Arrow key navigation
+        // This array MUST be rebuilt on each keydown to ensure it's up-to-date with DOM changes
         let allFocusableElements = [];
         if (!addMarkSection.classList.contains("hidden")) {
             allFocusableElements.push(urlNameInput, urlInput, exactMatchCheckbox, addMarkButton, syncBookmarksButton);
@@ -1032,6 +1037,27 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         }
         allFocusableElements.push(...Array.from(items));
 
+
+        // Determine if the active element is a list item
+        const isListItemFocused = activeElement.closest(".mark-item") !== null;
+
+        // Determine if any input field (including rename input) is currently focused
+        const isAnyInputFocused = activeElement === urlNameInput ||
+                                  activeElement === urlInput ||
+                                  activeElement === marksSearchInput ||
+                                  activeElement.classList.contains("marks-rename-input");
+
+        // If a rename input is focused, handle Enter/Escape and allow other keys for typing
+        if (activeElement.classList.contains("marks-rename-input")) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                finishRenamingMark(activeElement.value);
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                cancelRenamingMark();
+            }
+            return; // Allow other keys to be typed in the rename input
+        }
 
         // --- Arrow Key Navigation (Non-Cycling for Full View Navigation) ---
         if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -1069,14 +1095,14 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
 
         // --- J/K Key Navigation (Cycling within List) ---
         // 'j' and 'k' should only navigate if a list item is focused.
-        // If any input is focused, they should be typable characters.
+        // If ANY input is focused, they should be typable characters.
         if ((e.key === "j" || e.key === "k") && !e.ctrlKey && !e.altKey) {
-            if (isListItemFocused) {
+            if (isListItemFocused && !isAnyInputFocused) { // Only navigate if list item is focused AND no input is focused
                 e.preventDefault(); // Prevent typing 'j' or 'k'
                 navigateMarksList(e.key === "j" ? "down" : "up"); // This function handles cycling
                 return; // Consume the event
             }
-            // If not a list item, allow 'j' or 'k' to be typed in any input
+            // If not a list item or if an input is focused, allow 'j' or 'k' to be typed
             return;
         }
 
@@ -1092,13 +1118,13 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
             }
         } else if (e.key === "d" || e.key === "D") {
             // 'd' or 'D' should only delete if NOT in any input field AND (Ctrl is pressed OR a list item is focused).
-            if (!isGeneralInputFocused && !isSearchInputFocused && !isRenameInputFocused && (e.ctrlKey || isListItemFocused)) {
+            if (!isAnyInputFocused && (e.ctrlKey || isListItemFocused)) {
                 e.preventDefault();
                 removeSelectedMarkItem();
             }
         } else if (e.key === "r" || e.key === "R") {
             // 'r' or 'R' should only rename if NOT in any input field AND a list item is focused.
-            if (!isGeneralInputFocused && !isSearchInputFocused && !isRenameInputFocused && isListItemFocused) {
+            if (!isAnyInputFocused && isListItemFocused) {
                 e.preventDefault();
                 startRenamingMark();
             }
@@ -1113,12 +1139,12 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
             highlightMarkItem();
             performMarksSearch(currentMarksSearchQuery);
         } else if (e.key === "K" && e.shiftKey) { // Shift+K for move up (original behavior)
-            if (!isGeneralInputFocused && !isSearchInputFocused && !isRenameInputFocused) {
+            if (!isAnyInputFocused) {
                 e.preventDefault();
                 moveMarkItem("up");
             }
         } else if (e.key === "J" && e.shiftKey) { // Shift+J for move down (original behavior)
-            if (!isGeneralInputFocused && !isSearchInputFocused && !isRenameInputFocused) {
+            if (!isAnyInputFocused) {
                 e.preventDefault();
                 moveMarkItem("down");
             }
