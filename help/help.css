@@ -145,7 +145,7 @@
 
 .flex {
 	display: flex;
-	gap: 2rem;
+	gap: 1rem;
 	align-items: center;
 	justify-content: center;
 }

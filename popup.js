@@ -1216,7 +1216,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (e.key === "F2") {
         e.preventDefault();
         await ViewManager.toggle("marks", loadMarksContent);
-      } else if (e.key === "F3" || (e.altKey && e.key==="q")) {
+      } else if (e.key === "F3") {
         e.preventDefault();
         await ViewManager.toggle("harpoon", loadHarpoonContent);
       } else if (e.key === "F4") {
