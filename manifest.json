@@ -97,11 +97,7 @@
       "description": "Cycle_media_tabs"
     },
     "toggle_last_tab": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+T",
-        "mac": "Command+Shift+T"
-      },
-      "description": "Toggle between last two active tabs"
+      "description": "Toggle_last_tab"
     }
   },
   "browser_specific_settings": {

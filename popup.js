@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Key for commanding the initial view upon popup opening (stored in chrome.storage.session)
   const COMMAND_INITIAL_VIEW_KEY = `${LS_PREFIX}commandInitialView`;
 
-  const SEARCH_MEMORY_DURATION_MS = 20 * 1000; // 20 seconds
+  const SEARCH_MEMORY_DURATION_MS = 10 * 1000; // 10 seconds
 
   const searchInput = document.getElementById("searchInput");
   const tabList = document.getElementById("tabList"); // This will now hold combined results
@@ -1154,7 +1154,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (
       ViewManager.getActive() !== "harpoon" &&
       ViewManager.getActive() !== "marks" &&
-      ViewManager.getActive() !== "tabManagement" // New: Exclude tabManagement view
+      ViewManager.getActive() !== "tabManagement" 
     ) {
       if (e.ctrlKey) {
         let targetIndex = -1;
@@ -1214,33 +1214,27 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         await ViewManager.toggle("settings", loadSettingsContent);
       } else if (e.key === "F2") {
-        // F2 for Marks (moved from F3)
         e.preventDefault();
         await ViewManager.toggle("marks", loadMarksContent);
-      } else if (e.key === "F3") {
-        // F3 for Harpoon (NEW!)
+      } else if (e.key === "F3" || (e.altKey && e.key==="q")) {
         e.preventDefault();
         await ViewManager.toggle("harpoon", loadHarpoonContent);
-        // The refreshHarpoonedTabs call is now handled by ViewManager.show("harpoon")
       } else if (e.key === "F4") {
-        // F4 for Help (moved from F2)
-        e.preventDefault();
-        await ViewManager.toggle("help", loadHelpContent);
+		  e.preventDefault();
+		  await ViewManager.toggle("tabManagement", loadTabManagementContent);
       } else if (e.key === "F5") {
-        // F5 for Keymaps (old F4 functionality)
-        e.preventDefault();
-        const shortcutsUrl =
-          typeof chrome !== "undefined" &&
-          chrome.runtime &&
-          chrome.runtime.getURL
-            ? "chrome://extensions/shortcuts" // Chromium
-            : "chrome://extensions/shortcuts"; // Assume Chromium for now, Firefox would be "about:addons"
-        openUrl(shortcutsUrl);
-        clearPersistentLastQuery();
+		  e.preventDefault();
+		  await ViewManager.toggle("help", loadHelpContent);
       } else if (e.key === "F6") {
-        // F6 for Tab Management View
-        e.preventDefault();
-        await ViewManager.toggle("tabManagement", loadTabManagementContent);
+		  e.preventDefault();
+		  const shortcutsUrl =
+			  typeof chrome !== "undefined" &&
+			  chrome.runtime &&
+			  chrome.runtime.getURL
+			  ? "chrome://extensions/shortcuts" // Chromium
+			  : "about:addons"; //Mozzila
+		  openUrl(shortcutsUrl);
+		  clearPersistentLastQuery();
       }
     }
   });

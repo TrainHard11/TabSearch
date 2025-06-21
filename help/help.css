@@ -95,6 +95,13 @@
 	margin: 0 2px;
 }
 
+/* New style for command names */
+.command-name {
+	color: var(--color-accent-orange); /* Using the same blue as H2 for consistency */
+	font-weight: bold;
+}
+
+
 .help-container hr {
 	border: none;
 	border-top: 1px solid var(--color-border-medium);
