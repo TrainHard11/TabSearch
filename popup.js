@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	let alwaysShowMarksSearchInputCheckbox;
 	let customTabInputs = [];
 	let customTabExactMatchCheckboxes = [];
-	// NEW: Reference for the new checkbox
+	//  Reference for the new checkbox
 	let closePopupAfterMoveTabManagerCheckbox;
 
 	// --- State Variables ---
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		searchMarksEnabled: true,
 		enableMarksAddition: true,
 		alwaysShowMarksSearchInput: false,
-		closePopupAfterMoveTabManager: false, // NEW: Default to false (do not close popup)
+		closePopupAfterMoveTabManager: false, //  Default to false (do not close popup)
 		customTab1Url: "https://web.whatsapp.com/",
 		customTab1ExactMatch: false,
 		customTab2Url: "",
@@ -489,7 +489,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		alwaysShowMarksSearchInputCheckbox = settingsContentContainer.querySelector(
 			"#alwaysShowMarksSearchInput",
 		);
-		// NEW: Get reference for the new checkbox
+		//  Get reference for the new checkbox
 		closePopupAfterMoveTabManagerCheckbox =
 			settingsContentContainer.querySelector("#closePopupAfterMoveTabManager");
 
@@ -528,7 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			alwaysShowMarksSearchInputCheckbox.checked =
 				currentSettings.alwaysShowMarksSearchInput;
 		}
-		// NEW: Load the new setting
+		//  Load the new setting
 		if (closePopupAfterMoveTabManagerCheckbox) {
 			closePopupAfterMoveTabManagerCheckbox.checked =
 				currentSettings.closePopupAfterMoveTabManager;
@@ -565,7 +565,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			currentSettings.alwaysShowMarksSearchInput =
 				alwaysShowMarksSearchInputCheckbox.checked;
 		}
-		// NEW: Save the new setting
+		//  Save the new setting
 		if (closePopupAfterMoveTabManagerCheckbox) {
 			currentSettings.closePopupAfterMoveTabManager =
 				closePopupAfterMoveTabManagerCheckbox.checked;
@@ -606,7 +606,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				currentSettings.alwaysShowMarksSearchInput,
 			);
 		}
-		// NEW: If the new setting for Tab Management changes, update the variable in tabManager.js
+		//  If the new setting for Tab Management changes, update the variable in tabManager.js
 		if (ViewManager.getActive() === "tabManagement") {
 			if (typeof window.setTabManagerClosePopupSetting === "function") {
 				window.setTabManagerClosePopupSetting(
@@ -638,7 +638,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				saveSettings,
 			);
 		}
-		// NEW: Attach listener for the new checkbox
+		//  Attach listener for the new checkbox
 		if (closePopupAfterMoveTabManagerCheckbox) {
 			closePopupAfterMoveTabManagerCheckbox.addEventListener(
 				"change",

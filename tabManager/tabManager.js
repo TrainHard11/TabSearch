@@ -405,7 +405,7 @@ window.initTabManagerFeature = async (containerElement, settings) => {
         })
         .then((response) => {
           if (response && response.success) {
-            // NEW: Conditionally close popup based on the setting
+            //  Conditionally close popup based on the setting
             if (closePopupAfterMove) {
               window.close(); // Close the popup
             }

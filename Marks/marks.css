@@ -14,7 +14,7 @@
   overflow-y: hidden;
 }
 
-/* NEW: Style for when a bookmark is being edited */
+/*  Style for when a bookmark is being edited */
 .marks-container.editing .mark-item:not(.selected) {
   opacity: 0.5; /* Dim other items when one is being edited */
   pointer-events: none; /* Disable interaction with non-editing items */
@@ -26,7 +26,7 @@
   gap: 15px;
 }
 
-/* NEW: Header for the bookmark list, containing title and counter */
+/*  Header for the bookmark list, containing title and counter */
 .marks-list-header {
   display: flex;
   align-items: baseline; /* Align text baselines */
@@ -46,7 +46,7 @@
   flex-shrink: 0; /* Prevent title from shrinking */
 }
 
-/* NEW: Style for the bookmark counter */
+/*  Style for the bookmark counter */
 .marks-counter {
   font-size: 1em;
   color: var(--color-text-secondary);
@@ -111,7 +111,7 @@
   box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.3);
 }
 
-/* NEW: Styles for the rename input */
+/*  Styles for the rename input */
 .marks-rename-input {
   flex-grow: 1;
   margin-right: 10px; /* Space between input and action buttons */
@@ -176,7 +176,7 @@
   cursor: pointer;
 }
 
-/* NEW: Group container for multiple buttons (Add and Sync) */
+/*  Group container for multiple buttons (Add and Sync) */
 .marks-button-group {
     display: flex;
     flex-wrap: wrap; /* Allow buttons to wrap to next line if space is limited */
@@ -222,7 +222,7 @@
   box-shadow: 0 0 0 3px rgba(97, 175, 239, 0.7); /* Stronger blue glow for focus */
 }
 
-/* NEW: Specific style for the Sync button, perhaps a different color */
+/*  Specific style for the Sync button, perhaps a different color */
 .marks-button.sync-button {
     background-color: var(--color-accent-blue); /* Use blue for sync button */
 }
@@ -482,7 +482,7 @@
   border: 1px solid #00cc00;
 }
 
-/* NEW: Style for info message */
+/*  Style for info message */
 .marks-message.info {
   background-color: #e0eaff; /* Light blueish background */
   color: #3f51b5; /* Medium blue text */

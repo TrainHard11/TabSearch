@@ -1032,12 +1032,12 @@ window.initHarpoonFeature = async () => {
         e.preventDefault();
         overwriteHarpoonList(funTabs, LS_FUN_TABS_KEY);
     }
-    // NEW: Overwrite Work List with Harpoon List (Ctrl+Alt+1) - Harpoon -> Work
+    //  Overwrite Work List with Harpoon List (Ctrl+Alt+1) - Harpoon -> Work
     else if (e.ctrlKey && e.altKey && e.key === "1") {
         e.preventDefault();
         overwriteTargetListWithHarpoon('work');
     }
-    // NEW: Overwrite Fun List with Harpoon List (Ctrl+Alt+2) - Harpoon -> Fun
+    //  Overwrite Fun List with Harpoon List (Ctrl+Alt+2) - Harpoon -> Fun
     else if (e.ctrlKey && e.altKey && e.key === "2") {
         e.preventDefault();
         overwriteTargetListWithHarpoon('fun');
