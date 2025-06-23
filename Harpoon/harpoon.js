@@ -8,7 +8,7 @@ window.initHarpoonFeature = async () => {
   const funListSection = document.getElementById("funListSection");
   const funListContainer = document.getElementById("funList");
   const harpoonInfoText = document.querySelector(
-    "#harpoonSection .settings-hint",
+    "#HarpoonSection .settings-hint",
   );
   const harpoonSourceIndicator = document.getElementById(
     "harpoonSourceIndicator",

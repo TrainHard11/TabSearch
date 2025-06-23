@@ -7,7 +7,7 @@
 // AFTER the marks.html content is loaded into the DOM.
 window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     // DOM Element References - these will only exist AFTER marks.html has been loaded
-    // and its content injected into the #marksSection by popup.js.
+    // and its content injected into the #MarksSection by popup.js.
     const urlNameInput = document.getElementById("urlNameInput");
     const urlInput = document.getElementById("urlInput");
     const exactMatchCheckbox = document.getElementById("exactMatchCheckbox");
