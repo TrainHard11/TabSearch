@@ -878,22 +878,32 @@ document.addEventListener("DOMContentLoaded", () => {
     let tabsToSearch = allTabs;
     let marksToSearch = [];
 
-    // Conditionally fetch marks if global setting is enabled AND per-bookmark setting is true
-    if (
-      currentSettings.searchMarksEnabled &&
-      typeof window.getAllBookmarks === "function"
-    ) {
-      // Ensure marks content is loaded before trying to get bookmarks
+    // First, check if the setting to include bookmarks is enabled.
+    if (currentSettings.searchMarksEnabled) {
+      // If enabled, we must ensure the marks content and script are loaded.
+      // The loadMarksContent function has a check to prevent it from running more than once.
       if (!marksContentLoaded) {
         await loadMarksContent();
       }
-      const allRawMarks = window.getAllBookmarks(); // Get ALL marks from marks.js
-      // Filter marks based on the new per-bookmark searchableInTabSearch property
-      marksToSearch = allRawMarks.filter(
-        (mark) => mark.searchableInTabSearch === true,
-      );
+
+      // Now that we have attempted to load the content, we can safely check for
+      // the existence of the getAllBookmarks function and use it.
+      if (typeof window.getAllBookmarks === "function") {
+        const allRawMarks = window.getAllBookmarks(); // Get ALL marks from marks.js
+        // Filter marks based on the per-bookmark searchableInTabSearch property
+        marksToSearch = allRawMarks.filter(
+          (mark) => mark.searchableInTabSearch === true,
+        );
+      } else {
+        // This is a fallback in case loading the marks script failed for some reason.
+        console.warn(
+          "Bookmarks search is enabled, but the getAllBookmarks function is not available.",
+        );
+        allMarks = [];
+      }
     } else {
-      allMarks = []; // Clear marks if global feature is disabled
+      // If the setting is disabled, ensure the marks list is empty.
+      allMarks = [];
     }
 
     const filteredTabsRaw = fuzzySearchItems(query, tabsToSearch, "title").map(
@@ -903,10 +913,8 @@ document.addEventListener("DOMContentLoaded", () => {
       (mark) => ({ ...mark, type: "mark" }),
     );
 
-    // FIX: Modified logic to allow duplicate tabs but deduplicate marks by URL,
-    // and prioritize marks when a tab has the same URL as a mark.
     const combinedResults = [];
-    const markUrlsAdded = new Set(); // To track URLs of marks already added
+    const markUrlsAdded = new Set();
 
     // Add filtered marks first and track their URLs
     filteredMarksRaw.forEach((mark) => {
@@ -916,8 +924,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Add filtered tabs. Only add a tab if its URL is NOT present in the markUrlsAdded set.
-    // This prioritizes marks over tabs if they have the same URL, but allows all unique tabs.
+    // Add filtered tabs, preventing duplicates if a mark with the same URL exists.
     filteredTabsRaw.forEach((tab) => {
       if (!tab.url || !markUrlsAdded.has(tab.url)) {
         combinedResults.push(tab);
@@ -929,7 +936,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Re-render the list with the updated filtered results
     renderResults(filteredResults);
   };
-
   /**
    * Highlights the currently selected item in the list.
    */
