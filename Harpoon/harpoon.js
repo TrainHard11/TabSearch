@@ -7,10 +7,22 @@ window.initHarpoonFeature = async () => {
   const workListContainer = document.getElementById("workList");
   const funListSection = document.getElementById("funListSection");
   const funListContainer = document.getElementById("funList");
-  const harpoonInfoText = document.querySelector("#harpoonSection .settings-hint");
+  const harpoonInfoText = document.querySelector(
+    "#harpoonSection .settings-hint",
+  );
+  const harpoonSourceIndicator = document.getElementById(
+    "harpoonSourceIndicator",
+  ); // NEW
 
-
-  if (!harpoonListContainer || !workListContainer || !funListContainer || !workListSection || !funListSection) {
+  if (
+    !harpoonListContainer ||
+    !workListContainer ||
+    !funListContainer ||
+    !workListSection ||
+    !funListSection ||
+    !harpoonSourceIndicator
+  ) {
+    // Updated check
     console.error(
       "Harpoon feature: Essential DOM elements not found after initHarpoonFeature call.",
     );
@@ -24,9 +36,7 @@ window.initHarpoonFeature = async () => {
   const noWorkMessage = workListContainer.querySelector(
     ".no-harpooned-message",
   ); // Reusing class
-  const noFunMessage = funListContainer.querySelector(
-    ".no-harpooned-message",
-  ); // Reusing class
+  const noFunMessage = funListContainer.querySelector(".no-harpooned-message"); // Reusing class
 
   // State Variables
   let selectedHarpoonIndex = -1; // For the main harpoon list
@@ -39,7 +49,6 @@ window.initHarpoonFeature = async () => {
 
   let workListVisible = true; // New: Default visibility state
   let funListVisible = true; // New: Default visibility state
-
 
   // Storage Keys (from background.js constants, ensure consistency)
   const LS_HARPOONED_TABS_KEY = "fuzzyTabSearch_harpoonedTabs";
@@ -114,9 +123,27 @@ window.initHarpoonFeature = async () => {
    */
   const cycleThroughAllVisibleLists = (direction) => {
     const allLists = [];
-    if (harpoonedTabs.length > 0) allLists.push({ type: 'harpoon', data: harpoonedTabs, selectedIndex: selectedHarpoonIndex, container: harpoonListContainer });
-    if (workListVisible && workTabs.length > 0) allLists.push({ type: 'work', data: workTabs, selectedIndex: selectedWorkIndex, container: workListContainer });
-    if (funListVisible && funTabs.length > 0) allLists.push({ type: 'fun', data: funTabs, selectedIndex: selectedFunIndex, container: funListContainer });
+    if (harpoonedTabs.length > 0)
+      allLists.push({
+        type: "harpoon",
+        data: harpoonedTabs,
+        selectedIndex: selectedHarpoonIndex,
+        container: harpoonListContainer,
+      });
+    if (workListVisible && workTabs.length > 0)
+      allLists.push({
+        type: "work",
+        data: workTabs,
+        selectedIndex: selectedWorkIndex,
+        container: workListContainer,
+      });
+    if (funListVisible && funTabs.length > 0)
+      allLists.push({
+        type: "fun",
+        data: funTabs,
+        selectedIndex: selectedFunIndex,
+        container: funListContainer,
+      });
 
     if (allLists.length === 0) {
       selectedHarpoonIndex = selectedWorkIndex = selectedFunIndex = -1;
@@ -126,38 +153,52 @@ window.initHarpoonFeature = async () => {
 
     // Find the currently active list
     let activeListIndex = -1;
-    if (selectedHarpoonIndex !== -1) activeListIndex = allLists.findIndex(l => l.type === 'harpoon');
-    else if (selectedWorkIndex !== -1) activeListIndex = allLists.findIndex(l => l.type === 'work');
-    else if (selectedFunIndex !== -1) activeListIndex = allLists.findIndex(l => l.type === 'fun');
+    if (selectedHarpoonIndex !== -1)
+      activeListIndex = allLists.findIndex((l) => l.type === "harpoon");
+    else if (selectedWorkIndex !== -1)
+      activeListIndex = allLists.findIndex((l) => l.type === "work");
+    else if (selectedFunIndex !== -1)
+      activeListIndex = allLists.findIndex((l) => l.type === "fun");
 
     // If nothing is selected, start at the beginning/end of the first/last list
     if (activeListIndex === -1) {
-        if (direction === "down") {
-            activeListIndex = 0;
-            updateSelectedIndices(allLists[activeListIndex].type, 0);
-        } else { // "up"
-            activeListIndex = allLists.length - 1;
-            updateSelectedIndices(allLists[activeListIndex].type, allLists[activeListIndex].data.length - 1);
-        }
-        highlightAllLists();
-        return;
+      if (direction === "down") {
+        activeListIndex = 0;
+        updateSelectedIndices(allLists[activeListIndex].type, 0);
+      } else {
+        // "up"
+        activeListIndex = allLists.length - 1;
+        updateSelectedIndices(
+          allLists[activeListIndex].type,
+          allLists[activeListIndex].data.length - 1,
+        );
+      }
+      highlightAllLists();
+      return;
     }
 
     let currentList = allLists[activeListIndex];
     let currentIndexInList = currentList.selectedIndex;
 
-    let { newIndex, movedBeyondBounds } = navigateSingleList(direction, currentList.data, currentIndexInList);
+    let { newIndex, movedBeyondBounds } = navigateSingleList(
+      direction,
+      currentList.data,
+      currentIndexInList,
+    );
 
     if (movedBeyondBounds) {
       let nextListIndex;
       if (direction === "down") {
         nextListIndex = (activeListIndex + 1) % allLists.length;
-      } else { // "up"
-        nextListIndex = (activeListIndex - 1 + allLists.length) % allLists.length;
+      } else {
+        // "up"
+        nextListIndex =
+          (activeListIndex - 1 + allLists.length) % allLists.length;
       }
 
       let nextList = allLists[nextListIndex];
-      let newIndexInNextList = direction === "down" ? 0 : nextList.data.length - 1;
+      let newIndexInNextList =
+        direction === "down" ? 0 : nextList.data.length - 1;
       updateSelectedIndices(nextList.type, newIndexInNextList);
     } else {
       updateSelectedIndices(currentList.type, newIndex);
@@ -173,9 +214,9 @@ window.initHarpoonFeature = async () => {
     selectedWorkIndex = -1;
     selectedFunIndex = -1;
 
-    if (type === 'harpoon') selectedHarpoonIndex = index;
-    else if (type === 'work') selectedWorkIndex = index;
-    else if (type === 'fun') selectedFunIndex = index;
+    if (type === "harpoon") selectedHarpoonIndex = index;
+    else if (type === "work") selectedWorkIndex = index;
+    else if (type === "fun") selectedFunIndex = index;
   };
 
   /**
@@ -186,7 +227,6 @@ window.initHarpoonFeature = async () => {
     highlightItem(workListContainer, selectedWorkIndex);
     highlightItem(funListContainer, selectedFunIndex);
   };
-
 
   /**
    * Activates the specified tab/link.
@@ -258,7 +298,6 @@ window.initHarpoonFeature = async () => {
       workListContainer.appendChild(itemElement);
     });
   };
-
   /**
    * Renders the list of fun tabs in the UI.
    * Internal function, not exposed globally.
@@ -384,6 +423,7 @@ window.initHarpoonFeature = async () => {
         }
         highlightItem(funListContainer, selectedFunIndex);
       }
+      updateHarpoonSourceIndicator(); // NEW: Update indicator after removal
     });
     actionButtonsContainer.appendChild(removeButton);
 
@@ -422,28 +462,35 @@ window.initHarpoonFeature = async () => {
    * @returns {boolean} True if the item was successfully moved within the list, false if at a boundary or invalid state.
    */
   const moveItemWithinList = async (listType, direction) => {
-    let listArray, currentSelectedIdx, saveFunction, renderFunction, listContainer;
+    let listArray,
+      currentSelectedIdx,
+      saveFunction,
+      renderFunction,
+      listContainer;
 
-    if (listType === 'harpoon') {
+    if (listType === "harpoon") {
       listArray = harpoonedTabs;
       currentSelectedIdx = selectedHarpoonIndex;
       saveFunction = saveHarpoonedTabs;
       renderFunction = renderHarpoonedTabs;
       listContainer = harpoonListContainer;
-    } else if (listType === 'work') {
+    } else if (listType === "work") {
       listArray = workTabs;
       currentSelectedIdx = selectedWorkIndex;
       saveFunction = saveWorkTabs;
       renderFunction = renderWorkTabs;
       listContainer = workListContainer;
-    } else if (listType === 'fun') {
+    } else if (listType === "fun") {
       listArray = funTabs;
       currentSelectedIdx = selectedFunIndex;
       saveFunction = saveFunTabs;
       renderFunction = renderFunTabs;
       listContainer = funListContainer;
     } else {
-      console.warn("Invalid listType provided to moveItemWithinList:", listType);
+      console.warn(
+        "Invalid listType provided to moveItemWithinList:",
+        listType,
+      );
       return false;
     }
 
@@ -479,27 +526,27 @@ window.initHarpoonFeature = async () => {
     ];
 
     // Update the correct global selected index
-    if (listType === 'harpoon') selectedHarpoonIndex = newIndex;
-    else if (listType === 'work') selectedWorkIndex = newIndex;
-    else if (listType === 'fun') selectedFunIndex = newIndex;
+    if (listType === "harpoon") selectedHarpoonIndex = newIndex;
+    else if (listType === "work") selectedWorkIndex = newIndex;
+    else if (listType === "fun") selectedFunIndex = newIndex;
 
     await saveFunction();
     renderFunction(); // Re-render the specific list
 
     // Apply the highlight to the moved item in its new position
     const movedElement = listContainer.querySelector(
-        `.harpoon-item[data-url="${movedItemUrl}"]`,
+      `.harpoon-item[data-url="${movedItemUrl}"]`,
     );
     if (movedElement) {
-        movedElement.classList.add("moved-highlight");
-        setTimeout(() => {
-            movedElement.classList.remove("moved-highlight");
-        }, 400); // Duration matches CSS transition
+      movedElement.classList.add("moved-highlight");
+      setTimeout(() => {
+        movedElement.classList.remove("moved-highlight");
+      }, 400); // Duration matches CSS transition
     }
     highlightAllLists(); // Re-highlight the item in its new position (and deselect others)
+    updateHarpoonSourceIndicator(); // NEW: Update indicator after move
     return true; // Move successfully occurred within list
   };
-
 
   /**
    * Moves the currently selected item between visible lists.
@@ -512,20 +559,24 @@ window.initHarpoonFeature = async () => {
     let currentSelectedIndex = -1;
 
     if (selectedHarpoonIndex !== -1) {
-      currentListType = 'harpoon';
+      currentListType = "harpoon";
       currentListArray = harpoonedTabs;
       currentSelectedIndex = selectedHarpoonIndex;
     } else if (selectedWorkIndex !== -1 && workListVisible) {
-      currentListType = 'work';
+      currentListType = "work";
       currentListArray = workTabs;
       currentSelectedIndex = selectedWorkIndex;
     } else if (selectedFunIndex !== -1 && funListVisible) {
-      currentListType = 'fun';
+      currentListType = "fun";
       currentListArray = funTabs;
       currentSelectedIndex = selectedFunIndex;
     }
 
-    if (!currentListType || currentSelectedIndex === -1 || currentListArray.length === 0) {
+    if (
+      !currentListType ||
+      currentSelectedIndex === -1 ||
+      currentListArray.length === 0
+    ) {
       return false; // No item selected, or selected list is empty/hidden
     }
 
@@ -534,16 +585,43 @@ window.initHarpoonFeature = async () => {
 
     // Build a list of all *currently visible* lists that can be targets (including current list)
     const allVisibleLists = [];
-    if (harpoonedTabs.length > 0 || currentListType === 'harpoon') allVisibleLists.push({ type: 'harpoon', data: harpoonedTabs, save: saveHarpoonedTabs, render: renderHarpoonedTabs, maxCapacity: MAX_HARPOON_LINKS, container: harpoonListContainer });
-    if (workListVisible) allVisibleLists.push({ type: 'work', data: workTabs, save: saveWorkTabs, render: renderWorkTabs, maxCapacity: MAX_WORK_LINKS, container: workListContainer });
-    if (funListVisible) allVisibleLists.push({ type: 'fun', data: funTabs, save: saveFunTabs, render: renderFunTabs, maxCapacity: MAX_FUN_LINKS, container: funListContainer });
+    if (harpoonedTabs.length > 0 || currentListType === "harpoon")
+      allVisibleLists.push({
+        type: "harpoon",
+        data: harpoonedTabs,
+        save: saveHarpoonedTabs,
+        render: renderHarpoonedTabs,
+        maxCapacity: MAX_HARPOON_LINKS,
+        container: harpoonListContainer,
+      });
+    if (workListVisible)
+      allVisibleLists.push({
+        type: "work",
+        data: workTabs,
+        save: saveWorkTabs,
+        render: renderWorkTabs,
+        maxCapacity: MAX_WORK_LINKS,
+        container: workListContainer,
+      });
+    if (funListVisible)
+      allVisibleLists.push({
+        type: "fun",
+        data: funTabs,
+        save: saveFunTabs,
+        render: renderFunTabs,
+        maxCapacity: MAX_FUN_LINKS,
+        container: funListContainer,
+      });
 
     // Filter out lists that are full and are not the current list (which is about to lose an item)
-    const eligibleLists = allVisibleLists.filter(list =>
-        list.type === currentListType || list.data.length < list.maxCapacity
+    const eligibleLists = allVisibleLists.filter(
+      (list) =>
+        list.type === currentListType || list.data.length < list.maxCapacity,
     );
 
-    const currentListIndexInEligible = eligibleLists.findIndex(l => l.type === currentListType);
+    const currentListIndexInEligible = eligibleLists.findIndex(
+      (l) => l.type === currentListType,
+    );
 
     if (eligibleLists.length <= 1 || currentListIndexInEligible === -1) {
       return false; // Only one eligible list (or none), or current list not found. Cannot move between lists.
@@ -551,31 +629,36 @@ window.initHarpoonFeature = async () => {
 
     let targetListIndexInEligible;
     if (direction === "down") {
-      targetListIndexInEligible = (currentListIndexInEligible + 1) % eligibleLists.length;
-    } else { // "up"
-      targetListIndexInEligible = (currentListIndexInEligible - 1 + eligibleLists.length) % eligibleLists.length;
+      targetListIndexInEligible =
+        (currentListIndexInEligible + 1) % eligibleLists.length;
+    } else {
+      // "up"
+      targetListIndexInEligible =
+        (currentListIndexInEligible - 1 + eligibleLists.length) %
+        eligibleLists.length;
     }
 
     const targetListConfig = eligibleLists[targetListIndexInEligible];
 
     // If the target list is the same as the current list, it means we cycled back.
     if (targetListConfig.type === currentListType) {
-        return false; // Cannot move between lists if the target is the source.
+      return false; // Cannot move between lists if the target is the source.
     }
 
     // Double check if the target list is full (it should have been filtered out, but a safety check)
     if (targetListConfig.data.length >= targetListConfig.maxCapacity) {
-        console.log("Target list is full. Cannot move item.");
-        return false;
+      console.log("Target list is full. Cannot move item.");
+      return false;
     }
 
     // Perform the move:
     // 1. Remove from source list
     currentListArray.splice(currentSelectedIndex, 1);
-    await allVisibleLists.find(l => l.type === currentListType).save(); // Save source list
+    await allVisibleLists.find((l) => l.type === currentListType).save(); // Save source list
 
     // 2. Add to target list
-    const newIndexInTarget = direction === "down" ? 0 : targetListConfig.data.length; // Add to beginning or end
+    const newIndexInTarget =
+      direction === "down" ? 0 : targetListConfig.data.length; // Add to beginning or end
     targetListConfig.data.splice(newIndexInTarget, 0, itemToMove);
     await targetListConfig.save(); // Save target list
 
@@ -584,23 +667,22 @@ window.initHarpoonFeature = async () => {
     highlightAllLists();
 
     // 4. Re-render both lists to reflect changes
-    allVisibleLists.find(l => l.type === currentListType).render();
+    allVisibleLists.find((l) => l.type === currentListType).render();
     targetListConfig.render();
 
     // Apply highlight to the moved item in the target list
     const movedElement = targetListConfig.container.querySelector(
-        `.harpoon-item[data-url="${itemToMove.url}"]`,
+      `.harpoon-item[data-url="${itemToMove.url}"]`,
     );
     if (movedElement) {
-        movedElement.classList.add("moved-highlight");
-        setTimeout(() => {
-            movedElement.classList.remove("moved-highlight");
-        }, 400);
+      movedElement.classList.add("moved-highlight");
+      setTimeout(() => {
+        movedElement.classList.remove("moved-highlight");
+      }, 400);
     }
-
+    updateHarpoonSourceIndicator(); // NEW: Update indicator after move
     return true; // Successfully moved between lists
   };
-
 
   /**
    * Saves the current list of harpooned tabs to chrome.storage.local.
@@ -669,18 +751,18 @@ window.initHarpoonFeature = async () => {
   const saveWorkListVisibility = async (isVisible) => {
     try {
       await chrome.storage.local.set({ [LS_WORK_LIST_VISIBLE_KEY]: isVisible });
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error saving work list visibility:", error);
     }
   };
 
   const loadWorkListVisibility = async () => {
     try {
-      const result = await chrome.storage.local.get({ [LS_WORK_LIST_VISIBLE_KEY]: true }); // Default to visible
+      const result = await chrome.storage.local.get({
+        [LS_WORK_LIST_VISIBLE_KEY]: true,
+      }); // Default to visible
       return result[LS_WORK_LIST_VISIBLE_KEY];
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error loading work list visibility:", error);
       return true;
     }
@@ -689,21 +771,48 @@ window.initHarpoonFeature = async () => {
   const saveFunListVisibility = async (isVisible) => {
     try {
       await chrome.storage.local.set({ [LS_FUN_LIST_VISIBLE_KEY]: isVisible });
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error saving fun list visibility:", error);
     }
   };
 
   const loadFunListVisibility = async () => {
     try {
-      const result = await chrome.storage.local.get({ [LS_FUN_LIST_VISIBLE_KEY]: true }); // Default to visible
+      const result = await chrome.storage.local.get({
+        [LS_FUN_LIST_VISIBLE_KEY]: true,
+      }); // Default to visible
       return result[LS_FUN_LIST_VISIBLE_KEY];
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error loading fun list visibility:", error);
       return true;
     }
+  };
+
+  // NEW: Function to compare two lists for exact match (content and order)
+  const areListsIdentical = (listA, listB) => {
+    if (listA.length !== listB.length) {
+      return false;
+    }
+    for (let i = 0; i < listA.length; i++) {
+      // Compare by URL and Title, as these are the primary identifying properties for a tab/link
+      if (listA[i].url !== listB[i].url || listA[i].title !== listB[i].title) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // NEW: Function to update the source indicator text
+  const updateHarpoonSourceIndicator = () => {
+    let sourceText = "None";
+
+    if (areListsIdentical(harpoonedTabs, workTabs)) {
+      sourceText = "Work";
+    } else if (areListsIdentical(harpoonedTabs, funTabs)) {
+      sourceText = "Fun";
+    }
+
+    harpoonSourceIndicator.textContent = `Source: ${sourceText}`;
   };
 
   /**
@@ -728,6 +837,8 @@ window.initHarpoonFeature = async () => {
     selectedWorkIndex = -1;
     selectedFunIndex = -1;
     highlightAllLists();
+
+    updateHarpoonSourceIndicator(); // NEW: Update indicator after overwrite
   };
 
   /**
@@ -740,19 +851,22 @@ window.initHarpoonFeature = async () => {
     let targetRenderFunction;
     let maxCapacity;
 
-    if (targetListType === 'work') {
-        targetListArray = workTabs;
-        targetSaveFunction = saveWorkTabs;
-        targetRenderFunction = renderWorkTabs;
-        maxCapacity = MAX_WORK_LINKS;
-    } else if (targetListType === 'fun') {
-        targetListArray = funTabs;
-        targetSaveFunction = saveFunTabs;
-        targetRenderFunction = renderFunTabs;
-        maxCapacity = MAX_FUN_LINKS;
+    if (targetListType === "work") {
+      targetListArray = workTabs;
+      targetSaveFunction = saveWorkTabs;
+      targetRenderFunction = renderWorkTabs;
+      maxCapacity = MAX_WORK_LINKS;
+    } else if (targetListType === "fun") {
+      targetListArray = funTabs;
+      targetSaveFunction = saveFunTabs;
+      targetRenderFunction = renderFunTabs;
+      maxCapacity = MAX_FUN_LINKS;
     } else {
-        console.warn("Invalid targetListType provided to overwriteTargetListWithHarpoon:", targetListType);
-        return;
+      console.warn(
+        "Invalid targetListType provided to overwriteTargetListWithHarpoon:",
+        targetListType,
+      );
+      return;
     }
 
     // Clear the target list
@@ -760,7 +874,7 @@ window.initHarpoonFeature = async () => {
 
     // Copy items from harpoonedTabs to targetListArray, respecting max capacity
     for (let i = 0; i < harpoonedTabs.length && i < maxCapacity; i++) {
-        targetListArray.push({ ...harpoonedTabs[i] }); // Create shallow copy of item
+      targetListArray.push({ ...harpoonedTabs[i] }); // Create shallow copy of item
     }
 
     await targetSaveFunction();
@@ -773,10 +887,11 @@ window.initHarpoonFeature = async () => {
 
     // Set selection on the first item of the now updated target list
     if (targetListArray.length > 0) {
-        if (targetListType === 'work') selectedWorkIndex = 0;
-        else if (targetListType === 'fun') selectedFunIndex = 0;
+      if (targetListType === "work") selectedWorkIndex = 0;
+      else if (targetListType === "fun") selectedFunIndex = 0;
     }
     highlightAllLists();
+    updateHarpoonSourceIndicator(); // NEW: Update indicator after overwrite
   };
 
   /**
@@ -786,7 +901,11 @@ window.initHarpoonFeature = async () => {
    * @param {string} targetListKey The storage key for the target list (LS_WORK_TABS_KEY or LS_FUN_TABS_KEY).
    * @param {number} maxCapacity The maximum number of items allowed in the target list.
    */
-  const addItemToTargetList = async (targetList, targetListKey, maxCapacity) => {
+  const addItemToTargetList = async (
+    targetList,
+    targetListKey,
+    maxCapacity,
+  ) => {
     if (selectedHarpoonIndex === -1 || !harpoonedTabs[selectedHarpoonIndex]) {
       console.warn("No harpooned tab selected to add to list.");
       return;
@@ -795,18 +914,20 @@ window.initHarpoonFeature = async () => {
     const itemToAdd = harpoonedTabs[selectedHarpoonIndex];
 
     // Prevent duplicates
-    if (targetList.some(item => item.url === itemToAdd.url)) {
+    if (targetList.some((item) => item.url === itemToAdd.url)) {
       console.log("Item already exists in target list.");
       // Optionally, highlight the existing item
-      const existingIndex = targetList.findIndex(item => item.url === itemToAdd.url);
+      const existingIndex = targetList.findIndex(
+        (item) => item.url === itemToAdd.url,
+      );
       if (targetListKey === LS_WORK_TABS_KEY) {
-          selectedWorkIndex = existingIndex;
-          renderWorkTabs();
-          highlightAllLists();
+        selectedWorkIndex = existingIndex;
+        renderWorkTabs();
+        highlightAllLists();
       } else if (targetListKey === LS_FUN_TABS_KEY) {
-          selectedFunIndex = existingIndex;
-          renderFunTabs();
-          highlightAllLists();
+        selectedFunIndex = existingIndex;
+        renderFunTabs();
+        highlightAllLists();
       }
       return;
     }
@@ -833,8 +954,8 @@ window.initHarpoonFeature = async () => {
       selectedWorkIndex = -1; // Deselect from work list
     }
     highlightAllLists(); // Re-apply highlight
+    updateHarpoonSourceIndicator(); // NEW: Update indicator after adding item (might affect if Harpoon matches a source if item was added from Harpoon)
   };
-
 
   /**
    * Removes a tab from the main harpooned list based on its URL.
@@ -856,7 +977,7 @@ window.initHarpoonFeature = async () => {
    */
   const removeWorkItem = async (url) => {
     const initialLength = workTabs.length;
-    workTabs = workTabs.filter(item => item.url !== url);
+    workTabs = workTabs.filter((item) => item.url !== url);
     if (workTabs.length < initialLength) {
       await saveWorkTabs();
       renderWorkTabs();
@@ -870,7 +991,7 @@ window.initHarpoonFeature = async () => {
    */
   const removeFunItem = async (url) => {
     const initialLength = funTabs.length;
-    funTabs = funTabs.filter(item => item.url !== url);
+    funTabs = funTabs.filter((item) => item.url !== url);
     if (funTabs.length < initialLength) {
       await saveFunTabs();
       renderFunTabs();
@@ -887,26 +1008,27 @@ window.initHarpoonFeature = async () => {
       await removeHarpoonedTabFromList(urlToRemove);
       // Adjust selected index for main harpoon list
       if (selectedHarpoonIndex >= harpoonedTabs.length) {
-          selectedHarpoonIndex = harpoonedTabs.length > 0 ? harpoonedTabs.length - 1 : -1;
+        selectedHarpoonIndex =
+          harpoonedTabs.length > 0 ? harpoonedTabs.length - 1 : -1;
       }
     } else if (selectedWorkIndex !== -1 && workTabs[selectedWorkIndex]) {
       const urlToRemove = workTabs[selectedWorkIndex].url;
       await removeWorkItem(urlToRemove);
       // Adjust selected index for work list
       if (selectedWorkIndex >= workTabs.length) {
-          selectedWorkIndex = workTabs.length > 0 ? workTabs.length - 1 : -1;
+        selectedWorkIndex = workTabs.length > 0 ? workTabs.length - 1 : -1;
       }
     } else if (selectedFunIndex !== -1 && funTabs[selectedFunIndex]) {
       const urlToRemove = funTabs[selectedFunIndex].url;
       await removeFunItem(urlToRemove);
       // Adjust selected index for fun list
       if (selectedFunIndex >= funTabs.length) {
-          selectedFunIndex = funTabs.length > 0 ? funTabs.length - 1 : -1;
+        selectedFunIndex = funTabs.length > 0 ? funTabs.length - 1 : -1;
       }
     }
     highlightAllLists(); // Re-apply highlights after potential index change
+    updateHarpoonSourceIndicator(); // NEW: Update indicator after removal
   };
-
 
   /**
    * Toggles the visibility of a specified list section (Work or Fun) and persists the state.
@@ -916,18 +1038,18 @@ window.initHarpoonFeature = async () => {
     let sectionElement;
     let isVisible;
 
-    if (listType === 'work') {
+    if (listType === "work") {
       sectionElement = workListSection;
       workListVisible = !workListVisible;
       isVisible = workListVisible;
       await saveWorkListVisibility(isVisible);
-    } else if (listType === 'fun') {
+    } else if (listType === "fun") {
       sectionElement = funListSection;
       funListVisible = !funListVisible;
       isVisible = funListVisible;
       await saveFunListVisibility(isVisible);
     } else {
-      console.warn('Invalid list type for toggleVisibility:', listType);
+      console.warn("Invalid list type for toggleVisibility:", listType);
       return;
     }
 
@@ -936,12 +1058,12 @@ window.initHarpoonFeature = async () => {
     } else {
       sectionElement.classList.add("hidden-list-section");
       // If a list becomes hidden, clear its selection and de-highlight it
-      if (listType === 'work') {
-          selectedWorkIndex = -1;
-          highlightItem(workListContainer, selectedWorkIndex);
-      } else if (listType === 'fun') {
-          selectedFunIndex = -1;
-          highlightItem(funListContainer, selectedFunIndex);
+      if (listType === "work") {
+        selectedWorkIndex = -1;
+        highlightItem(workListContainer, selectedWorkIndex);
+      } else if (listType === "fun") {
+        selectedFunIndex = -1;
+        highlightItem(funListContainer, selectedFunIndex);
       }
     }
     // Re-evaluate current selection based on new visibility state
@@ -949,58 +1071,73 @@ window.initHarpoonFeature = async () => {
     // if a list gets hidden, and it was the selected one, selection moves to next visible list.
     let currentActiveListSelected = false;
     if (selectedHarpoonIndex !== -1) currentActiveListSelected = true;
-    if (workListVisible && selectedWorkIndex !== -1) currentActiveListSelected = true;
-    if (funListVisible && selectedFunIndex !== -1) currentActiveListSelected = true;
+    if (workListVisible && selectedWorkIndex !== -1)
+      currentActiveListSelected = true;
+    if (funListVisible && selectedFunIndex !== -1)
+      currentActiveListSelected = true;
 
     // If no list was selected, or the selected list became hidden, find a new default selection
     if (!currentActiveListSelected) {
-        if (harpoonedTabs.length > 0) {
-            selectedHarpoonIndex = 0;
-        } else if (workListVisible && workTabs.length > 0) {
-            selectedWorkIndex = 0;
-        } else if (funListVisible && funTabs.length > 0) {
-            selectedFunIndex = 0;
-        }
+      if (harpoonedTabs.length > 0) {
+        selectedHarpoonIndex = 0;
+      } else if (workListVisible && workTabs.length > 0) {
+        // Only set focus if list is visible
+        selectedWorkIndex = 0;
+      } else if (funListVisible && funTabs.length > 0) {
+        // Only set focus if list is visible
+        selectedFunIndex = 0;
+      }
     }
     highlightAllLists(); // Re-apply highlights after state change
+    updateHarpoonSourceIndicator(); // NEW: Update indicator when visibility changes
   };
-
 
   /**
    * Handles keyboard events specific to the Harpoon view.
    * This function is attached/detached by popup.js when switching views.
    * @param {KeyboardEvent} e The keyboard event.
    */
-  const harpoonKeydownHandler = async (e) => { // Made async as move functions are now async
+  const harpoonKeydownHandler = async (e) => {
+    // Made async as move functions are now async
     // Navigation (j, k, ArrowDown, ArrowUp, Alt+j, Alt+k) - Changes selection/focus only
     // This explicitly checks that SHIFT is NOT pressed for navigation keys.
-    if ((e.key === "ArrowDown" || e.key === "j" || (e.altKey && e.key === "j")) && !e.shiftKey) {
-        e.preventDefault();
-        cycleThroughAllVisibleLists("down");
-    } else if ((e.key === "ArrowUp" || e.key === "k" || (e.altKey && e.key === "k")) && !e.shiftKey) {
-        e.preventDefault();
-        cycleThroughAllVisibleLists("up");
+    if (
+      (e.key === "ArrowDown" || e.key === "j" || (e.altKey && e.key === "j")) &&
+      !e.shiftKey
+    ) {
+      e.preventDefault();
+      cycleThroughAllVisibleLists("down");
+    } else if (
+      (e.key === "ArrowUp" || e.key === "k" || (e.altKey && e.key === "k")) &&
+      !e.shiftKey
+    ) {
+      e.preventDefault();
+      cycleThroughAllVisibleLists("up");
     }
     // Item Movement (Shift+J, Shift+K)
     else if (e.shiftKey && (e.key === "J" || e.key === "K")) {
-        e.preventDefault();
-        const direction = (e.key === "J") ? "down" : "up"; // J for down, K for up
+      e.preventDefault();
+      const direction = e.key === "J" ? "down" : "up"; // J for down, K for up
 
-        // Determine which list the item is currently in
-        let currentListType = null;
-        if (selectedHarpoonIndex !== -1) currentListType = 'harpoon';
-        else if (selectedWorkIndex !== -1) currentListType = 'work';
-        else if (selectedFunIndex !== -1) currentListType = 'fun';
+      // Determine which list the item is currently in
+      let currentListType = null;
+      if (selectedHarpoonIndex !== -1) currentListType = "harpoon";
+      else if (selectedWorkIndex !== -1) currentListType = "work";
+      else if (selectedFunIndex !== -1) currentListType = "fun";
 
-        if (currentListType) { // Only try to move if an item is currently selected
-            // First, try to move within the current list
-            const movedWithin = await moveItemWithinList(currentListType, direction);
+      if (currentListType) {
+        // Only try to move if an item is currently selected
+        // First, try to move within the current list
+        const movedWithin = await moveItemWithinList(
+          currentListType,
+          direction,
+        );
 
-            // If not moved within the list (i.e., at a boundary), try to move between lists
-            if (!movedWithin) {
-                await moveItemBetweenLists(direction);
-            }
+        // If not moved within the list (i.e., at a boundary), try to move between lists
+        if (!movedWithin) {
+          await moveItemBetweenLists(direction);
         }
+      }
     }
     // Activation (Enter key)
     else if (e.key === "Enter") {
@@ -1024,31 +1161,31 @@ window.initHarpoonFeature = async () => {
     }
     // Overwrite Harpoon with Work List (Ctrl+1) - Work -> Harpoon
     else if (e.ctrlKey && e.key === "1" && !e.altKey) {
-        e.preventDefault();
-        overwriteHarpoonList(workTabs, LS_WORK_TABS_KEY);
+      e.preventDefault();
+      await overwriteHarpoonList(workTabs, LS_WORK_TABS_KEY);
     }
     // Overwrite Harpoon with Fun List (Ctrl+2) - Fun -> Harpoon
     else if (e.ctrlKey && e.key === "2" && !e.altKey) {
-        e.preventDefault();
-        overwriteHarpoonList(funTabs, LS_FUN_TABS_KEY);
+      e.preventDefault();
+      await overwriteHarpoonList(funTabs, LS_FUN_TABS_KEY);
     }
     //  Overwrite Work List with Harpoon List (Ctrl+Alt+1) - Harpoon -> Work
     else if (e.ctrlKey && e.altKey && e.key === "1") {
-        e.preventDefault();
-        overwriteTargetListWithHarpoon('work');
+      e.preventDefault();
+      await overwriteTargetListWithHarpoon("work");
     }
     //  Overwrite Fun List with Harpoon List (Ctrl+Alt+2) - Harpoon -> Fun
     else if (e.ctrlKey && e.altKey && e.key === "2") {
-        e.preventDefault();
-        overwriteTargetListWithHarpoon('fun');
+      e.preventDefault();
+      await overwriteTargetListWithHarpoon("fun");
     }
     // Toggle Work/Fun Lists Visibility (Ctrl+T)
     else if (e.ctrlKey && e.key === "t") {
-        e.preventDefault();
-        toggleListVisibility('work');
-        toggleListVisibility('fun');
-        // Update info text dynamically
-        harpoonInfoText.innerHTML = `Press F3 again to hide Harpoon. J/K to move items. C-d to delete. <b>Ctrl+T to ${workListVisible || funListVisible ? 'hide' : 'show'} Work/Fun lists.</b>`;
+      e.preventDefault();
+      await toggleListVisibility("work"); // Made await
+      await toggleListVisibility("fun"); // Made await
+      // Update info text dynamically
+      harpoonInfoText.innerHTML = `Press F3 again to hide Harpoon. J/K to move items. C-d to delete. <b>Ctrl+T to ${workListVisible || funListVisible ? "hide" : "show"} Work/Fun lists.</b>`;
     }
   };
 
@@ -1064,16 +1201,17 @@ window.initHarpoonFeature = async () => {
         selectedHarpoonIndex = 0;
       }
       highlightItem(harpoonListContainer, selectedHarpoonIndex);
-    } else if (workListVisible && workTabs.length > 0) { // Only set focus if list is visible
-        selectedWorkIndex = 0;
-        highlightItem(workListContainer, selectedWorkIndex);
-    } else if (funListVisible && funTabs.length > 0) { // Only set focus if list is visible
-        selectedFunIndex = 0;
-        highlightItem(funListContainer, selectedFunIndex);
+    } else if (workListVisible && workTabs.length > 0) {
+      // Only set focus if list is visible
+      selectedWorkIndex = 0;
+      highlightItem(workListContainer, selectedWorkIndex);
+    } else if (funListVisible && funTabs.length > 0) {
+      // Only set focus if list is visible
+      selectedFunIndex = 0;
+      highlightItem(funListContainer, selectedFunIndex);
     }
-
     // Set the initial info text
-    harpoonInfoText.innerHTML = `Press F3 again to hide Harpoon. J/K to move items. C-d to delete. <b>Ctrl+T to ${workListVisible || funListVisible ? 'hide' : 'show'} Work/Fun lists.</b>`;
+    harpoonInfoText.innerHTML = `Press F3 again to hide Harpoon. J/K to move items. C-d to delete. <b>Ctrl+T to ${workListVisible || funListVisible ? "hide" : "show"} Work/Fun lists.</b>`;
   };
 
   /**
@@ -1143,31 +1281,34 @@ window.initHarpoonFeature = async () => {
     }
 
     if (!initialFocusSet) {
-        // If no specific URL to focus, and there are items, default to the first in main harpoon list
-        if (harpoonedTabs.length > 0) {
-            if (selectedHarpoonIndex === -1) {
-                selectedHarpoonIndex = 0;
-            }
-            highlightItem(harpoonListContainer, selectedHarpoonIndex);
-            initialFocusSet = true;
-        } else if (workListVisible && workTabs.length > 0) { // Only set focus if list is visible
-            selectedWorkIndex = 0;
-            highlightItem(workListContainer, selectedWorkIndex);
-            initialFocusSet = true;
-        } else if (funListVisible && funTabs.length > 0) { // Only set focus if list is visible
-            selectedFunIndex = 0;
-            highlightItem(funListContainer, selectedFunIndex);
-            initialFocusSet = true;
+      // If no specific URL to focus, and there are items, default to the first in main harpoon list
+      if (harpoonedTabs.length > 0) {
+        if (selectedHarpoonIndex === -1) {
+          selectedHarpoonIndex = 0;
         }
+        highlightItem(harpoonListContainer, selectedHarpoonIndex);
+        initialFocusSet = true;
+      } else if (workListVisible && workTabs.length > 0) {
+        // Only set focus if list is visible
+        selectedWorkIndex = 0;
+        highlightItem(workListContainer, selectedWorkIndex);
+        initialFocusSet = true;
+      } else if (funListVisible && funTabs.length > 0) {
+        // Only set focus if list is visible
+        selectedFunIndex = 0;
+        highlightItem(funListContainer, selectedFunIndex);
+        initialFocusSet = true;
+      }
     }
 
     if (!initialFocusSet) {
-        selectedHarpoonIndex = -1; // No items, no selection
-        selectedWorkIndex = -1;
-        selectedFunIndex = -1;
+      selectedHarpoonIndex = -1; // No items, no selection
+      selectedWorkIndex = -1;
+      selectedFunIndex = -1;
     }
-  };
 
+    updateHarpoonSourceIndicator(); // NEW: Call this after all lists are loaded and rendered
+  };
 
   // Initial load of harpooned tabs when the initHarpoonFeature function is called
   await loadAllHarpoonLists();
@@ -1177,7 +1318,8 @@ window.initHarpoonFeature = async () => {
 
   // Expose other utility functions as needed (if popup.js or other external scripts call them)
   window.activateSelectedHarpoonItem = () => {
-    if (selectedHarpoonIndex !== -1) activateItem(harpoonedTabs[selectedHarpoonIndex]);
+    if (selectedHarpoonIndex !== -1)
+      activateItem(harpoonedTabs[selectedHarpoonIndex]);
   };
   window.removeSelectedHarpoonItem = removeSelectedItem; // Now universal delete
 

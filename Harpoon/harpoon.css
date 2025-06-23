@@ -14,6 +14,7 @@
 .harpoon-content {
   display: flex;
   flex-direction: column;
+  position: relative; /* Added for absolute positioning of the indicator */
   /* gap: 15px; */
   /* flex-grow: 1; */
 }
@@ -209,12 +210,23 @@
   border-top: 1px solid var(--color-border-dark);
 }
 
-/* New style for margin between harpoon list sections */
 .harpoon-new-list-section {
   margin-top: 25px;
 }
 
-/* New style to hide list sections */
 .hidden-list-section {
   display: none !important;
+}
+
+.harpoon-source-indicator {
+  position: absolute;
+  bottom: 10px;
+  right: 15px;
+  font-size: 0.8em;
+  color: var(--color-accent-blue);
+  background-color: var(--color-background-secondary);
+  padding: 5px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border-dark);
+  z-index: 10;
 }
