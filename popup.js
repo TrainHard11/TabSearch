@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let settingsContentLoaded = false;
   let marksContentLoaded = false;
   let harpoonContentLoaded = false;
-  let tabManagementContentLoaded = false; //  Flag for Tab Management content
+  let tabManagementContentLoaded = false; // Flag for Tab Management content
 
   // Flag to indicate if the current searchInput value came from a persistent query
   let isPersistentQueryActive = false;
@@ -98,7 +98,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const lowerCaseQuery = query.toLowerCase();
     const queryWords = lowerCaseQuery.split(" ").filter(Boolean);
     let highlightedHtml = text;
+
     queryWords.forEach((word) => {
+      // Escape special characters in the word for use in a RegExp constructor
+      // This regex escapes characters that have special meaning in regular expressions
       const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const regex = new RegExp(`(${escapedWord})`, "gi");
       highlightedHtml = highlightedHtml.replace(
@@ -313,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
       help: { container: HelpSection, content: HelpSection },
       marks: { container: MarksSection, content: MarksSection },
       harpoon: { container: HarpoonSection, content: HarpoonSection },
-      //  Tab Management view definition
+      // Tab Management view definition
       tabManagement: {
         container: tabManagerSection,
         content: tabManagerSection,
@@ -427,7 +430,7 @@ document.addEventListener("DOMContentLoaded", () => {
           );
         }
       } else if (viewName === "tabManagement") {
-        //  Tab Management view actions
+        // Tab Management view actions
         if (typeof window.attachTabManagerListeners === "function") {
           window.attachTabManagerListeners();
         }
@@ -493,7 +496,7 @@ document.addEventListener("DOMContentLoaded", () => {
     showSearchUIforMarks_Checkbox = SettingsSection.querySelector(
       "#alwaysShowMarksSearchInput",
     );
-    //  Get reference for the new checkbox
+    // Get reference for the new checkbox
     closePopupAfterMoveTabManager_Checkbox = SettingsSection.querySelector(
       "#closePopupAfterMoveTabManager",
     );
@@ -533,7 +536,7 @@ document.addEventListener("DOMContentLoaded", () => {
       showSearchUIforMarks_Checkbox.checked =
         currentSettings.alwaysShowMarksSearchInput;
     }
-    //  Load the new setting
+    // Load the new setting
     if (closePopupAfterMoveTabManager_Checkbox) {
       closePopupAfterMoveTabManager_Checkbox.checked =
         currentSettings.closePopupAfterMoveTabManager;
@@ -572,7 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentSettings.alwaysShowMarksSearchInput =
         showSearchUIforMarks_Checkbox.checked;
     }
-    //  Save the new setting
+    // Save the new setting
     if (closePopupAfterMoveTabManager_Checkbox) {
       currentSettings.closePopupAfterMoveTabManager =
         closePopupAfterMoveTabManager_Checkbox.checked;
@@ -613,7 +616,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentSettings.alwaysShowMarksSearchInput,
       );
     }
-    //  If the new setting for Tab Management changes, update the variable in tabManager.js
+    // If the new setting for Tab Management changes, update the variable in tabManager.js
     if (ViewManager.getActive() === "tabManagement") {
       if (typeof window.setTabManagerClosePopupSetting === "function") {
         window.setTabManagerClosePopupSetting(
@@ -642,7 +645,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (showSearchUIforMarks_Checkbox) {
       showSearchUIforMarks_Checkbox.addEventListener("change", saveSettings);
     }
-    //  Attach listener for the new checkbox
+    // Attach listener for the new checkbox
     if (closePopupAfterMoveTabManager_Checkbox) {
       closePopupAfterMoveTabManager_Checkbox.addEventListener(
         "change",
@@ -880,6 +883,10 @@ document.addEventListener("DOMContentLoaded", () => {
       currentSettings.searchMarksEnabled &&
       typeof window.getAllBookmarks === "function"
     ) {
+      // Ensure marks content is loaded before trying to get bookmarks
+      if (!marksContentLoaded) {
+        await loadMarksContent();
+      }
       const allRawMarks = window.getAllBookmarks(); // Get ALL marks from marks.js
       // Filter marks based on the new per-bookmark searchableInTabSearch property
       marksToSearch = allRawMarks.filter(
@@ -1041,7 +1048,11 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
           favicon.src = chrome.runtime.getURL("img/icon.png");
         } else {
-          favicon.src = `chrome://favicon/${new URL(item.url).hostname}`;
+          try {
+            favicon.src = `chrome://favicon/${new URL(item.url).hostname}`;
+          } catch (e) {
+            favicon.src = chrome.runtime.getURL("img/icon.png"); // Fallback for invalid URLs
+          }
         }
 
         titleSpan.innerHTML = highlightText(item.title || "", currentQuery);
@@ -1255,12 +1266,60 @@ document.addEventListener("DOMContentLoaded", () => {
   // Keyboard navigation within the main tab search view
   // Note: Harpoon view keybindings are now handled directly in harpoon.js via attached listeners
   // Note: Marks view keybindings are now handled directly in marks.js via attached listeners
-  //  Tab Management view keybindings will be handled directly in tabManager.js
-  document.addEventListener("keydown", (e) => {
+  // Tab Management view keybindings will be handled directly in tabManager.js
+  document.addEventListener("keydown", async (e) => {
     const activeView = ViewManager.getActive();
 
     if (activeView === "tabSearch") {
       const items = tabList.querySelectorAll("li");
+      // New: Toggle bookmarks search with backtick (`)
+      // New: Toggle bookmarks search with backtick (`)
+      // New: Toggle bookmarks search with backtick (`)
+      if (e.key === "`") {
+        e.preventDefault(); // Prevent typing ` into the search input
+
+        // Ensure settings content is loaded and elements are referenced.
+        // This is crucial to ensure `showMarksInTabSearch_Checkbox` exists.
+        if (!settingsContentLoaded || !showMarksInTabSearch_Checkbox) {
+          await loadSettingsContent(); // This will also call getSettingsDOMElements() and loadSettings()
+        }
+
+        // Toggle the setting in currentSettings
+        currentSettings.searchMarksEnabled =
+          !currentSettings.searchMarksEnabled;
+        if (showMarksInTabSearch_Checkbox) {
+          showMarksInTabSearch_Checkbox.checked =
+            currentSettings.searchMarksEnabled;
+        }
+
+        await saveSettings(); // Persist the updated setting
+
+        // ******* CRUCIAL ADDITION/MODIFICATION *******
+        // If bookmarks are now enabled, ensure allMarks are loaded.
+        // If they are disabled, ensure allMarks are cleared.
+        if (currentSettings.searchMarksEnabled) {
+          // Only load marks if they aren't already loaded
+          if (typeof window.getAllBookmarks === "function") {
+            // marks.js needs to be initialized. loadMarksContent handles this.
+            // It's already called in the initial load, but we can re-ensure it if needed.
+            if (!marksContentLoaded) {
+              await loadMarksContent();
+            }
+            allMarks = window.getAllBookmarks(); // Get the latest list of all marks
+          } else {
+            console.warn(
+              "getAllBookmarks function not found. Marks feature might not be fully loaded.",
+            );
+            allMarks = [];
+          }
+        } else {
+          allMarks = []; // Clear allMarks if the feature is disabled
+        }
+        // ********************************************
+
+        await performUnifiedSearch(currentQuery); // Re-filter and re-render immediately
+        return; // Exit to prevent further processing
+      }
 
       if (isPersistentQueryActive) {
         // Check for printable characters (most common scenario for new input)
@@ -1395,7 +1454,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (initialView === "harpoon" && !harpoonContentLoaded) {
       await loadHarpoonContent(); // Ensure harpoon content is loaded if starting in harpoon view
     } else if (initialView === "tabManagement" && !tabManagementContentLoaded) {
-      //  Load tab management content if starting in this view
+      // Load tab management content if starting in this view
       await loadTabManagementContent();
     }
 
