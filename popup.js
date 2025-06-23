@@ -19,14 +19,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("searchInput");
   const tabList = document.getElementById("tabList");
   const tabCounter = document.getElementById("tabCounter");
-  const HelpSection = document.getElementById("HelpSection");
-  const MarksSection = document.getElementById("MarksSection");
-  const HarpoonSection = document.getElementById("HarpoonSection");
   const infoText = document.querySelector(".info-text");
   const searchArea = document.querySelector(".search-area");
+  // Views IDs
   const SettingsSection = document.getElementById("SettingsSection");
-  //  Tab Management Section reference
-  const tabManagementSection = document.getElementById("tabManagementSection");
+  const MarksSection = document.getElementById("MarksSection");
+  const HarpoonSection = document.getElementById("HarpoonSection");
+  const tabManagerSection = document.getElementById("tabManagerSection");
+  const HelpSection = document.getElementById("HelpSection");
 
   // Variables for settings elements, populated after settings.html is loaded
   let enableWebNavigatorCheckbox;
@@ -309,8 +309,8 @@ document.addEventListener("DOMContentLoaded", () => {
       harpoon: { container: HarpoonSection, content: HarpoonSection },
       //  Tab Management view definition
       tabManagement: {
-        container: tabManagementSection,
-        content: tabManagementSection,
+        container: tabManagerSection,
+        content: tabManagerSection,
       },
     };
 
@@ -429,7 +429,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof window.initTabManagerFeature === "function") {
           // Pass the actual DOM container element AND currentSettings
           window.initTabManagerFeature(
-            tabManagementSection,
+            tabManagerSection,
             currentSettings, // Pass all current settings
           );
         }
@@ -822,13 +822,13 @@ document.addEventListener("DOMContentLoaded", () => {
           const doc = parser.parseFromString(html, "text/html");
           // Extract content from the <body>, not a specific wrapper div
           const tabManagerHtmlContent = doc.body.innerHTML;
-          tabManagementSection.innerHTML = tabManagerHtmlContent;
+          tabManagerSection.innerHTML = tabManagerHtmlContent;
           tabManagementContentLoaded = true;
 
           if (typeof window.initTabManagerFeature === "function") {
             // Pass the actual DOM container element AND currentSettings
             await window.initTabManagerFeature(
-              tabManagementSection,
+              tabManagerSection,
               currentSettings,
             );
           } else {
@@ -841,12 +841,12 @@ document.addEventListener("DOMContentLoaded", () => {
             "Failed to load tabManager/tabManager.html:",
             response.statusText,
           );
-          tabManagementSection.innerHTML =
+          tabManagerSection.innerHTML =
             "<p>Error loading Tab Management content.</p>";
         }
       } catch (error) {
         console.error("Error fetching tabManager/tabManager.html:", error);
-        tabManagementSection.innerHTML =
+        tabManagerSection.innerHTML =
           "<p>Error fetching Tab Management content.</p>";
       }
     }
