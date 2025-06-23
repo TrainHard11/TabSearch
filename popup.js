@@ -1272,19 +1272,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (activeView === "tabSearch") {
       const items = tabList.querySelectorAll("li");
-      // New: Toggle bookmarks search with backtick (`)
-      // New: Toggle bookmarks search with backtick (`)
+
       // New: Toggle bookmarks search with backtick (`)
       if (e.key === "`") {
         e.preventDefault(); // Prevent typing ` into the search input
-
-        // Ensure settings content is loaded and elements are referenced.
-        // This is crucial to ensure `showMarksInTabSearch_Checkbox` exists.
-        if (!settingsContentLoaded || !showMarksInTabSearch_Checkbox) {
+        // Ensure the checkbox reference is available. It's loaded via loadSettingsContent.
+        // If the settings content hasn't been loaded, load it now to get the reference.
+        if (!showMarksInTabSearch_Checkbox) {
           await loadSettingsContent(); // This will also call getSettingsDOMElements() and loadSettings()
         }
 
-        // Toggle the setting in currentSettings
+        // Toggle the setting in currentSettings and in the UI checkbox if it exists
         currentSettings.searchMarksEnabled =
           !currentSettings.searchMarksEnabled;
         if (showMarksInTabSearch_Checkbox) {
@@ -1293,30 +1291,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         await saveSettings(); // Persist the updated setting
-
-        // ******* CRUCIAL ADDITION/MODIFICATION *******
-        // If bookmarks are now enabled, ensure allMarks are loaded.
-        // If they are disabled, ensure allMarks are cleared.
-        if (currentSettings.searchMarksEnabled) {
-          // Only load marks if they aren't already loaded
-          if (typeof window.getAllBookmarks === "function") {
-            // marks.js needs to be initialized. loadMarksContent handles this.
-            // It's already called in the initial load, but we can re-ensure it if needed.
-            if (!marksContentLoaded) {
-              await loadMarksContent();
-            }
-            allMarks = window.getAllBookmarks(); // Get the latest list of all marks
-          } else {
-            console.warn(
-              "getAllBookmarks function not found. Marks feature might not be fully loaded.",
-            );
-            allMarks = [];
-          }
-        } else {
-          allMarks = []; // Clear allMarks if the feature is disabled
-        }
-        // ********************************************
-
         await performUnifiedSearch(currentQuery); // Re-filter and re-render immediately
         return; // Exit to prevent further processing
       }
