@@ -36,10 +36,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let searchOnNoResults_Checkbox;
   // Marks view:
   let showMarksInTabSearch_Checkbox;
-
   let showAddMenuUIforMarks_Checkbox;
-
   let showSearchUIforMarks_Checkbox;
+
   let closePopupAfterMoveTabManager_Checkbox;
 
   // Those 7 custom field inputs:
