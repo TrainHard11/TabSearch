@@ -1,119 +1,159 @@
 <div class="options-container">
-	<!-- General Settings -->
-	<section class="settings-group" id="generalSettings">
-		<h1 class="Title">General Settings</h1>
-		<div class="option-item">
-			<label for="enableWebNavigator">Enable Web Navigator (Google Search results)</label>
-			<input type="checkbox" id="enableWebNavigator">
-		</div>
-		<div class="option-item">
-			<label for="searchOnNoResults">Search Google if no results found in Tabs/Bookmarks</label>
-			<input type="checkbox" id="searchOnNoResults">
-		</div>
-	</section>
+  <!-- General Settings -->
+  <section class="settings-group" id="generalSettings">
+    <h1 class="Title">General Settings</h1>
+    <div class="option-item">
+      <label for="enableWebNavigator"
+        >Enable Web Navigator (Google Search results)</label
+      >
+      <input type="checkbox" id="enableWebNavigator" />
+    </div>
+    <div class="option-item">
+      <label for="searchOnNoResults"
+        >Search Google if no results found in Tabs/Bookmarks</label
+      >
+      <input type="checkbox" id="searchOnNoResults" />
+    </div>
+  </section>
 
-	<!-- Bookmarks (Marks) View Settings -->
-	<section class="settings-group" id="marksSettings">
-		<h2>Bookmarks (Marks) View Settings</h2>
-		<div class="option-item">
-			<label for="searchMarksCheckbox">Include Bookmarks in Tab Search</label>
-			<input type="checkbox" id="searchMarksCheckbox">
-		</div>
-		<div class="option-item">
-			<label for="enableMarksAddition">Allow adding new Bookmarks from popup</label>
-			<input type="checkbox" id="enableMarksAddition">
-		</div>
-		<div class="option-item">
-			<label for="alwaysShowMarksSearchInput">Always show search input in Bookmarks view</label>
-			<input type="checkbox" id="alwaysShowMarksSearchInput">
-		</div>
-	</section>
+  <!-- Bookmarks (Marks) View Settings -->
+  <section class="settings-group" id="marksSettings">
+    <h2>Bookmarks View Settings</h2>
+    <div class="option-item">
+      <label for="showMarksInTabSearch_Checkbox"
+        >Include Bookmarks in Tab Search</label
+      >
+      <input type="checkbox" id="showMarksInTabSearch_Checkbox" />
+    </div>
+    <div class="option-item">
+      <label for="enableMarksAddition"
+        >Allow adding new Bookmarks from popup</label
+      >
+      <input type="checkbox" id="enableMarksAddition" />
+    </div>
+    <div class="option-item">
+      <label for="alwaysShowMarksSearchInput"
+        >Always show search input in Bookmarks view</label
+      >
+      <input type="checkbox" id="alwaysShowMarksSearchInput" />
+    </div>
+  </section>
 
-	<!-- Tab Management View Settings -->
-	<section class="settings-group" id="tabManagementSettings">
-		<h2>Tab Management View Settings</h2>
-		<div class="option-item">
-			<label for="closePopupAfterMoveTabManager">Close popup after moving tab (0-9 keys)</label>
-			<input type="checkbox" id="closePopupAfterMoveTabManager">
-		</div>
-	</section>
+  <!-- Tab Management View Settings -->
+  <section class="settings-group" id="tabManagementSettings">
+    <h2>Tab Management View Settings</h2>
+    <div class="option-item">
+      <label for="closePopupAfterMoveTabManager"
+        >Close popup after moving tab (0-9 keys)</label
+      >
+      <input type="checkbox" id="closePopupAfterMoveTabManager" />
+    </div>
+  </section>
 
-	<div class="custom-tab-section">
-		<div class="custom-tab-header">
-			<h3>Custom Tab 1</h3>
-			<div class="option-item">
-				<input type="checkbox" id="customTab1ExactMatch" />
-				<label for="customTab1ExactMatch">Exact Match</label>
-			</div>
-		</div>
-		<input type="text" id="customTab1Url" placeholder="Enter URL for Custom Tab 1" />
-	</div>
+  <div class="custom-tab-section">
+    <div class="custom-tab-header">
+      <h3>Custom Tab 1</h3>
+      <div class="option-item">
+        <input type="checkbox" id="customTab1ExactMatch" />
+        <label for="customTab1ExactMatch">Exact Match</label>
+      </div>
+    </div>
+    <input
+      type="text"
+      id="customTab1Url"
+      placeholder="Enter URL for Custom Tab 1"
+    />
+  </div>
 
-	<div class="custom-tab-section">
-		<div class="custom-tab-header">
-			<h3>Custom Tab 2</h3>
-			<div class="option-item">
-				<input type="checkbox" id="customTab2ExactMatch" />
-				<label for="customTab2ExactMatch">Exact Match</label>
-			</div>
-		</div>
-		<input type="text" id="customTab2Url" placeholder="Enter URL for Custom Tab 2" />
-	</div>
+  <div class="custom-tab-section">
+    <div class="custom-tab-header">
+      <h3>Custom Tab 2</h3>
+      <div class="option-item">
+        <input type="checkbox" id="customTab2ExactMatch" />
+        <label for="customTab2ExactMatch">Exact Match</label>
+      </div>
+    </div>
+    <input
+      type="text"
+      id="customTab2Url"
+      placeholder="Enter URL for Custom Tab 2"
+    />
+  </div>
 
-	<div class="custom-tab-section">
-		<div class="custom-tab-header">
-			<h3>Custom Tab 3</h3>
-			<div class="option-item">
-				<input type="checkbox" id="customTab3ExactMatch" />
-				<label for="customTab3ExactMatch">Exact Match</label>
-			</div>
-		</div>
-		<input type="text" id="customTab3Url" placeholder="Enter URL for Custom Tab 3" />
-	</div>
+  <div class="custom-tab-section">
+    <div class="custom-tab-header">
+      <h3>Custom Tab 3</h3>
+      <div class="option-item">
+        <input type="checkbox" id="customTab3ExactMatch" />
+        <label for="customTab3ExactMatch">Exact Match</label>
+      </div>
+    </div>
+    <input
+      type="text"
+      id="customTab3Url"
+      placeholder="Enter URL for Custom Tab 3"
+    />
+  </div>
 
-	<div class="custom-tab-section">
-		<div class="custom-tab-header">
-			<h3>Custom Tab 4</h3>
-			<div class="option-item">
-				<input type="checkbox" id="customTab4ExactMatch" />
-				<label for="customTab4ExactMatch">Exact Match</label>
-			</div>
-		</div>
-		<input type="text" id="customTab4Url" placeholder="Enter URL for Custom Tab 4" />
-	</div>
+  <div class="custom-tab-section">
+    <div class="custom-tab-header">
+      <h3>Custom Tab 4</h3>
+      <div class="option-item">
+        <input type="checkbox" id="customTab4ExactMatch" />
+        <label for="customTab4ExactMatch">Exact Match</label>
+      </div>
+    </div>
+    <input
+      type="text"
+      id="customTab4Url"
+      placeholder="Enter URL for Custom Tab 4"
+    />
+  </div>
 
-	<div class="custom-tab-section">
-		<div class="custom-tab-header">
-			<h3>Custom Tab 5</h3>
-			<div class="option-item">
-				<input type="checkbox" id="customTab5ExactMatch" />
-				<label for="customTab5ExactMatch">Exact Match</label>
-			</div>
-		</div>
-		<input type="text" id="customTab5Url" placeholder="Enter URL for Custom Tab 5" />
-	</div>
+  <div class="custom-tab-section">
+    <div class="custom-tab-header">
+      <h3>Custom Tab 5</h3>
+      <div class="option-item">
+        <input type="checkbox" id="customTab5ExactMatch" />
+        <label for="customTab5ExactMatch">Exact Match</label>
+      </div>
+    </div>
+    <input
+      type="text"
+      id="customTab5Url"
+      placeholder="Enter URL for Custom Tab 5"
+    />
+  </div>
 
-	<div class="custom-tab-section">
-		<div class="custom-tab-header">
-			<h3>Custom Tab 6</h3>
-			<div class="option-item">
-				<input type="checkbox" id="customTab6ExactMatch" />
-				<label for="customTab6ExactMatch">Exact Match</label>
-			</div>
-		</div>
-		<input type="text" id="customTab6Url" placeholder="Enter URL for Custom Tab 6" />
-	</div>
+  <div class="custom-tab-section">
+    <div class="custom-tab-header">
+      <h3>Custom Tab 6</h3>
+      <div class="option-item">
+        <input type="checkbox" id="customTab6ExactMatch" />
+        <label for="customTab6ExactMatch">Exact Match</label>
+      </div>
+    </div>
+    <input
+      type="text"
+      id="customTab6Url"
+      placeholder="Enter URL for Custom Tab 6"
+    />
+  </div>
 
-	<div class="custom-tab-section">
-		<div class="custom-tab-header">
-			<h3>Custom Tab 7</h3>
-			<div class="option-item">
-				<input type="checkbox" id="customTab7ExactMatch" />
-				<label for="customTab7ExactMatch">Exact Match</label>
-			</div>
-		</div>
-		<input type="text" id="customTab7Url" placeholder="Enter URL for Custom Tab 7" />
-	</div>
+  <div class="custom-tab-section">
+    <div class="custom-tab-header">
+      <h3>Custom Tab 7</h3>
+      <div class="option-item">
+        <input type="checkbox" id="customTab7ExactMatch" />
+        <label for="customTab7ExactMatch">Exact Match</label>
+      </div>
+    </div>
+    <input
+      type="text"
+      id="customTab7Url"
+      placeholder="Enter URL for Custom Tab 7"
+    />
+  </div>
 
-	<p class="settings-hint">Press F1 again to hide options.</p>
+  <p class="settings-hint">Press F1 again to hide options.</p>
 </div>

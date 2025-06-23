@@ -16,28 +16,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const SEARCH_MEMORY_DURATION_MS = 10 * 1000; // 10 seconds
 
-  const searchInput = document.getElementById("searchInput");
-  const tabList = document.getElementById("tabList");
-  const tabCounter = document.getElementById("tabCounter");
-  const infoText = document.querySelector(".info-text");
+  // tabSearch View:
   const searchArea = document.querySelector(".search-area");
-  // Views IDs
+  const searchInput = document.getElementById("searchInput");
+  const tabCounter = document.getElementById("tabCounter");
+  const tabList = document.getElementById("tabList");
+  const infoText = document.querySelector(".info-text");
+  // Views IDs:
   const SettingsSection = document.getElementById("SettingsSection");
   const MarksSection = document.getElementById("MarksSection");
   const HarpoonSection = document.getElementById("HarpoonSection");
   const tabManagerSection = document.getElementById("tabManagerSection");
   const HelpSection = document.getElementById("HelpSection");
 
-  // Variables for settings elements, populated after settings.html is loaded
-  let enableWebNavigatorCheckbox;
-  let searchOnNoResultsCheckbox;
-  let searchMarksCheckbox;
-  let enableMarksAdditionCheckbox;
-  let alwaysShowMarksSearchInputCheckbox;
-  let customTabInputs = [];
+  // === User options from Settings view: ===
+
+  //General Settings:
+  let enableWebNavigator_Checkbox;
+  let searchOnNoResults_Checkbox;
+  // Marks view:
+  let showMarksInTabSearch_Checkbox;
+
+  let showAddMenuUIforMarks_Checkbox;
+
+  let showSearchUIforMarks_Checkbox;
+  let closePopupAfterMoveTabManager_Checkbox;
+
+  // Those 7 custom field inputs:
+  let customTabFields = [];
   let customTabExactMatchCheckboxes = [];
-  //  Reference for the new checkbox
-  let closePopupAfterMoveTabManagerCheckbox;
 
   // --- State Variables ---
   let allTabs = []; // Holds all active browser tabs
@@ -61,8 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
     searchMarksEnabled: true,
     enableMarksAddition: true,
     alwaysShowMarksSearchInput: false,
-    closePopupAfterMoveTabManager: false, //  Default to false (do not close popup)
-    customTab1Url: "https://web.whatsapp.com/",
+    closePopupAfterMoveTabManager: false,
+    customTab1Url: "",
     customTab1ExactMatch: false,
     customTab2Url: "",
     customTab2ExactMatch: false,
@@ -473,27 +480,29 @@ document.addEventListener("DOMContentLoaded", () => {
    * Gets references to settings DOM elements after content is loaded.
    */
   const getSettingsDOMElements = () => {
-    enableWebNavigatorCheckbox = SettingsSection.querySelector(
+    enableWebNavigator_Checkbox = SettingsSection.querySelector(
       "#enableWebNavigator",
     );
-    searchOnNoResultsCheckbox =
+    searchOnNoResults_Checkbox =
       SettingsSection.querySelector("#searchOnNoResults");
-    searchMarksCheckbox = SettingsSection.querySelector("#searchMarksCheckbox");
-    enableMarksAdditionCheckbox = SettingsSection.querySelector(
+    showMarksInTabSearch_Checkbox = SettingsSection.querySelector(
+      "#showMarksInTabSearch_Checkbox",
+    );
+    showAddMenuUIforMarks_Checkbox = SettingsSection.querySelector(
       "#enableMarksAddition",
     );
-    alwaysShowMarksSearchInputCheckbox = SettingsSection.querySelector(
+    showSearchUIforMarks_Checkbox = SettingsSection.querySelector(
       "#alwaysShowMarksSearchInput",
     );
     //  Get reference for the new checkbox
-    closePopupAfterMoveTabManagerCheckbox = SettingsSection.querySelector(
+    closePopupAfterMoveTabManager_Checkbox = SettingsSection.querySelector(
       "#closePopupAfterMoveTabManager",
     );
 
-    customTabInputs = [];
+    customTabFields = [];
     customTabExactMatchCheckboxes = [];
     for (let i = 1; i <= 7; i++) {
-      customTabInputs.push(SettingsSection.querySelector(`#customTab${i}Url`));
+      customTabFields.push(SettingsSection.querySelector(`#customTab${i}Url`));
       customTabExactMatchCheckboxes.push(
         SettingsSection.querySelector(`#customTab${i}ExactMatch`),
       );
@@ -507,31 +516,33 @@ document.addEventListener("DOMContentLoaded", () => {
     const storedSettings = await chrome.storage.local.get(defaultSettings);
     currentSettings = { ...defaultSettings, ...storedSettings };
 
-    if (enableWebNavigatorCheckbox) {
-      enableWebNavigatorCheckbox.checked = currentSettings.webNavigatorEnabled;
+    if (enableWebNavigator_Checkbox) {
+      enableWebNavigator_Checkbox.checked = currentSettings.webNavigatorEnabled;
     }
-    if (searchOnNoResultsCheckbox) {
-      searchOnNoResultsCheckbox.checked = currentSettings.searchOnNoResults;
+    if (searchOnNoResults_Checkbox) {
+      searchOnNoResults_Checkbox.checked = currentSettings.searchOnNoResults;
     }
-    if (searchMarksCheckbox) {
-      searchMarksCheckbox.checked = currentSettings.searchMarksEnabled;
+    if (showMarksInTabSearch_Checkbox) {
+      showMarksInTabSearch_Checkbox.checked =
+        currentSettings.searchMarksEnabled;
     }
-    if (enableMarksAdditionCheckbox) {
-      enableMarksAdditionCheckbox.checked = currentSettings.enableMarksAddition;
+    if (showAddMenuUIforMarks_Checkbox) {
+      showAddMenuUIforMarks_Checkbox.checked =
+        currentSettings.enableMarksAddition;
     }
-    if (alwaysShowMarksSearchInputCheckbox) {
-      alwaysShowMarksSearchInputCheckbox.checked =
+    if (showSearchUIforMarks_Checkbox) {
+      showSearchUIforMarks_Checkbox.checked =
         currentSettings.alwaysShowMarksSearchInput;
     }
     //  Load the new setting
-    if (closePopupAfterMoveTabManagerCheckbox) {
-      closePopupAfterMoveTabManagerCheckbox.checked =
+    if (closePopupAfterMoveTabManager_Checkbox) {
+      closePopupAfterMoveTabManager_Checkbox.checked =
         currentSettings.closePopupAfterMoveTabManager;
     }
 
     for (let i = 0; i < 7; i++) {
-      if (customTabInputs[i]) {
-        customTabInputs[i].value = currentSettings[`customTab${i + 1}Url`];
+      if (customTabFields[i]) {
+        customTabFields[i].value = currentSettings[`customTab${i + 1}Url`];
       }
       if (customTabExactMatchCheckboxes[i]) {
         customTabExactMatchCheckboxes[i].checked =
@@ -544,32 +555,34 @@ document.addEventListener("DOMContentLoaded", () => {
    * Saves settings from the UI fields to chrome.storage.local.
    */
   const saveSettings = async () => {
-    if (enableWebNavigatorCheckbox) {
-      currentSettings.webNavigatorEnabled = enableWebNavigatorCheckbox.checked;
+    if (enableWebNavigator_Checkbox) {
+      currentSettings.webNavigatorEnabled = enableWebNavigator_Checkbox.checked;
     }
-    if (searchOnNoResultsCheckbox) {
-      currentSettings.searchOnNoResults = searchOnNoResultsCheckbox.checked;
+    if (searchOnNoResults_Checkbox) {
+      currentSettings.searchOnNoResults = searchOnNoResults_Checkbox.checked;
     }
-    if (searchMarksCheckbox) {
-      currentSettings.searchMarksEnabled = searchMarksCheckbox.checked;
+    if (showMarksInTabSearch_Checkbox) {
+      currentSettings.searchMarksEnabled =
+        showMarksInTabSearch_Checkbox.checked;
     }
-    if (enableMarksAdditionCheckbox) {
-      currentSettings.enableMarksAddition = enableMarksAdditionCheckbox.checked;
+    if (showAddMenuUIforMarks_Checkbox) {
+      currentSettings.enableMarksAddition =
+        showAddMenuUIforMarks_Checkbox.checked;
     }
-    if (alwaysShowMarksSearchInputCheckbox) {
+    if (showSearchUIforMarks_Checkbox) {
       currentSettings.alwaysShowMarksSearchInput =
-        alwaysShowMarksSearchInputCheckbox.checked;
+        showSearchUIforMarks_Checkbox.checked;
     }
     //  Save the new setting
-    if (closePopupAfterMoveTabManagerCheckbox) {
+    if (closePopupAfterMoveTabManager_Checkbox) {
       currentSettings.closePopupAfterMoveTabManager =
-        closePopupAfterMoveTabManagerCheckbox.checked;
+        closePopupAfterMoveTabManager_Checkbox.checked;
     }
 
     // FIX: Capture values from custom URL input fields before saving
     for (let i = 0; i < 7; i++) {
-      if (customTabInputs[i]) {
-        currentSettings[`customTab${i + 1}Url`] = customTabInputs[i].value;
+      if (customTabFields[i]) {
+        currentSettings[`customTab${i + 1}Url`] = customTabFields[i].value;
       }
       // Exact match checkbox is already handled below, but this ensures consistency
       if (customTabExactMatchCheckboxes[i]) {
@@ -615,35 +628,32 @@ document.addEventListener("DOMContentLoaded", () => {
    * Attaches event listeners to settings elements for saving changes.
    */
   const attachSettingsEventListeners = () => {
-    if (enableWebNavigatorCheckbox) {
-      enableWebNavigatorCheckbox.addEventListener("change", saveSettings);
+    if (enableWebNavigator_Checkbox) {
+      enableWebNavigator_Checkbox.addEventListener("change", saveSettings);
     }
-    if (searchOnNoResultsCheckbox) {
-      searchOnNoResultsCheckbox.addEventListener("change", saveSettings);
+    if (searchOnNoResults_Checkbox) {
+      searchOnNoResults_Checkbox.addEventListener("change", saveSettings);
     }
-    if (searchMarksCheckbox) {
-      searchMarksCheckbox.addEventListener("change", saveSettings);
+    if (showMarksInTabSearch_Checkbox) {
+      showMarksInTabSearch_Checkbox.addEventListener("change", saveSettings);
     }
-    if (enableMarksAdditionCheckbox) {
-      enableMarksAdditionCheckbox.addEventListener("change", saveSettings);
+    if (showAddMenuUIforMarks_Checkbox) {
+      showAddMenuUIforMarks_Checkbox.addEventListener("change", saveSettings);
     }
-    if (alwaysShowMarksSearchInputCheckbox) {
-      alwaysShowMarksSearchInputCheckbox.addEventListener(
-        "change",
-        saveSettings,
-      );
+    if (showSearchUIforMarks_Checkbox) {
+      showSearchUIforMarks_Checkbox.addEventListener("change", saveSettings);
     }
     //  Attach listener for the new checkbox
-    if (closePopupAfterMoveTabManagerCheckbox) {
-      closePopupAfterMoveTabManagerCheckbox.addEventListener(
+    if (closePopupAfterMoveTabManager_Checkbox) {
+      closePopupAfterMoveTabManager_Checkbox.addEventListener(
         "change",
         saveSettings,
       );
     }
 
     for (let i = 0; i < 7; i++) {
-      if (customTabInputs[i]) {
-        customTabInputs[i].addEventListener("input", saveSettings);
+      if (customTabFields[i]) {
+        customTabFields[i].addEventListener("input", saveSettings);
       }
       if (customTabExactMatchCheckboxes[i]) {
         customTabExactMatchCheckboxes[i].addEventListener(
