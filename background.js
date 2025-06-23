@@ -1106,7 +1106,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     })();
     return true; // Asynchronous response
   } else if (request.action === "createWindowAndMoveTab") {
-    // New: Handle "create empty window and teleport"
+    //  Handle "create empty window and teleport"
     (async () => {
       try {
         // Find the tab to move (it might not be the active one anymore)

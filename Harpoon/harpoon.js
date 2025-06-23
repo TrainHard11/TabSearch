@@ -47,8 +47,8 @@ window.initHarpoonFeature = async () => {
   let workTabs = []; // New
   let funTabs = []; // New
 
-  let workListVisible = true; // New: Default visibility state
-  let funListVisible = true; // New: Default visibility state
+  let workListVisible = true; //  Default visibility state
+  let funListVisible = true; //  Default visibility state
 
   // Storage Keys (from background.js constants, ensure consistency)
   const LS_HARPOONED_TABS_KEY = "fuzzyTabSearch_harpoonedTabs";
@@ -747,7 +747,7 @@ window.initHarpoonFeature = async () => {
     }
   };
 
-  // --- New: Visibility State Storage Functions ---
+  // ---  Visibility State Storage Functions ---
   const saveWorkListVisibility = async (isVisible) => {
     try {
       await chrome.storage.local.set({ [LS_WORK_LIST_VISIBLE_KEY]: isVisible });

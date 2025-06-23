@@ -223,7 +223,7 @@
   bottom: 10px;
   right: 15px;
   font-size: 0.8em;
-  color: var(--color-accent-blue);
+  color: var(--color-highlight-bg);
   background-color: var(--color-background-secondary);
   padding: 5px 8px;
   border-radius: 4px;

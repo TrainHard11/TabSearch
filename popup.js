@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	const settingsContentContainer = document.getElementById(
 		"settingsContentContainer",
 	);
-	// New: Tab Management Section reference
+	//  Tab Management Section reference
 	const tabManagementSection = document.getElementById("tabManagementSection");
 
 	// Variables for settings elements, populated after settings.html is loaded
@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	let settingsContentLoaded = false;
 	let marksContentLoaded = false;
 	let harpoonContentLoaded = false;
-	let tabManagementContentLoaded = false; // New: Flag for Tab Management content
+	let tabManagementContentLoaded = false; //  Flag for Tab Management content
 
 	// Flag to indicate if the current searchInput value came from a persistent query
 	let isPersistentQueryActive = false;
@@ -309,7 +309,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			help: { container: helpContentContainer, content: helpContentContainer },
 			marks: { container: marksSection, content: marksSection },
 			harpoon: { container: harpoonSection, content: harpoonSection },
-			// New: Tab Management view definition
+			//  Tab Management view definition
 			tabManagement: {
 				container: tabManagementSection,
 				content: tabManagementSection,
@@ -423,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					);
 				}
 			} else if (viewName === "tabManagement") {
-				// New: Tab Management view actions
+				//  Tab Management view actions
 				if (typeof window.attachTabManagerListeners === "function") {
 					window.attachTabManagerListeners();
 				}
@@ -1254,7 +1254,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Keyboard navigation within the main tab search view
 	// Note: Harpoon view keybindings are now handled directly in harpoon.js via attached listeners
 	// Note: Marks view keybindings are now handled directly in marks.js via attached listeners
-	// New: Tab Management view keybindings will be handled directly in tabManager.js
+	//  Tab Management view keybindings will be handled directly in tabManager.js
 	document.addEventListener("keydown", (e) => {
 		const activeView = ViewManager.getActive();
 
@@ -1397,7 +1397,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			initialView === "tabManagement" &&
 			!tabManagementContentLoaded
 		) {
-			// New: Load tab management content if starting in this view
+			//  Load tab management content if starting in this view
 			await loadTabManagementContent();
 		}
 
