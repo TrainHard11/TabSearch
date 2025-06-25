@@ -1232,7 +1232,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.key === "F1") {
         e.preventDefault();
         await ViewManager.toggle("settings", loadSettingsContent);
-      } else if (e.key === "F2") {
+      } else if (e.key === "F2" || (e.ctrlKey && e.key === "b")) {
         e.preventDefault();
         await ViewManager.toggle("marks", loadMarksContent);
       } else if (e.key === "F3") {
