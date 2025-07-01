@@ -817,14 +817,16 @@ chrome.commands.onCommand.addListener(async (command) => {
 
   switch (command) {
     case "_execute_action":
-      // When the default action command is triggered, explicitly set the view to tabSearch
+    case "open_main_view_secondary": // <--- ADD THIS CASE
+      // When either the default action or the new secondary command is triggered,
+      // explicitly set the view to tabSearch and open the popup.
       await chrome.storage.session.set({
         [COMMAND_INITIAL_VIEW_KEY]: "tabSearch",
       });
       // Clear any lingering initial focus commands
       await chrome.storage.session.remove(INITIAL_MARK_URL_KEY);
       await chrome.storage.session.remove(INITIAL_HARPOON_URL_KEY);
-      // chrome.action.openPopup() is usually implicitly called by _execute_action
+      await chrome.action.openPopup(); // Explicitly open popup for secondary command
       break;
     case "open_harpoon_view": // NEW command
       await chrome.storage.session.set({

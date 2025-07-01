@@ -16,7 +16,10 @@
       "suggested_key": {
         "default": "Alt+A"
       },
-      "description": "Open_Main_View"
+      "description": "Main View"
+    },
+    "open_main_view_secondary": {
+      "description": "Main View x2 "
     },
     "open_harpoon_view": {
       "description": "Harpoon_open"
