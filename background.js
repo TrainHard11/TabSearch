@@ -1,6 +1,6 @@
 // background.js
 
-// Store the history of active tabs (last two active tab IDs)
+// Store the history of active tabs (last two active active tab IDs)
 // This will be an array like [previousTabId, currentTabId]
 let lastActiveTabs = []; // Stores [tabId, windowId] for the last two unique active tabs
 const LAST_ACTIVE_TABS_STORAGE_KEY = "fuzzyTabSearch_lastActiveTabs";
@@ -1058,7 +1058,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: false, error: error.message });
       }
     })();
-    return true; // Indicate that sendResponse will be called asynchronously
+    return true; // Asynchronous response
   } else if (request.action === "moveCurrentTabLeft") {
     (async () => {
       try {
@@ -1196,6 +1196,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             error.message ||
             "An unknown error occurred while trying to close the window.",
         });
+      }
+    })();
+    return true; // Asynchronous response
+  } else if (request.action === "addBookmarkFromPopup") {
+    // New handler for adding bookmark from popup
+    (async () => {
+      try {
+        const result = await addCurrentTabAsBookmark();
+        // The addCurrentTabAsBookmark function already handles setting INITIAL_MARK_URL_KEY
+        // and COMMAND_INITIAL_VIEW_KEY, and opening the popup if needed.
+        sendResponse(result);
+      } catch (error) {
+        console.error("Error adding bookmark from popup:", error);
+        sendResponse({ success: false, error: error.message, url: null });
       }
     })();
     return true; // Asynchronous response

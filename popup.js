@@ -13,6 +13,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Key for commanding the initial view upon popup opening (stored in chrome.storage.session)
   const COMMAND_INITIAL_VIEW_KEY = `${LS_PREFIX}commandInitialView`;
+  // Key to store the URL of the bookmark to focus after adding/findng it
+  const INITIAL_MARK_URL_KEY = `${LS_PREFIX}initialMarkUrl`;
+  // Key to store the URL of the harpooned item to focus after adding/finding it
+  const INITIAL_HARPOON_URL_KEY = `${LS_PREFIX}initialHarpoonUrl`;
+
 
   const SEARCH_MEMORY_DURATION_MS = 10 * 1000; // 10 seconds
 
@@ -1001,7 +1006,6 @@ document.addEventListener("DOMContentLoaded", () => {
       searchInput.focus();
     }
   };
-
   /**
    * Renders the list of combined results (tabs and bookmarks) in the UI.
    * @param {Array<Object>} resultsToRender The items to display.
@@ -1266,6 +1270,38 @@ document.addEventListener("DOMContentLoaded", () => {
           clearPersistentLastQuery(); // Still clear persistent query as we've navigated
         });
       }
+    }
+
+    // NEW: Ctrl+Shift+B to add current tab as bookmark
+    if (e.ctrlKey && e.shiftKey && (e.key === "b" || e.key === "B")) {
+      e.preventDefault();
+      try {
+        // Send a message to background.js to trigger the addCurrentTabAsBookmark function
+        const response = await chrome.runtime.sendMessage({
+          action: "addBookmarkFromPopup",
+        });
+        if (response && response.success) {
+          // The background script already handles setting the initial view to 'marks'
+          // and opening the popup if it was closed, and focusing the new bookmark.
+          // So, we just need to ensure the popup reflects the change if it's already open.
+          // If the popup is already open and not in marks view, switch to marks view.
+          if (ViewManager.getActive() !== "marks") {
+            await ViewManager.show("marks", false); // Show marks view, not restoring
+          }
+          // The marks.js `attachMarksListeners` will pick up `INITIAL_MARK_URL_KEY`
+          // and focus the newly added bookmark.
+        } else {
+          console.error(
+            "Failed to add bookmark from popup:",
+            response?.message || "Unknown error",
+          );
+          // Optionally display a message to the user within the popup
+          // (This would require a new message display mechanism in popup.js or marks.js)
+        }
+      } catch (error) {
+        console.error("Error sending add bookmark message:", error);
+      }
+      return; // Consume the event
     }
   });
 
