@@ -167,7 +167,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         }
     };
 
-
     /**
      * Activates (opens URL) the currently selected bookmark item.
      * It uses window.focusOrCreateTabByUrl (provided by popup.js) to handle opening or switching tabs.
@@ -265,8 +264,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
                 }))
                 : [];
 
-            console.log("DEBUG: Bookmarks loaded from storage:", JSON.parse(JSON.stringify(bookmarks))); // Deep copy for logging state
-
             if (!isMarksSearchActive || currentMarksSearchQuery === "") {
                 filteredMarksResults = [...bookmarks];
             } else {
@@ -290,7 +287,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
     const saveBookmarks = async () => {
         try {
             await chrome.storage.local.set({ [STORAGE_KEY]: bookmarks });
-            console.log("DEBUG: Bookmarks saved to storage:", JSON.parse(JSON.stringify(bookmarks))); // Deep copy for logging state
         } catch (error) {
             console.error("Error saving bookmarks:", error);
         }
@@ -347,7 +343,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
                 markItem.classList.add("editing");
             }
 
-
             const markInfo = document.createElement("div");
             markInfo.classList.add("mark-info");
 
@@ -385,7 +380,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
                 );
                 markInfo.appendChild(markName);
             }
-
 
             const markUrl = document.createElement("a");
             markUrl.classList.add("mark-url");
@@ -427,17 +421,11 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
                 e.stopPropagation();
                 // Ensure 'mark' object is valid, though it should be due to closure
                 if (!mark || typeof mark.url === 'undefined' || typeof mark.name === 'undefined') {
-                    console.error("DEBUG: Invalid mark object in checkbox change listener:", mark);
                     displayMarksMessage("Error: Bookmark data missing for update.", "error");
                     return;
                 }
 
                 const currentMarkToUpdate = mark; // 'mark' is from the forEach loop, captured in closure
-                console.log("DEBUG: Checkbox change event fired for:", currentMarkToUpdate.name, currentMarkToUpdate.url);
-                console.log("DEBUG: Event target checked state:", e.target.checked);
-                console.log("DEBUG: Current state of 'filteredMarksResults' (snapshot):", JSON.parse(JSON.stringify(filteredMarksResults)));
-                console.log("DEBUG: Current state of 'bookmarks' (main array snapshot before findIndex):", JSON.parse(JSON.stringify(bookmarks)));
-
 
                 // Find the original index in the main 'bookmarks' array
                 // We use the unique url and name combination to find the exact bookmark
@@ -445,16 +433,11 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
                     (b) => b.url === currentMarkToUpdate.url && b.name === currentMarkToUpdate.name
                 );
 
-                console.log("DEBUG: Attempting to find original index for:", currentMarkToUpdate);
-                console.log("DEBUG: Found original index:", originalMarkIndex);
-
                 if (originalMarkIndex > -1) {
                     bookmarks[originalMarkIndex].searchableInTabSearch = e.target.checked;
                     await saveBookmarks(); // This explicitly calls the saveBookmarks function
-                    console.log(`DEBUG: Bookmark updated and saved: ${currentMarkToUpdate.name}, new searchable: ${e.target.checked}`);
                     displayMarksMessage(`Bookmark "${currentMarkToUpdate.name}" visibility updated.`, "success");
                 } else {
-                    console.error("DEBUG: Failed to find original bookmark in 'bookmarks' array for update. This usually means the bookmark was deleted or modified externally. Mark:", currentMarkToUpdate);
                     displayMarksMessage("Failed to update bookmark setting. Bookmark not found.", "error");
                 }
             });
@@ -1003,7 +986,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         });
     };
 
-
     /**
      * Function to recursively process bookmark tree nodes from the browser.
      * It identifies actual bookmarks and adds unique ones to a collection.
@@ -1097,7 +1079,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
         }
     };
 
-
     /**
      * Handles keyboard events specific to the Marks view.
      * This function is attached/detached by popup.js when switching views.
@@ -1117,7 +1098,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
             allFocusableElements.push(marksSearchInput);
         }
         allFocusableElements.push(...Array.from(items));
-
 
         // Determine if the active element is a list item
         const isListItemFocused = activeElement.closest(".mark-item") !== null;
@@ -1241,7 +1221,6 @@ window.initMarksFeature = async (defaultUrl = "", defaultTitle = "") => {
             }
         }
     };
-
 
     /**
      * Attaches keyboard event listeners for the Marks view.
