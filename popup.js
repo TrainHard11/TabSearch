@@ -1,5 +1,6 @@
 // popup.js
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  // Changed to async here
   // --- Constants and DOM Element References ---
   const LS_PREFIX = "fuzzyTabSearch_"; // Local storage prefix for all keys
   const LS_LAST_QUERY_PERSISTENT = `${LS_PREFIX}lastQueryPersistent`;
@@ -64,6 +65,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Flag to indicate if the current searchInput value came from a persistent query
   let isPersistentQueryActive = false;
 
+  // New: Store the ID of the window from which the popup was opened
+  let currentWindowId = null;
+
   // Default settings
   const defaultSettings = {
     webNavigatorEnabled: false,
@@ -72,6 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     enableMarksAddition: true,
     alwaysShowMarksSearchInput: false,
     closePopupAfterMoveTabManager: false,
+    showOnlyCurrentWindowTabs: false, // NEW: Default to showing all tabs
     customTab1Url: "",
     customTab1ExactMatch: false,
     customTab2Url: "",
@@ -504,6 +509,7 @@ document.addEventListener("DOMContentLoaded", () => {
     closePopupAfterMoveTabManager_Checkbox = SettingsSection.querySelector(
       "#closePopupAfterMoveTabManager",
     );
+    // No dedicated checkbox for showOnlyCurrentWindowTabs, it's keymap controlled
 
     customTabFields = [];
     customTabExactMatchCheckboxes = [];
@@ -880,6 +886,12 @@ document.addEventListener("DOMContentLoaded", () => {
     allTabs = await chrome.tabs.query({});
 
     let tabsToSearch = allTabs;
+
+    // NEW: Filter tabs based on 'showOnlyCurrentWindowTabs' setting
+    if (currentSettings.showOnlyCurrentWindowTabs && currentWindowId !== null) {
+      tabsToSearch = allTabs.filter((tab) => tab.windowId === currentWindowId);
+    }
+
     let marksToSearch = [];
 
     // First, check if the setting to include bookmarks is enabled.
@@ -1013,6 +1025,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const renderResults = (resultsToRender, suggestedIndex = 0) => {
     tabList.innerHTML = "";
     tabCounter.textContent = `${resultsToRender.length} results`;
+
+    // NEW: Update info text to show current window filtering status
+    if (currentSettings.showOnlyCurrentWindowTabs) {
+      infoText.textContent = `Showing ${resultsToRender.length} results (current window)`;
+    } else {
+      infoText.textContent = `Showing ${resultsToRender.length} results (all windows)`;
+    }
 
     if (
       resultsToRender.length === 0 &&
@@ -1373,7 +1392,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const items = tabList.querySelectorAll("li");
 
       // New: Toggle bookmarks search with backtick (`)
-      if (e.key === "`") {
+      if (e.key === "`" && !e.ctrlKey) {
+        // Ensure it's not Ctrl+`
         e.preventDefault(); // Prevent typing ` into the search input
         // Ensure the checkbox reference is available. It's loaded via loadSettingsContent.
         // If the settings content hasn't been loaded, load it now to get the reference.
@@ -1392,6 +1412,16 @@ document.addEventListener("DOMContentLoaded", () => {
         await saveSettings(); // Persist the updated setting
         await performUnifiedSearch(currentQuery); // Re-filter and re-render immediately
         return; // Exit to prevent further processing
+      }
+
+      // NEW: Ctrl+` to toggle between all tabs and current window tabs
+      if (e.ctrlKey && e.key === "`") {
+        e.preventDefault();
+        currentSettings.showOnlyCurrentWindowTabs =
+          !currentSettings.showOnlyCurrentWindowTabs;
+        await saveSettings(); // Persist the updated setting
+        await performUnifiedSearch(currentQuery); // Re-filter and re-render immediately
+        return; // Consume the event
       }
 
       // NEW: Ctrl+X to close all tabs below the highlighted tab in the same window
@@ -1495,6 +1525,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- Initialization ---
+
+  // Get the current window ID right at the start
+  const currentWindow = await chrome.windows.getCurrent();
+  currentWindowId = currentWindow.id;
+
   // Load settings first as they might influence initial behavior
   loadSettings().then(async () => {
     // Load marks content eagerly if searchMarksEnabled or enableMarksAddition or alwaysShowMarksSearchInput is true
