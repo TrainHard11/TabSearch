@@ -1,6 +1,5 @@
 // popup.js
 document.addEventListener("DOMContentLoaded", async () => {
-  // Changed to async here
   // --- Constants and DOM Element References ---
   const LS_PREFIX = "fuzzyTabSearch_"; // Local storage prefix for all keys
   const LS_LAST_QUERY_PERSISTENT = `${LS_PREFIX}lastQueryPersistent`;
@@ -76,7 +75,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     enableMarksAddition: true,
     alwaysShowMarksSearchInput: false,
     closePopupAfterMoveTabManager: false,
-    showOnlyCurrentWindowTabs: false, // NEW: Default to showing all tabs
+    showOnlyCurrentWindowTabs: false, // Default to showing all tabs
     customTab1Url: "",
     customTab1ExactMatch: false,
     customTab2Url: "",
@@ -408,6 +407,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Specific actions after showing a view
       if (viewName === "tabSearch") {
         searchInput.focus(); // Focus search input for tab search
+        updateSearchInputColor(); // Update color based on current search mode
         // The renderResults function will be called by fetchAndDisplayResults which handles restoring.
       } else if (viewName === "harpoon") {
         // Do not focus searchInput when in harpoon view
@@ -561,6 +561,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           currentSettings[`customTab${i + 1}ExactMatch`];
       }
     }
+    // Update the search input color immediately after settings are loaded
+    updateSearchInputColor();
   };
 
   /**
@@ -887,7 +889,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let tabsToSearch = allTabs;
 
-    // NEW: Filter tabs based on 'showOnlyCurrentWindowTabs' setting
+    // Filter tabs based on 'showOnlyCurrentWindowTabs' setting
     if (currentSettings.showOnlyCurrentWindowTabs && currentWindowId !== null) {
       tabsToSearch = allTabs.filter((tab) => tab.windowId === currentWindowId);
     }
@@ -1026,12 +1028,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     tabList.innerHTML = "";
     tabCounter.textContent = `${resultsToRender.length} results`;
 
-    // NEW: Update info text to show current window filtering status
+    // Update info text to show current window filtering status
     if (currentSettings.showOnlyCurrentWindowTabs) {
-      infoText.textContent = `Showing ${resultsToRender.length} results (current window)`;
+        infoText.textContent = `Showing ${resultsToRender.length} results (current window)`;
     } else {
-      infoText.textContent = `Showing ${resultsToRender.length} results (all windows)`;
+        infoText.textContent = `Showing ${resultsToRender.length} results (all windows)`;
     }
+
 
     if (
       resultsToRender.length === 0 &&
@@ -1127,6 +1130,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   /**
+   * Toggles the 'local-search-active' class on the search input based on the setting.
+   */
+  const updateSearchInputColor = () => {
+    if (currentSettings.showOnlyCurrentWindowTabs) {
+      searchInput.classList.add("local-search-active");
+    } else {
+      searchInput.classList.remove("local-search-active");
+    }
+  };
+
+  /**
    * Deletes the currently selected result if it's a tab.
    * Ignores bookmarks.
    */
@@ -1196,9 +1210,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Ensure the highlighted item is a tab
     if (highlightedItem.type !== "tab") {
-      console.log(
-        "Highlighted item is not a tab. Skipping 'close tabs below'.",
-      );
+      console.log("Highlighted item is not a tab. Skipping 'close tabs below'.");
       return;
     }
 
@@ -1215,18 +1227,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (tabIdsToClose.length > 0) {
-      console.log(
-        `Closing tabs: ${tabIdsToClose.join(", ")} from window ${highlightedTabWindowId}`,
-      );
+      console.log(`Closing tabs: ${tabIdsToClose.join(', ')} from window ${highlightedTabWindowId}`);
       try {
         await chrome.tabs.remove(tabIdsToClose);
         // After closing tabs, refresh the list
         await performUnifiedSearch(currentQuery);
         // Maintain selection if possible, or move it to the last item if current becomes invalid
-        let newSelectedIndex = Math.min(
-          selectedIndex,
-          filteredResults.length - 1,
-        );
+        let newSelectedIndex = Math.min(selectedIndex, filteredResults.length - 1);
         newSelectedIndex = Math.max(-1, newSelectedIndex); // Ensure it's not less than -1
         renderResults(filteredResults, newSelectedIndex);
         searchInput.focus();
@@ -1234,11 +1241,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error("Error closing tabs:", error);
       }
     } else {
-      console.log(
-        "No tabs found below the highlighted tab in the same window to close.",
-      );
+      console.log("No tabs found below the highlighted tab in the same window to close.");
     }
   };
+
 
   // --- Event Listeners ---
 
@@ -1306,7 +1312,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
 
-    // NEW: Ctrl+Shift+B to add current tab as bookmark
+    // Ctrl+Shift+B to add current tab as bookmark
     if (e.ctrlKey && e.shiftKey && (e.key === "b" || e.key === "B")) {
       e.preventDefault();
       try {
@@ -1373,7 +1379,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             switchTab(existingTab.id, existingTab.windowId);
           } else {
             // Tab does not exist, open a new one
-            openUrl(shortcutsUrl);
+            chrome.tabs.create({ url: shortcutsUrl }, () => window.close());
           }
           clearPersistentLastQuery(); // Still clear persistent query as we've navigated
         });
@@ -1391,9 +1397,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (activeView === "tabSearch") {
       const items = tabList.querySelectorAll("li");
 
-      // New: Toggle bookmarks search with backtick (`)
-      if (e.key === "`" && !e.ctrlKey) {
-        // Ensure it's not Ctrl+`
+      // Toggle bookmarks search with backtick (`)
+      if (e.key === "`" && !e.ctrlKey) { // Ensure it's not Ctrl+`
         e.preventDefault(); // Prevent typing ` into the search input
         // Ensure the checkbox reference is available. It's loaded via loadSettingsContent.
         // If the settings content hasn't been loaded, load it now to get the reference.
@@ -1414,17 +1419,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         return; // Exit to prevent further processing
       }
 
-      // NEW: Ctrl+` to toggle between all tabs and current window tabs
+      // Ctrl+` to toggle between all tabs and current window tabs
       if (e.ctrlKey && e.key === "`") {
         e.preventDefault();
-        currentSettings.showOnlyCurrentWindowTabs =
-          !currentSettings.showOnlyCurrentWindowTabs;
+        currentSettings.showOnlyCurrentWindowTabs = !currentSettings.showOnlyCurrentWindowTabs;
         await saveSettings(); // Persist the updated setting
+        updateSearchInputColor(); // Update the input field color
         await performUnifiedSearch(currentQuery); // Re-filter and re-render immediately
         return; // Consume the event
       }
 
-      // NEW: Ctrl+X to close all tabs below the highlighted tab in the same window
+      // Ctrl+X to close all tabs below the highlighted tab in the same window
       if (e.ctrlKey && (e.key === "x" || e.key === "X")) {
         e.preventDefault();
         await closeTabsBelowHighlighted();
