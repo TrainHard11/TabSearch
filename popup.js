@@ -18,7 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Key to store the URL of the harpooned item to focus after adding/finding it
   const INITIAL_HARPOON_URL_KEY = `${LS_PREFIX}initialHarpoonUrl`;
 
-
   const SEARCH_MEMORY_DURATION_MS = 10 * 1000; // 10 seconds
 
   // tabSearch View:
@@ -1164,6 +1163,64 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  /**
+   * Closes all tabs below the currently highlighted tab within the same window.
+   * Only applies to items of type 'tab'.
+   */
+  const closeTabsBelowHighlighted = async () => {
+    if (selectedIndex === -1 || !filteredResults[selectedIndex]) {
+      console.log("No tab highlighted to close tabs below.");
+      return; // No tab is highlighted
+    }
+
+    const highlightedItem = filteredResults[selectedIndex];
+
+    // Ensure the highlighted item is a tab
+    if (highlightedItem.type !== "tab") {
+      console.log(
+        "Highlighted item is not a tab. Skipping 'close tabs below'.",
+      );
+      return;
+    }
+
+    const highlightedTabWindowId = highlightedItem.windowId;
+    const tabIdsToClose = [];
+
+    // Iterate through filtered results AFTER the highlighted index
+    for (let i = selectedIndex + 1; i < filteredResults.length; i++) {
+      const item = filteredResults[i];
+      // Collect only tabs that are in the same window
+      if (item.type === "tab" && item.windowId === highlightedTabWindowId) {
+        tabIdsToClose.push(item.id);
+      }
+    }
+
+    if (tabIdsToClose.length > 0) {
+      console.log(
+        `Closing tabs: ${tabIdsToClose.join(", ")} from window ${highlightedTabWindowId}`,
+      );
+      try {
+        await chrome.tabs.remove(tabIdsToClose);
+        // After closing tabs, refresh the list
+        await performUnifiedSearch(currentQuery);
+        // Maintain selection if possible, or move it to the last item if current becomes invalid
+        let newSelectedIndex = Math.min(
+          selectedIndex,
+          filteredResults.length - 1,
+        );
+        newSelectedIndex = Math.max(-1, newSelectedIndex); // Ensure it's not less than -1
+        renderResults(filteredResults, newSelectedIndex);
+        searchInput.focus();
+      } catch (error) {
+        console.error("Error closing tabs:", error);
+      }
+    } else {
+      console.log(
+        "No tabs found below the highlighted tab in the same window to close.",
+      );
+    }
+  };
+
   // --- Event Listeners ---
 
   // Global keyboard shortcuts for View switching and tab/bookmark movement
@@ -1230,6 +1287,38 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // NEW: Ctrl+Shift+B to add current tab as bookmark
+    if (e.ctrlKey && e.shiftKey && (e.key === "b" || e.key === "B")) {
+      e.preventDefault();
+      try {
+        // Send a message to background.js to trigger the addCurrentTabAsBookmark function
+        const response = await chrome.runtime.sendMessage({
+          action: "addBookmarkFromPopup",
+        });
+        if (response && response.success) {
+          // The background script already handles setting the initial view to 'marks'
+          // and opening the popup if it was closed, and focusing the new bookmark.
+          // So, we just need to ensure the popup reflects the change if it's already open.
+          // If the popup is already open and not in marks view, switch to marks view.
+          if (ViewManager.getActive() !== "marks") {
+            await ViewManager.show("marks", false); // Show marks view, not restoring
+          }
+          // The marks.js `attachMarksListeners` will pick up `INITIAL_MARK_URL_KEY`
+          // and focus the newly added bookmark.
+        } else {
+          console.error(
+            "Failed to add bookmark from popup:",
+            response?.message || "Unknown error",
+          );
+          // Optionally display a message to the user within the popup
+          // (This would require a new message display mechanism in popup.js or marks.js)
+        }
+      } catch (error) {
+        console.error("Error sending add bookmark message:", error);
+      }
+      return; // Consume the event
+    }
+
     // --- Other global F-key combinations (view switching, shortcuts page) ---
     // These now only trigger if Alt is NOT pressed, or if it's the specific F5 case.
     if (!e.altKey) {
@@ -1271,38 +1360,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
-
-    // NEW: Ctrl+Shift+B to add current tab as bookmark
-    if (e.ctrlKey && e.shiftKey && (e.key === "b" || e.key === "B")) {
-      e.preventDefault();
-      try {
-        // Send a message to background.js to trigger the addCurrentTabAsBookmark function
-        const response = await chrome.runtime.sendMessage({
-          action: "addBookmarkFromPopup",
-        });
-        if (response && response.success) {
-          // The background script already handles setting the initial view to 'marks'
-          // and opening the popup if it was closed, and focusing the new bookmark.
-          // So, we just need to ensure the popup reflects the change if it's already open.
-          // If the popup is already open and not in marks view, switch to marks view.
-          if (ViewManager.getActive() !== "marks") {
-            await ViewManager.show("marks", false); // Show marks view, not restoring
-          }
-          // The marks.js `attachMarksListeners` will pick up `INITIAL_MARK_URL_KEY`
-          // and focus the newly added bookmark.
-        } else {
-          console.error(
-            "Failed to add bookmark from popup:",
-            response?.message || "Unknown error",
-          );
-          // Optionally display a message to the user within the popup
-          // (This would require a new message display mechanism in popup.js or marks.js)
-        }
-      } catch (error) {
-        console.error("Error sending add bookmark message:", error);
-      }
-      return; // Consume the event
-    }
   });
 
   // Keyboard navigation within the main tab search view
@@ -1335,6 +1392,13 @@ document.addEventListener("DOMContentLoaded", () => {
         await saveSettings(); // Persist the updated setting
         await performUnifiedSearch(currentQuery); // Re-filter and re-render immediately
         return; // Exit to prevent further processing
+      }
+
+      // NEW: Ctrl+X to close all tabs below the highlighted tab in the same window
+      if (e.ctrlKey && (e.key === "x" || e.key === "X")) {
+        e.preventDefault();
+        await closeTabsBelowHighlighted();
+        return; // Consume the event
       }
 
       if (isPersistentQueryActive) {
