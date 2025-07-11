@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Default settings
   const defaultSettings = {
-    webNavigatorEnabled: false,
+    webNavigatorEnabled: true,
     searchOnNoResults: true,
     searchMarksEnabled: true,
     enableMarksAddition: true,
@@ -510,7 +510,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       "#closePopupAfterMoveTabManager",
     );
     // No dedicated checkbox for showOnlyCurrentWindowTabs, it's keymap controlled
-
     customTabFields = [];
     customTabExactMatchCheckboxes = [];
     for (let i = 1; i <= 7; i++) {
@@ -1030,9 +1029,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Update info text to show current window filtering status
     if (currentSettings.showOnlyCurrentWindowTabs) {
-        infoText.textContent = `Showing ${resultsToRender.length} results (current window)`;
+      infoText.textContent = `Showing ${resultsToRender.length} results (current window)`;
     } else {
-        infoText.textContent = `Showing ${resultsToRender.length} results (all windows)`;
+      infoText.textContent = `Showing ${resultsToRender.length} results (all windows)`;
     }
 
 
@@ -1250,6 +1249,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Global keyboard shortcuts for View switching and tab/bookmark movement
   document.addEventListener("keydown", async (e) => {
+    // Define selectedItem and isItemHighlighted at the beginning of the event listener
     const selectedItem =
       selectedIndex !== -1 ? filteredResults[selectedIndex] : null;
     const isItemHighlighted = selectedItem !== null;
@@ -1366,8 +1366,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         e.preventDefault();
         const shortcutsUrl =
           typeof chrome !== "undefined" &&
-          chrome.runtime &&
-          chrome.runtime.getURL
+            chrome.runtime &&
+            chrome.runtime.getURL
             ? "chrome://extensions/shortcuts" // Chromium
             : "about:addons"; //Mozilla
 
@@ -1433,6 +1433,36 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (e.ctrlKey && (e.key === "x" || e.key === "X")) {
         e.preventDefault();
         await closeTabsBelowHighlighted();
+        return; // Consume the event
+      }
+
+      // Ctrl+N to create a new window with the highlighted tab
+      if (e.ctrlKey && (e.key === "n" || e.key === "N")) {
+        e.preventDefault(); // Prevent default browser action for Ctrl+N (new window)
+        // Re-declare selectedItem and isItemHighlighted within this scope
+        const selectedItem =
+          selectedIndex !== -1 ? filteredResults[selectedIndex] : null;
+        const isItemHighlighted = selectedItem !== null;
+
+        if (isItemHighlighted && selectedItem.type === "tab") {
+          try {
+            const response = await chrome.runtime.sendMessage({
+              action: "createWindowAndMoveTab",
+              tabId: selectedItem.id,
+              tabUrl: selectedItem.url, // Pass URL for potential use, though not strictly needed for move
+            });
+            if (response && response.success) {
+              window.close(); // Close the popup after action
+            } else {
+              console.error(
+                "Failed to create new window with tab:",
+                response?.error || "Unknown error",
+              );
+            }
+          } catch (error) {
+            console.error("Error sending message to create new window:", error);
+          }
+        }
         return; // Consume the event
       }
 
